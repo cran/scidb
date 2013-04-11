@@ -22,6 +22,7 @@
 # Element-wise operations
 Ops.scidb = function(e1,e2) {
   switch(.Generic,
+    '^' = .binop(e1,e2,"^"),
     '+' = .binop(e1,e2,"+"),
     '-' = .binop(e1,e2,"-"),
     '*' = .binop(e1,e2,"*"),
@@ -49,9 +50,8 @@ scidbmultiply = function(e1,e2)
   if(length(e2@attributes)>1)
     op2 = sprintf("project(%s,%s)",e2@name,a2)
 
-# We use subarray to handle starting index mismatches, for
-# subarray always returns an array with dimension indices starting
-# at zero.
+# We use subarray to handle starting index mismatches (subarray always
+# returns an array with dimension indices starting at zero).
   l1 = length(dim(e1))
   lb = paste(rep(.scidb_DIM_MIN,l1),collapse=",")
   ub = paste(rep(.scidb_DIM_MAX,l1),collapse=",")
@@ -63,11 +63,11 @@ scidbmultiply = function(e1,e2)
 
   j = which(e2@attribute == e2@attributes)[[1]]
 # Adjust the 2nd array to be schema-compatible with the 1st:
-  op2 = sprintf("repart(%s, <%s:%s>[%s=0:%.0f,%.0f,%.0f,%s=0:%.0f,%.0f,%.0f])",
+  op2 = sprintf("repart(%s, <%s:%s>[%s=%.0f:%.0f,%.0f,%.0f,%s=%.0f:%.0f,%.0f,%.0f])",
           op2, a2, e2@type[[j]],
-          e2@D$name[[1]], e2@D$length[[1]] - 1,
+          e2@D$name[[1]], 0, e2@D$length[[1]] - 1,
                           e1@D$chunk_interval[[2]], e1@D$chunk_overlap[[2]],
-          e2@D$name[[2]], e2@D$length[[2]] - 1,
+          e2@D$name[[2]], 0, e2@D$length[[2]] - 1,
                           e2@D$chunk_interval[[2]], e2@D$chunk_overlap[[2]])
   scidbquery(paste("store(multiply(",op1,",",op2,"),",x,")",sep=""))
   return(scidb(x,gc=TRUE))
@@ -102,25 +102,35 @@ scidbmultiply = function(e1,e2)
   ub = paste(rep(.scidb_DIM_MAX,l),collapse=",")
   q2 = sprintf("subarray(%s,%s,%s)",e2@name,lb,ub)
 # Adjust the 2nd array to be schema-compatible with the 1st:
+# XXX PGB Makes the good point here that we should repart the smaller of the
+# two arrays...
   if(l==2 && l1==l)
   {
     q2 = sprintf(
        "repart(%s, <%s:%s>[%s=%.0f:%.0f,%.0f,%.0f,%s=%.0f:%.0f,%.0f,%.0f])",
        q2, e2a, e2@type[[1]],
-       e2@D$name[[1]], 0, e2@D$length[[1]],
+       e2@D$name[[1]], 0, e2@D$length[[1]] - 1,
                           e1@D$chunk_interval[[1]], e1@D$chunk_overlap[[1]],
-       e2@D$name[[2]], 0, e2@D$length[[2]],
+       e2@D$name[[2]], 0, e2@D$length[[2]] - 1,
                           e1@D$chunk_interval[[2]], e1@D$chunk_overlap[[2]])
+  }
+  p1 = p2 = ""
+# Syntax sugar for exponetiation (map the ^ infix operator to pow):
+  if(op=="^")
+  {
+    p1 = "pow("
+    op = ","
+    p2 = ")"
   }
 # Handle special scalar multiplication case:
   if(length(e1s)==1)
-    Q = sprintf("apply(%s,%s,%.15f %s %s)",q2,v,e1s,op,e2a)
+    Q = sprintf("apply(%s,%s, %s %.15f %s %s %s)",q2,v,p1,e1s,op,e2a,p2)
   else if(length(e2s)==1)
-    Q = sprintf("apply(%s,%s,%.15f %s %s)",q1,v,e2s,op,e1a)
+    Q = sprintf("apply(%s,%s,%s %s %s %.15f %s)",q1,v,p1,e1a,op,e2s,p2)
   else
   {
     Q = sprintf("join(%s as e1, %s as e2)", q1, q2)
-    Q = sprintf("apply(%s, %s, e1.%s %s e2.%s)", Q, v, e1a, op, e2a)
+    Q = sprintf("apply(%s, %s, %s e1.%s %s e2.%s %s)", Q,v,p1,e1a,op,e2a,p2)
   }
   Q = sprintf("project(%s, %s)",Q,v)
   Q = sprintf("store(%s, %s)",Q,x)

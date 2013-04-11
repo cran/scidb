@@ -5,7 +5,7 @@
 Copy a data frame into a new 1-D SciDB array.
 }
 \usage{
-df2scidb(X, name = ifelse(exists(as.character(match.call()[2])), as.character(match.call()[2]), "X"), dimlabel = "row", chunkSize, rowOverlap = 0L, types = NULL, nullable = FALSE, real_format = "\%.15f", gc)
+df2scidb(X, name = ifelse(exists(as.character(match.call()[2])), as.character(match.call()[2]), "X"), dimlabel = "row", chunkSize, rowOverlap = 0L, types = NULL, nullable = FALSE, gc)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -16,7 +16,6 @@ df2scidb(X, name = ifelse(exists(as.character(match.call()[2])), as.character(ma
   \item{rowOverlap}{The SciDB chunk overlap.}
   \item{types}{An optional vector explicitly specifying the SciDB attribute types. Length must match the number of columns of the data frame.}
   \item{nullable}{An optional vector indicating the SciDB nullable property of each attribute. Length must match the number of columns of the data frame.}
-  \item{real_format}{The format string used to print real values.}
   \item{gc}{Optional logical value. If TRUE, then resulting SciDB array will be garbage-collected when the R variable referencing it is. The default value is FALSE.}
 }
 \details{

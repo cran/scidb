@@ -137,14 +137,15 @@ POST = function(uri, size, transmit)
 # Input:
 # type (character), one of the indicated list types
 # verbose (boolean), include attribute and dimension data when type="arrays"
+# n: maximum lines of output to return
 # Output:
 # A list.
 scidblist = function(pattern,
 type= c("arrays","operators","functions","types","aggregates","instances","queries"),
-              verbose=FALSE)
+              verbose=FALSE, n=Inf)
 {
   type = match.arg(type)
-  Q = iquery(paste("list('",type,"')",sep=""), return=TRUE)
+  Q = iquery(paste("list('",type,"')",sep=""), return=TRUE, n=n)
 
   if(dim(Q)[1]==0) return(NULL)
   z=Q[,-1,drop=FALSE]
@@ -159,7 +160,6 @@ type= c("arrays","operators","functions","types","aggregates","instances","queri
 scidbls = function(...) scidblist(...)
 
 # Basic low-level query. Returns query id.
-# Only supports a single query at a time.
 # query: a character query string
 # afl: TRUE indicates use AFL, FALSE AQL
 # async: TRUE=Ignore return value and return immediately, FALSE=wait for return
@@ -247,26 +247,6 @@ scidbremove = function(x, error=stop)
 }
 scidbrm = function(x,error=stop) scidbremove(x,error)
 
-# Note: data frames are sent as single dimension objects along rows. The
-# columns of the data frame are sent as attributes.
-# This is not directly exposed to the user, but can be used by the
-# user independently to create scidb ASCII input files.
-# Input:
-# A (data.frame): data frame
-# r (integer): chunk size
-# offset (real): offset for start chunk
-# Output:
-# (character) formatted SciDB input string
-.df2scidb = function (A, r, offset=1.0, real_format="%.15f")
-{
-  if(!("data.frame" %in% class(A))) stop("Requires a data.frame")
-  r = min(nrow(A),r)
-
-  .Call('df2scidb', A, as.integer(r),as.double(offset),as.character(real_format),PACKAGE="scidb")
-
-}
-
-
 # df2scidb: User function to send a data frame to SciDB
 # Returns a scidbdf object
 df2scidb = function(X,
@@ -277,7 +257,6 @@ df2scidb = function(X,
                     rowOverlap=0L,
                     types=NULL,
                     nullable=FALSE,
-                    real_format="%.15f",
                     gc)
 {
   if(!is.data.frame(X)) stop("X must be a data frame")
@@ -298,13 +277,13 @@ df2scidb = function(X,
   dimlabel = gsub("\\.","_",dimlabel)
   if(dimlabel!=old_dimlabel) warning("Dimension name has been changed")
   if(missing(chunkSize)) {
-    chunkSize = min(nrow(X),100000L)
+    chunkSize = min(nrow(X),10000)
   }
   m = ceiling(nrow(X) / chunkSize)
 
 # Default type is string
   typ = rep(paste("string",nullable),ncol(X))
-  args = sprintf("create array %s <",name)
+  args = "<"
   if(!is.null(types)) {
     for(j in 1:ncol(X)) typ[j]=paste(types[j],nullable[j])
   } else {
@@ -325,10 +304,7 @@ df2scidb = function(X,
     else args=paste(args,">")
   }
 
-# Create array part of query, cleaning up on error
-  query = paste(args,"[",dimlabel,"=1:",sprintf("%.0f",nrow(X)),",",sprintf("%.0f",chunkSize),",", rowOverlap,"]",sep="")
-  tryCatch( scidbquery(query),
-    error = function(e) {stop(e)})
+  SCHEMA = paste(args,"[",dimlabel,"=1:",sprintf("%.0f",nrow(X)),",",sprintf("%.0f",chunkSize),",", rowOverlap,"]",sep="")
 
 # Obtain a session from the SciDB http service for the upload process
   u = url(paste(URI(),"/new_session",sep=""))
@@ -336,11 +312,13 @@ df2scidb = function(X,
   close(u)
 
 # Create SciDB input string from the data frame
-  scidbInput = .df2scidb(X,chunkSize,real_format=real_format)
+  scidbInput = .df2scidb(X,chunkSize)
 
 # Post the input string to the SciDB http service
-  tmp = tryCatch(POST(paste("/upload_file?id=",session,sep=""),nchar(scidbInput),
-                       function(fd) scidb:::.SOCK_SEND(fd, scidbInput)),
+  tmp = tryCatch(
+          POST(paste("/upload_file?id=",session,sep=""),
+               nchar(scidbInput,type="bytes"),
+               function(fd) scidb:::.SOCK_SEND(fd, scidbInput)),
           error=function(e)
            {
              GET(paste("/release_session?id=",session,sep=""),async=FALSE)
@@ -348,7 +326,7 @@ df2scidb = function(X,
            })
 
 # Load query
-  query = paste("load(",name,", '",tmp,"')",sep="")
+  query = sprintf("store(input(%s, '%s'),%s)",SCHEMA, tmp, name)
   scidbquery(query, async=FALSE, release=1, session=session)
   scidb(name,`data.frame`=TRUE,gc=gc)
 }
@@ -357,7 +335,7 @@ df2scidb = function(X,
 # Calling wrapper for matrix 2 scidb array function
 # A: an R matrix object
 # session: An active SciDB http session
-.m2scidb = function (A,session)
+.m2scidb = function (A,session,start=c(0L,0L))
 {
 # Compute the size of the upload data:
   n = length(A)
@@ -371,7 +349,7 @@ df2scidb = function(X,
 # Define a transmit function for the POST routine
   f = function(fd)
    {
-    .Call('m2scidb', A, as.integer(fd), PACKAGE='scidb')
+    .Call('m2scidb', A, as.integer(fd),as.integer(start), PACKAGE='scidb')
    }
 
 # DEBUG
@@ -389,7 +367,9 @@ df2scidb = function(X,
 }
 
 
-iquery = function(query, `return`=FALSE, afl=TRUE, iterative=FALSE, n=1000, excludecol, ...)
+iquery = function(query, `return`=FALSE,
+                  afl=TRUE, iterative=FALSE,
+                  n=1000, excludecol, ...)
 {
   if(!afl && `return`) stop("return=TRUE may only be used with AFL statements")
   if(iterative && !`return`) stop("Iterative result requires return=TRUE")
@@ -401,6 +381,7 @@ iquery = function(query, `return`=FALSE, afl=TRUE, iterative=FALSE, n=1000, excl
   }
   qsplit = strsplit(query,";")[[1]]
   m = 1
+  if(n==Inf) n = -1    # Indicate to shim that we want all the lines of output
   for(query in qsplit)
   {
     if(`return` && m==length(qsplit))
@@ -483,3 +464,55 @@ iqiter = function (con, n = 1, excludecol, ...)
   it
 }
 
+
+# Utility csv2scidb function
+.df2scidb = function(X, chunksize, start=1)
+{
+  if(missing(chunksize)) chunksize = min(nrow(X),10000)
+  scipen = options("scipen")
+  options(scipen=20)
+  buf = capture.output(
+         write.table(X, file=stdout(), sep=",",
+                     row.names=FALSE,col.names=FALSE,quote=FALSE)
+        )
+  options(scipen=scipen)
+  x = sapply(1:length(buf), function(j)
+    {
+      chunk = floor(j/chunksize)
+      if(j==length(buf))
+      {
+        if((j-1) %% chunksize == 0)
+          tmp = sprintf("{%.0f}[\n(%s)];",start + chunk*chunksize, buf[j])
+        else
+          tmp = sprintf("(%s)];",buf[j])
+      } else if((j-1) %% chunksize==0)
+      {
+        tmp = sprintf("{%.0f}[\n(%s),",start + chunk*chunksize, buf[j])
+      } else if((j) %% chunksize == 0)
+      {
+        tmp = sprintf("(%s)];",buf[j])
+      } else
+      {
+        tmp = sprintf("(%s),",buf[j])
+      }
+      tmp
+    }
+  )
+  paste(x,collapse="")
+}
+
+# Return a SciDB schema of a scidb object x.
+# Explicitly indicate attribute part of schema with remaining arguments
+extract_schema = function(x, at=x@attributes, ty=x@types, nu=x@nullable)
+{
+  if(!(inherits(x,"scidb") || inherits(x,"scidbdf"))) stop("Not a scidb object")
+  op = options(scipen=20)
+  nullable = rep("",length(nu))
+  if(any(nu)) nullable[nu] = " NULL"
+  attr = paste(at,ty,sep=":")
+  attr = paste(attr, nullable,sep="")
+  attr = sprintf("<%s>",paste(attr,collapse=","))
+  dims = sprintf("[%s]",paste(paste(paste(paste(paste(paste(x@D$name,"=",sep=""),x@D$start,sep=""),x@D$start+x@D$length-1,sep=":"),x@D$chunk_interval,sep=","),x@D$chunk_overlap,sep=","),collapse=","))
+  options(op)
+  paste(attr,dims,sep="")
+}

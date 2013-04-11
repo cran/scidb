@@ -120,6 +120,10 @@ scidbdf_subset = function(x, i)
 {
   attribute_range = i[[2]]
   if(is.null(attribute_range)) attribute_range = x@attributes
+  if(is.numeric(attribute_range))
+  {
+    attribute_range = x@attributes[attribute_range]
+  }
 
   i = i[[1]]
 
@@ -146,13 +150,6 @@ scidbdf_subset = function(x, i)
   else
   {
     if(!is.numeric(i)) stop("This kind of indexing is not yet supported for NID arrays :<")
-# Lookup
-    X = data.frame(as.integer(i))
-    names(X) = tail(make.names_(c(x@attributes,"I")),1)
-    I = tmpnam()
-    df2scidb(X,name=I,nullable=FALSE,types="int64")
-    on.exit(tryCatch(scidbremove(I),error=function(e)invisible()))
-    query = sprintf("lookup(%s,%s)",I,x@name)
   }
   query = sprintf("project(%s, %s)",query, paste(attribute_range,collapse=","))
   N = tmpnam("array")

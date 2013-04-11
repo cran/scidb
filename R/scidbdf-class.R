@@ -37,7 +37,7 @@ setGeneric("head")
 setMethod("head", signature(x="scidbdf"),
 function(x, n=6L, ...)
 {
-  iquery(sprintf("between(%s,%.0f,%.0f)",x@name,x@D$start,n),`return`=TRUE,colClasses=x@colClasses)[,-1]
+  iquery(sprintf("between(%s,%.0f,%.0f)",x@name,x@D$start,x@D$start + n - 1),`return`=TRUE,colClasses=x@colClasses)[,-1]
 })
 
 setGeneric("tail")
@@ -83,10 +83,15 @@ setMethod("aggregate", signature(x="scidbdf"),
 
     agat = strsplit(FUN,",")[[1]]
     agnames = gsub(".* ","", gsub(" *$","",gsub("^ *","",gsub(".*)","",agat))))
+
+    atnames = strsplit(FUN,split="\\(")[[1]]
+    wx = grep("\\)",atnames)
+    if(length(wx)>0) atnames = gsub("\\).*","",atnames[wx])
+    agtp = unlist(lapply(atnames,function(z)data@types[data@attributes %in% z]))
+    agtp = paste(agtp, "NULL")
+
     if(any(nchar(agnames))<1) stop("We require that aggregate expressions name outputs, for example count(x) AS cx")
     agfun = tolower(gsub(" *","",gsub("\\(.*","",agat)))
-    agtp = data@types[data@attributes %in% agnames]
-    agtp = paste(agtp, "NULL")
     J = agfun %in% names(agtypes)
     if(any(J)) agtp[J] = agtypes[agfun[J]]
     attributes = paste(paste(agnames,agtp,sep=":"),collapse=",")
@@ -105,6 +110,6 @@ setMethod("aggregate", signature(x="scidbdf"),
     query = sprintf("redimension_store(%s,%s,%s)",data@name, A, paste(FUN,collapse=","))
     iquery(query)
     query = sprintf("scan(%s)",A)
-    iquery(query, `return`=TRUE)
+    iquery(query, `return`=TRUE, n=Inf)
   }
 )

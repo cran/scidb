@@ -109,52 +109,12 @@ selectively_drop_nid = function(A, idx, schema_only=FALSE, query, nullable)
 }
 
 
-# New faster materialize, only for matrices for now.
-materialize_new =
-function(x, default=options("scidb.default.value"), drop=FALSE)
-{
-# Try out new, more efficient transfer
-  if( all(x@D$type=="int64") && (length(dim(x))==2) )
-  {
-    type = names(.scidbtypes[.scidbtypes==x@type])
-    if(length(type)<1) stop("Unsupported data type.")
-    tval = vector(mode=type,length=1)
-#   query = x@name
-    query = selectively_drop_nid(x,rep(TRUE,length(x@D$type)),nullable="NULL")
-    s = selectively_drop_nid(x,rep(TRUE,length(x@D$type)),nullable="NULL",schema_only=TRUE)
-    query = sprintf("merge(%s, build(%s, %s))",query,s,as.character(default))
-#    nl = x@nullable[x@attribute==x@attributes][[1]]
-#    N = ifelse(nl,"NULL","")
-    N = "NULL"  # merge always returns NULLABLE. sucky for data transfer...
-    savestring = sprintf("&save=(%s %s)",x@type, N)
-    sessionid = tryCatch( scidbquery(query, save=savestring, async=FALSE, release=0),
-                    error = function(e) {stop(e)})
-# Release the session on exit
-    on.exit( GET(paste("/release_session?id=",sessionid,sep=""),async=FALSE) ,add=TRUE)
-    host = get("host",envir=.scidbenv)
-    port = get("port",envir=.scidbenv)
-    n = prod(dim(x))*(8 + (nchar(N)>0))
-    r = sprintf("http://%s:%d/read_bytes?id=%s&n=%.0f",host,port,sessionid,n)
-    u = url(r, open="rb")
-    buf = readBin(u, what="raw", n=n)
-    if(length(buf)<n) stop("Incomplete read. Requested object may be too large.")
-    close(u)
-# Frikin row-major conversion.
-    rdim = dim(x)[length(dim(x)):1]
-    ans = array(.Call("blob2R",buf,rdim,tval,TRUE,PACKAGE="scidb"),dim=rdim)
-    return(t(ans))
-  }
-  materialize(x,default,drop)
-}
-
 # Materialize the single-attribute scidb array x to R.
 materialize = function(x, default=options("scidb.default.value"), drop=FALSE)
 {
   type = names(.scidbtypes[.scidbtypes==x@type])
   if(length(type)<1) stop("Unsupported data type.")
   tval = vector(mode=type,length=1)
-# Temporary output file
-  fn = tempfile(pattern="scidb")
 # Run quey
   query = selectively_drop_nid(x,rep(TRUE,length(x@D$type)),nullable="NULL")
 # Fill out sparsity with default value for return to R. XXX THIS DOES NOT
@@ -183,11 +143,8 @@ materialize = function(x, default=options("scidb.default.value"), drop=FALSE)
   port = get("port",envir=.scidbenv)
   n = 1048576
   buf = 1
+  BUF = c()
 
-
-# XXX We re-use an older function called .scidb2m here that parses data from a
-# file. Update this to read directly from SciDB web service instead.
-  f = file(fn,open="ab")
   tryCatch(
     while(length(buf)>0)
     {
@@ -195,26 +152,18 @@ materialize = function(x, default=options("scidb.default.value"), drop=FALSE)
       u = url(r, open="rb")
       buf = readBin(u, what="raw", n=n)
       close(u)
-      writeBin(buf,f)
+      BUF = c(BUF,buf)
     }, error = function(e) warning(e))
-  close(f)
 
-# Read the data from the output file.  In some cases, we don't know how
-# big the output will be.  so, we need to inspect the output file size and use
-# the type info to figure this out.
-  fsz = file.info(fn)$size
-  maxlen = ceiling(fsz/length(dim(x)))
-  fdim =  rep(1,length(dim(x)))
-  fdim[1] = maxlen
+  if(prod(dim(x))>options("scidb.max.array.elements")) stop("Size exceeds options('scidb.max.array.elements')")
+  fdim = dim(x)
 
   A = tryCatch(
     {
-      if(dolabel) .scidb2m(fn,fdim,tval,dim(x),drop,x@D$name,nl,S=x,default=default)
-      else .scidb2m(fn,fdim,tval,dim(x),drop,x@D$name,nl,default=default)
+      if(dolabel) .scidb2m(BUF,fdim,tval,dim(x),drop,x@D$name,nl,S=x,default=default)
+      else .scidb2m(BUF,fdim,tval,dim(x),drop,x@D$name,nl,default=default)
     },
-    error = function(e){unlink(fn); stop(e)})
-# Remove temporary output file
-  unlink(fn)
+    error = function(e){stop(e)})
   A
 }
 
@@ -330,7 +279,7 @@ lookup_subarray = function(x, q, i, ci, mask)
 warning("Dimension labels were dropped.")
       } else
       {
-        df2scidb(X,types="int64",nullable=FALSE,name=xdim[j],real_format="%.0f",dimlabel=x@D$name[[j]])
+        df2scidb(X,types="int64",nullable=FALSE,name=xdim[j],dimlabel=x@D$name[[j]])
       }
     } else # Not lookup-style index
     {
@@ -430,7 +379,7 @@ rangetype = function(x, i, si, bi, ci)
 
 
 # Import data from a binary save into an R matrix.
-# file: binary SciDB output file
+# x: binary SciDB output file or raw vector
 # dim: A vector of the same length as the number of dimensions of the output
 #      and such that the product of the entries is the maximum number of
 #      possible output elements in the array.
@@ -441,11 +390,16 @@ rangetype = function(x, i, si, bi, ci)
 # nullable: (logical) Are the binary output data (SciBD)nullable?
 # S: Optional scidb array reference. If present, will label
 #    output dimensions,
-.scidb2m = function (file, dim, type, req,drop, dimlabels,nullable, S,default=options("scidb.default.value"))
+.scidb2m = function (x, dim, type, req,drop, dimlabels,nullable, S,default=options("scidb.default.value"))
 {
   N = ifelse(nullable,1L,0L)
   ans = tryCatch(
-    .Call('scidb2m',as.character(file), as.integer(dim), type, N, PACKAGE='scidb'),
+   {
+    if(is.raw(x))
+      .Call('scidb2mnew',x, as.integer(dim), type, N, PACKAGE='scidb')
+    else
+      .Call('scidb2mnew',as.character(x), as.integer(dim), type, N, PACKAGE='scidb')
+   },
   error=function(e) {
     unlink(file)
     stop(e)

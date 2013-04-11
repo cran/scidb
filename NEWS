@@ -1,0 +1,29 @@
+CHANGES IN scidb 1.1-0:
+
+  SIGNIFICANT BUG FIX:
+
+    o Materializing subsetting operations could return inconsistently ordered data when
+      results spanned SciDB array chunks across multiple SciDB instances. Data are now
+      returned correctly in such cases.
+
+  OTHER BUG FIXES:
+
+    o Fixed a bug in the processing of the start argument in the as.scidb function.
+
+    o Fixed several bugs in the image function.
+
+  NEW FEATURES:
+
+    o The iquery function now accepts n=Inf to efficiently download all output
+      from query at once. The iterative=TRUE option should still be used with
+      smaller n values to iterate over large results.
+
+    o The crossprod and tcrossprod functions are now available for SciDB arrays
+      and mixed SciDB/R objects.
+      
+    o A diag function is now available for SciDB matrices, returning result as a new
+      SciDB 1-D array (vector).
+
+    o Element-wise exponentiation was implemented for scidb array objects.
+
+    o Implemented a sum function for scidb array objects.

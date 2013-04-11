@@ -139,10 +139,12 @@ df2scidb (SEXP A, SEXP chunk, SEXP start, SEXP REALFORMAT)
   fstat (fd, &sb);
   length = sb.st_size;
   rewind(fp);
-  buf = (char *)malloc(length);
+  buf = (char *)calloc(sizeof(char),length);
   length = fread(buf,sizeof(char),length,fp);
   fclose(fp);
   close(fd);
+// XXX possible R bug here in mkString? Sometimes extra chars appended
+// (beyond length defined above...)
   ans = mkString(buf);
   free(buf);
   return ans;
@@ -153,11 +155,14 @@ df2scidb (SEXP A, SEXP chunk, SEXP start, SEXP REALFORMAT)
  * format, writing to the specified open file descriptor. Return R NULL.
  * Presently supported types: double, int32, char, bool This function writes:
  * int64 rowindex, int64 colindex, <type> data, ...
+ * A: data matrix to convert...must be a matrix or a vector
+ * B: File descriptor to write to (usually a socket)
+ * S: starting coordinates.
  */
 SEXP
-m2scidb (SEXP A, SEXP F)
+m2scidb (SEXP A, SEXP F, SEXP S)
 {
-  long long j, k, m, n;
+  long long j, k, m, n, s1, s2, h, i;
   int fp;
   char a;
   ssize_t w;
@@ -178,22 +183,30 @@ m2scidb (SEXP A, SEXP F)
       n = ncols (A);
     }
   fp = INTEGER(F)[0];
+  s1 = INTEGER(S)[0];
+  if(LENGTH(S)>1) s2 = (long long)INTEGER(S)[1];
+  else            s2 = 0;
 
+// XXX make the loops a common function here...
   switch (TYPEOF (A))
     {
     case STRSXP:
       for (j = 0; j < m; j++)
         for (k = 0; k < n; k++) {
-          w = write (fp, &j, sizeof(long long));
-          w = write (fp, &k, sizeof(long long));
+          h = j + s1;
+          i = k + s2;
+          w = write (fp, &h, sizeof(long long));
+          w = write (fp, &i, sizeof(long long));
           w = write (fp, CHAR (STRING_ELT (A, j + k * m)), sizeof (char));
         }
       break;
     case LGLSXP:
       for (j = 0; j < m; j++)
         for (k = 0; k < n; k++) {
-          w = write (fp, &j,sizeof(long long));
-          w = write (fp, &k,sizeof(long long));
+          h = j + s1;
+          i = k + s2;
+          w = write (fp, &h,sizeof(long long));
+          w = write (fp, &i,sizeof(long long));
           a = (char) LOGICAL(A)[j + k *m];
           w = write (fp, &a, sizeof (char));
         }
@@ -201,16 +214,20 @@ m2scidb (SEXP A, SEXP F)
     case INTSXP:
       for (j = 0; j < m; j++)
         for (k = 0; k < n; k++) {
-          w = write (fp,&j,sizeof(long long));
-          w = write (fp,&k,sizeof(long long));
+          h = j + s1;
+          i = k + s2;
+          w = write (fp,&h,sizeof(long long));
+          w = write (fp,&i,sizeof(long long));
           w = write (fp,&INTEGER (A)[j + k * m], sizeof (int));
          }
       break;
     case REALSXP:
       for (j = 0; j < m; j++)
         for (k = 0; k < n; k++) {
-          w = write (fp,&j,sizeof(long long));
-          w = write (fp,&k,sizeof(long long));
+          h = j + s1;
+          i = k + s2;
+          w = write (fp,&h,sizeof(long long));
+          w = write (fp,&i,sizeof(long long));
           w = write (fp,&REAL (A)[j + k * m], sizeof (double));
           if(w<sizeof(double)) warning("Data corrupted");
          }
@@ -267,7 +284,6 @@ scidb2m (SEXP file, SEXP DIM, SEXP TYPE, SEXP NULLABLE)
  */
   PROTECT (A = allocVector (TYPEOF (TYPE), l));
   PROTECT (I = allocMatrix (REALSXP, l, length(DIM)));
-// XXX memset here?
   for(j=0;j<l*length(DIM);++j) REAL(I)[j] = NA_REAL;
   nx = 1;
 
@@ -360,33 +376,49 @@ scidb2m (SEXP file, SEXP DIM, SEXP TYPE, SEXP NULLABLE)
 
 
 
-
-
-/*
- * BUF: RAW input data buffer
- * DIM: vector of array dimensions
- * TYPE: SciDB attribute type (limited to supported TYPEOF enumeration)
+/* Read SciDB single-attribute binary output from the specified
+ * buffer.
+ * TYPE must be an SEXP of the correct output type.
+ * DIM is a vector of maximum output dimension lengths (INTEGER)
+ * NULLABLE is an integer, 1 indicates we need to parse for nullable
+ * output from SciDB.
  *
- * returns vector of TYPE
+ * It expects the binary input file to include integer dimensions
+ * like:
+ * value, int64, int64, ..., value, int64, int64, ..., etc.
+ * It returns a list of two elements, each of length NR*NC:
+ * 1. A vector of values  of length L = prod(DIM)
+ * 2. A double precision matrix of L rows and number of dimension columns
+ *    The matrix contains the dimension indices of each value.
+ * Only values with corresponding row/column indices that are not marked
+ * NA are valid.
  */
 SEXP
-blob2R (SEXP BUF, SEXP DIM, SEXP TYPE, SEXP NULLABLE)
+scidb2mnew (SEXP BUFFER, SEXP DIM, SEXP TYPE, SEXP NULLABLE)
 {
-  int j, l;
-  char *p;
-  SEXP A;
+  int j, k, l;
+  long long i;
+  size_t m;
+  SEXP A, ans, I;
   double x;
+  void *p;
   char xc[2];
   int xi;
   char a;
   char nx;
   int nullable = INTEGER(NULLABLE)[0];
-  p = (char *)RAW(BUF);
+  p = (char *)RAW(BUFFER);
 
   l = 1;
   for(j=0;j<length(DIM);++j) l = l*INTEGER(DIM)[j];
 
+/* We reserve the maximum elements and fill the **indices** with NA. The
+ * variable A contains the data and I the indices. Remember, R does not have
+ * 64-bit integers, so we use doubles instead to store indices.
+ */
   PROTECT (A = allocVector (TYPEOF (TYPE), l));
+  PROTECT (I = allocMatrix (REALSXP, l, length(DIM)));
+  for(j=0;j<l*length(DIM);++j) REAL(I)[j] = NA_REAL;
   nx = 1;
 
   switch (TYPEOF (TYPE))
@@ -402,6 +434,11 @@ blob2R (SEXP BUF, SEXP DIM, SEXP TYPE, SEXP NULLABLE)
           x = *((double *)p);
           p+=sizeof(double);
           if((int)nx != 0) REAL (A)[j] = x;
+          for(k=0;k<length(DIM);++k) {
+            i = *((long long *)p);
+            p+=sizeof(long long);
+            REAL(I)[j + k*l] = (double)i;
+          }
         }
       break;
     case STRSXP:
@@ -409,13 +446,18 @@ blob2R (SEXP BUF, SEXP DIM, SEXP TYPE, SEXP NULLABLE)
         {
           SET_STRING_ELT (A, j, NA_STRING);
           if(nullable) {
-            nx = (int) ((char)*((char *)p));
+            nx = (int) (char)(*((char *)p));
             p+=1;
           }
           memset(xc,0,2);
-          memcpy(xc, p, sizeof(char));
-          p+=1;
+          xc[0] = *((char *)p);
+          p+=sizeof(char);
           if((int)nx != 0) SET_STRING_ELT (A, j, mkChar (xc));
+          for(k=0;k<length(DIM);++k) {
+            i = *((long long *)p);
+            p+=sizeof(long long);
+            REAL(I)[j + k*l] = (double)i;
+          }
         }
       break;
     case LGLSXP:
@@ -423,12 +465,17 @@ blob2R (SEXP BUF, SEXP DIM, SEXP TYPE, SEXP NULLABLE)
         {
           LOGICAL (A)[j] = NA_LOGICAL;
           if(nullable) {
-            nx = (int) ((char)*((char *)p));
+            nx = (int) (char)(*((char *)p));
             p+=1;
           }
-          a = (int) ((char)(*(char *)p));
-          p+=1;
+          a = *((char *)p);
+          p+=sizeof(char);
           if((int)nx != 0) LOGICAL (A)[j] = (int)a;
+          for(k=0;k<length(DIM);++k) {
+            i = *((long long *)p);
+            p+=sizeof(long long);
+            REAL(I)[j + k*l] = (double)i;
+          }
         }
       break;
     case INTSXP:
@@ -436,18 +483,26 @@ blob2R (SEXP BUF, SEXP DIM, SEXP TYPE, SEXP NULLABLE)
         {
           INTEGER (A)[j] = R_NaInt;
           if(nullable) {
-            nx = (int) ((char)*((char *)p));
+            nx = (int) (char)(*((char *)p));
             p+=1;
           }
-          xi = (int) *( (int *)p);
+          xi = *((int *)p);
           p+=sizeof(int);
           if((int) nx != 0) INTEGER (A)[j] = xi;
+          for(k=0;k<length(DIM);++k) {
+            i = *((long long *)p);
+            p+=sizeof(long long);
+            REAL(I)[j + k*l] = (double)i;
+          }
         }
       break;
     default:
       break;
     };
+  ans = PROTECT(allocVector(VECSXP, 2));
+  SET_VECTOR_ELT(ans, 0, A);
+  SET_VECTOR_ELT(ans, 1, I);
 
-  UNPROTECT (1);
-  return A;
+  UNPROTECT (3);
+  return ans;
 }

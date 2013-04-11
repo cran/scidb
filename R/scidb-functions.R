@@ -152,7 +152,7 @@ dimnames.scidb = function(x)
     if(x@D$length[j] > options("scidb.max.array.elements"))
       stop("Result will be too big. Perhaps try a manual query with an iterative result.")
     Q = sprintf("scan(%s:%s)",x@name,x@D$name[j])
-    iquery(Q,return=TRUE)[,2]
+    iquery(Q,return=TRUE,n=Inf)[,2]
   })
 }
 
@@ -192,7 +192,7 @@ summary.scidb = function(x)
   i = lapply(1:length(M), function(j) tryCatch(eval(M[j][[1]],parent.frame()),error=function(e)c()))
 # User wants this materialized to R...
   if(all(sapply(i,is.null)))
-    return(materialize_new(x,default=default,drop=drop))
+    return(materialize(x,default=default,drop=drop))
 # Not materializing, return a SciDB array
   if(length(i)!=length(dim(x))) stop("Dimension mismatch")
   dimfilter(x,i)
@@ -257,6 +257,10 @@ as.scidb = function(X,
   D = dim(X)
   rowOverlap=0L
   colOverlap=0L
+  if(length(start)<1) stop ("Invalid starting coordinates")
+  if(length(start)>2) start = start[1:2]
+  if(length(start)<2) start = c(start, 0)
+  start = as.integer(start)
   type = .scidbtypes[[typeof(X)]]
   if(is.null(type)) {
     stop(paste("Unupported data type. The package presently supports: ",
@@ -276,15 +280,10 @@ as.scidb = function(X,
       min(ncol(X),colChunkSize), colOverlap)
   }
   if(!is.matrix(X)) stop ("X must be a matrix or a vector")
-  schema1d = sprintf("<i:int64, j:int64, val : %s>[idx=0:*,100000,0]",type)
+  schema1d = sprintf("<i:int64, j:int64, val : %s>[idx=0:*,10000,0]",type)
 
 # Create the array, might error out here if array already exists
   query = sprintf("create_array(%s,%s)",name,schema)
-  scidbquery(query,async=FALSE)
-
-# Unfortunately SciDB input function requires a named array, not just schema :(
-  tmparray = tmpnam()
-  query = paste("create array",tmparray,schema1d)
   scidbquery(query,async=FALSE)
 
 # Obtain a session from shim for the upload process
@@ -293,21 +292,17 @@ as.scidb = function(X,
   close(u)
 
 # Upload the data
-  f = .m2scidb(X, session)
+  f = .m2scidb(X, session,start)
 
 # Load query
-  query = sprintf("input(%s,'%s', 0, '(int64,int64,%s)')",tmparray,f,type)
+#  query = sprintf("input(%s,'%s', 0, '(int64,int64,%s)')",tmparray,f,type)
+  query = sprintf("input(%s,'%s', 0, '(int64,int64,%s)')",schema1d,f,type)
   query = sprintf("redimension_store(%s, %s)",query, name)
   tryCatch( scidbquery(query, async=FALSE, release=1, session=session),
     error = function(e) {
-      unlink(f)
-      scidbquery(sprintf("remove(%s)",tmparray))
       stop(e)
     })
   unlink(f)
-# Remove the temp array used during load
-  query = sprintf("remove(%s)",tmparray)
-  scidbquery(query, async=FALSE)
 
   ans = scidb(name,gc=gc)
 

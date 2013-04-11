@@ -52,73 +52,107 @@ setClass("scidb",
          S3methods=TRUE)
 
 setMethod("%*%",signature(x="scidb", y="scidb"),
-  function(x,y) scidbmultiply(x,y),
-  valueClass="scidb"
-)
-
-# XXX add check for type...
-setMethod("%*%",signature(x="matrix", y="scidb"),
-  function(x,y) {
-    on.exit(tryCatch(scidbremove(x@name),error=function(e)invisible()))
-    x = as.scidb(x,name=basename(tempfile(pattern="array")),colChunkSize=y@D$chunk_interval[1],start=c(0L,y@D$start[[2]]))
-    ans = scidbmultiply(x,y)
-    return(ans)
+  function(x,y)
+  {
+    scidbmultiply(x,y)
   },
   valueClass="scidb"
 )
 
-setMethod("%*%",signature(x="scidb", y="matrix"),
-  function(x,y) {
-    on.exit(tryCatch(scidbremove(y@name),error=function(e)invisible()))
-    y = as.scidb(y,name=basename(tempfile(pattern="array")), rowChunkSize=x@D$chunk_interval[2],start=c(x@D$start[[1]],0L))
-    ans = scidbmultiply(x,y)
-    ans
+setMethod("%*%",signature(x="scidb", y="ANY"),
+  function(x,y)
+  {
+    if(!inherits(y,"scidb"))
+    {
+      on.exit(tryCatch(scidbremove(y@name),error=function(e)invisible()))
+      y = as.scidb(cbind(y),name=basename(tempfile(pattern="array")), rowChunkSize=x@D$chunk_interval[2],start=c(x@D$start[[1]],0L))
+    }
+    scidbmultiply(x,y)
   },
   valueClass="scidb"
 )
 
-setGeneric("crossprod")
-setMethod("crossprod",signature(x="scidb", y="scidb"),
-  function(x,y) t(x) %*% y,
+setMethod("%*%",signature(x="ANY", y="scidb"),
+  function(x,y)
+  {
+    if(!inherits(x,"scidb"))
+    { # Lazy evaluation saves the day...
+      on.exit(tryCatch(scidbremove(x@name),error=function(e)invisible()))
+      x = as.scidb(cbind(x),name=basename(tempfile(pattern="array")),colChunkSize=y@D$chunk_interval[1],start=c(0L,y@D$start[[2]]))
+    }
+    scidbmultiply(x,y)
+  },
   valueClass="scidb"
 )
 
-setGeneric("crossprod")
-setMethod("crossprod",signature(x="matrix", y="scidb"),
-  function(x,y) t(x) %*% y,
+
+setMethod("crossprod",signature(x="scidb", y="ANY"),
+  function(x,y)
+  {
+    if(is.null(y)) y = x
+    t(x) %*% y
+  },
   valueClass="scidb"
 )
 
-setGeneric("crossprod")
-setMethod("crossprod",signature(x="scidb", y="matrix"),
-  function(x,y) t(x) %*% y,
+setMethod("crossprod",signature(x="ANY", y="scidb"),
+  function(x,y)
+  {
+    if(is.null(x)) x = y
+    t(x) %*% y
+  },
   valueClass="scidb"
 )
 
-setGeneric("tcrossprod")
-setMethod("tcrossprod",signature(x="scidb", y="scidb"),
-  function(x,y) x %*% t(y),
+setMethod("tcrossprod",signature(x="scidb", y="ANY"),
+  function(x,y)
+  {
+    if(is.null(y)) y = x
+    x %*% t(y)
+  },
   valueClass="scidb"
 )
 
-setGeneric("tcrossprod")
-setMethod("tcrossprod",signature(x="matrix", y="scidb"),
-  function(x,y) x %*% t(y),
+setMethod("tcrossprod",signature(x="ANY", y="scidb"),
+  function(x,y)
+  {
+    if(is.null(x)) x = y
+    x %*% t(y)
+  },
   valueClass="scidb"
 )
 
-setGeneric("tcrossprod")
-setMethod("tcrossprod",signature(x="scidb", y="matrix"),
-  function(x,y) x %*% t(y),
-  valueClass="scidb"
-)
 
+# The remaining functions return data to R:
+setGeneric("sum")
+setMethod("sum", signature(x="scidb"),
+function(x)
+{
+  iquery(sprintf("sum(%s)",x@name),return=TRUE)[,2]
+})
 
 setGeneric("count",function(x) sum(!is.na(x)))
 setMethod("count", signature(x="scidb"),
 function(x)
 {
   iquery(sprintf("count(%s)",x@name),return=TRUE)$count
+})
+
+setGeneric("diag")
+setMethod("diag", signature(x="scidb"),
+function(x)
+{
+  if(length(dim(x))!=2) stop("diag requires a matrix argument")
+  ans = tmpnam("array")
+  name = make.names_(c(x@attribute,"diag"))[2]
+  schema = extract_schema(x,x@attribute,x@type,x@nullable[x@attributes %in% x@attribute])
+  query  = sprintf("build_sparse(%s,1,%s=%s)",schema,x@D$name[1],x@D$name[2])
+  query  = sprintf("join(%s as _A1,%s as _A2)",x@name,query)
+  query  = sprintf("project(unpack(%s,%s),_A1.%s)",query,name,x@attribute)
+  query  = sprintf("subarray(%s,0,%.0f)",query, min(x@D$length)-1)
+  query  = sprintf("store(%s,%s)",query,ans)
+  iquery(query)
+  scidb(ans)
 })
 
 setGeneric("head")
@@ -137,27 +171,31 @@ function(x, n=6L, ...)
 
 
 setGeneric('is.scidb', function(x) standardGeneric('is.scidb'))
-setMethod('is.scidb', signature(x='scidb'),
-  function(x) return(TRUE))
-setMethod('is.scidb', definition=function(x) return(FALSE))
+setMethod('is.scidb', signature(x='ANY'),
+  function(x) 
+  {
+    if(inherits(x, "scidb")) return(TRUE)
+    FALSE
+  }
+)
+#setMethod('is.scidb', definition=function(x) return(FALSE))
 
 setGeneric('print', function(x) standardGeneric('print'))
 setMethod('print', signature(x='scidb'),
   function(x) {
     cat("A reference to a ",paste(nrow(x),ncol(x),sep="x"),
-        "dimensional SciDB array\n")
+        "SciDB array\n")
   })
 
 setMethod('show', 'scidb',
   function(object) {
     atr=object@attribute
     if(is.null(dim(object)) || length(dim(object))==1)
-      cat("Reference to the SciDB vector.attribute",
-          paste(object@name,atr,sep=".")," of length",object@length,"\n")
+      cat("Reference to a SciDB vector of length",object@length,"\n")
     else
       cat("A reference to a ",
           paste(object@dim,collapse="x"),
-          "dimensional SciDB array\n")
+          "SciDB array\n")
   })
 
 setGeneric("image", function(x,...) x)
@@ -169,7 +207,7 @@ function(x, grid=c(x@D$chunk_interval[1], x@D$chunk_interval[2]), op=sprintf("su
   blocks = c(x@D$high[1] - x@D$low[1] + 1, x@D$high[2] - x@D$low[2] + 1)
   blocks = blocks/grid
   query = sprintf("regrid(project(%s,%s),%.0f,%.0f,%s)",x@name,x@attribute,blocks[1],blocks[2],op)
-  A = iquery(query,return=TRUE)
+  A = iquery(query,return=TRUE,n=Inf)
   A[is.na(A[,3]),3] = na
   m = max(A[,1]) + 1
   n = max(A[,2]) + 1

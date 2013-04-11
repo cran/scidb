@@ -2,18 +2,18 @@
 \Rdversion{1.1}
 \docType{class}
 \alias{scidb-class}
-\alias{\%*\%,matrix,scidb-method}
-\alias{\%*\%,scidb,matrix-method}
 \alias{\%*\%,scidb,scidb-method}
+\alias{\%*\%,ANY,scidb-method}
+\alias{\%*\%,scidb,ANY-method}
 
-\alias{crossprod,matrix,scidb-method}
-\alias{crossprod,scidb,matrix-method}
-\alias{crossprod,scidb,scidb-method}
-\alias{tcrossprod,matrix,scidb-method}
-\alias{tcrossprod,scidb,matrix-method}
-\alias{tcrossprod,scidb,scidb-method}
+\alias{crossprod,scidb,ANY-method}
+\alias{tcrossprod,scidb,ANY-method}
+\alias{crossprod,ANY,scidb-method}
+\alias{tcrossprod,ANY,scidb-method}
 
-\alias{is.scidb,scidb-method}
+\alias{diag,scidb-method}
+\alias{sum,scidb-method}
+
 \alias{is.scidb,ANY-method}
 \alias{print,scidb-method}
 \alias{head,scidb-method}
@@ -50,16 +50,13 @@ Objects can be created by calls of the form \code{new("scidb", ...)},
 }
 \section{Methods}{
   \describe{
-    \item{\%*\%}{\code{signature(x = "matrix", y = "scidb")}: ... }
-    \item{\%*\%}{\code{signature(x = "scidb", y = "matrix")}: ... }
+    \item{\%*\%}{\code{signature(x = "ANY", y = "scidb")}: ... }
+    \item{\%*\%}{\code{signature(x = "scidb", y = "ANY")}: ... }
     \item{\%*\%}{\code{signature(x = "scidb", y = "scidb")}: ... }
-    \item{crossprod}{\code{signature(x = "matrix", y = "scidb")}: ... }
-    \item{crossprod}{\code{signature(x = "scidb", y = "matrix")}: ... }
-    \item{crossprod}{\code{signature(x = "scidb", y = "scidb")}: ... }
-    \item{tcrossprod}{\code{signature(x = "matrix", y = "scidb")}: ... }
-    \item{tcrossprod}{\code{signature(x = "scidb", y = "matrix")}: ... }
-    \item{tcrossprod}{\code{signature(x = "scidb", y = "scidb")}: ... }
-    \item{is.scidb}{\code{signature(x = "scidb")}: ... }
+    \item{crossprod}{\code{signature(x = "scidb", y = "ANY")}: ... }
+    \item{tcrossprod}{\code{signature(x = "scidb", y = "ANY")}: ... }
+    \item{crossprod}{\code{signature(x = "ANY", y = "scidb")}: ... }
+    \item{tcrossprod}{\code{signature(x = "ANY", y = "scidb")}: ... }
     \item{is.scidb}{\code{signature(x = "ANY")}: ... }
     \item{print}{\code{signature(x = "scidb")}: ... }
     \item{head}{\code{signature(x = "scidb")}: ... }
@@ -67,12 +64,12 @@ Objects can be created by calls of the form \code{new("scidb", ...)},
     \item{count}{\code{signature(x = "scidb")}: ... }
     \item{tail}{\code{signature(x = "scidb")}: ... }
     \item{image}{\code{signature(x = "scidb")}: \code{image(x, grid=c(m,n), op="sum(attribute)")}
-
 Display a heatmap-like image of the 2-d scidb array reference object \code{x}.
-\code{grid(m,n)} specifies the repartitioned array block sizes and \code{op} is a valid
-SciDB aggregation function applied to the repartitioned chunks. }
+\code{grid(m,n)} specifies the repartitioned array block sizes and \code{op} is a valid SciDB aggregation function applied to the repartitioned chunks. }
+    \item{diag}{\code{signature(x = "scidb")}: Return the diagonal of a SciDB matrix as a new 1d SciDB array (a vector).}
     \item{show}{\code{signature(object = "scidb")}: ... }
-	 }
+    \item{sum}{\code{signature(object = "scidb")}: Return the sum of the SciDB array elements. }
+  }
 }
 \section{Notes}{
 

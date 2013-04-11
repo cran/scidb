@@ -8,7 +8,7 @@ List SciDB database items.
 List arrays and various other items available in a SciDB database.
 }
 \usage{
-scidblist(pattern, type = c("arrays", "operators", "functions", "types", "aggregates", "instances","queries"), verbose = FALSE)
+scidblist(pattern, type = c("arrays", "operators", "functions", "types", "aggregates", "instances","queries"), verbose = FALSE, n = Inf)
 }
 \arguments{
   \item{pattern}{
@@ -19,6 +19,9 @@ A character string indicating the type of SciDB item to list--defaults to 'array
 }
   \item{verbose}{
 Include extra available information for some items (arrays, in particular).
+}
+  \item{n}{
+Maximum number of rows to return.
 }
 }
 \value{

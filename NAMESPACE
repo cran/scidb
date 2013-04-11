@@ -14,7 +14,7 @@ importFrom("stats", "aggregate")
 
 # S4 methods
 exportClasses("scidb","scidbdf")
-exportMethods("%*%",print,is.scidb,show,head,tail,count,image,crossprod,tcrossprod,is.scidbdf,aggregate)
+exportMethods("%*%",print,is.scidb,diag,show,head,tail,sum,count,image,crossprod,tcrossprod,is.scidbdf,aggregate)
 
 # S3 methods
 S3method('Ops',scidb)
