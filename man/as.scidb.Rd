@@ -4,18 +4,18 @@
 Upload an R matrix or data.frame to a SciDB array.
 }
 \description{
-Cast an R matrix or data.frame to a SciDB array, returning a reference scidb object.
+Upload an R matrix or data.frame into SciDB, returning a reference scidb object.
 }
 \usage{
-as.scidb(X, name = ifelse(exists(as.character(match.call()[2])), as.character(match.call()[2]), tmpnam("array")), rowChunkSize = 1000L, colChunkSize = 1000L, start = c(0L,0L), gc=FALSE, ...)
+as.scidb(X, name = tmpnam(), chunkSize, overlap, start, gc=TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{X}{ A matrix of double-precision floating point values or a data.frame. }
-  \item{name}{ The name of the SciDB array to create, defaulting to the R variable name if available.  }
-  \item{rowChunkSize}{Maximum SciDB chunk size for the 1st array dimension.}
-  \item{colChunkSize}{Maximum SciDB chunk size for the 2nd array dimension (ignored for vectors and data.frames). }
-  \item{start}{Starting dimension numeric index value or values.}
+  \item{X}{ A vector, matrix or sparse matrix of double-precision floating point values or a data.frame. }
+  \item{name}{ The name of the SciDB array to create.  }
+  \item{chunkSize}{A vector of optional SciDB array chunk sizes (a vector of length 1 for data frames and vectors, length 2 for matrices)}
+  \item{overlap}{(Not yet supported)}
+  \item{start}{A vector of SciDB array starting dimension numeric index value or values.}
   \item{gc}{Set to TRUE to remove SciDB array when R object is garbage collected or R exists. FALSE means SciDB array persists.}
   \item{\dots}{ additional arguments to pass to \code{df2scidb} (see \code{\link{df2scidb}}).}
 }
@@ -28,16 +28,16 @@ vector, and 2-D if \code{X} is a matrix.
 
 If \code{X} is a data.frame, then \code{as.scidb} creates a one-dimensional
 multi-attribute SciDB array, with SciDB attributes representing each column
-of the data.frame. The functions \code{as.scidb} and {df2scidb} are equivalent
+of the data.frame. A utitlity function called \code{df2scidb} is used for
+data.frame uploads--the functions \code{as.scidb} and {df2scidb} are equivalent
 in this use case.
-
-The SciDB array row and column chunk sizes are set to the minimum of the number
-of rows and columns of \code{X} and the specified \code{rowChunkSize} and
-\code{colChunkSize} arguments, respectively. The column chunk size argument is
-ignored if the \code{X} is a vector.
 
 This function supports double-precision, integer (32-bit), logical, and single-character
 array attribute types.
+}
+\note{
+The \code{as.scidb} function is not a very efficient way to upload lots of data
+to SciDB. Consider using the SciDB parallel bulk loader tools for that.
 }
 \value{A \code{scidb} reference object. }
 \author{

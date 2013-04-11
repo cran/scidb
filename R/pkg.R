@@ -1,4 +1,11 @@
 #/*
+#    _____      _ ____  ____
+#   / ___/_____(_) __ \/ __ )
+#   \__ \/ ___/ / / / / __  |
+#  ___/ / /__/ / /_/ / /_/ / 
+# /____/\___/_/_____/_____/  
+#
+#
 #**
 #* BEGIN_COPYRIGHT
 #*
@@ -24,17 +31,22 @@
 {
 # Maximum allowed sequential index limit (for larger, use between)
   options(scidb.index.sequence.limit=1000000)
-# Default empty fill-in value
-  options(scidb.default.value=NA)
 # Maximum allowed elements in an array return result
   options(scidb.max.array.elements=100000000)
+# The scidb.version option is set during scidbconnect(). However, users
+# may carefully override it to enable certain bug fixes specific to older
+# versions of SciDB.
+  options(scidb.version=13.9)
+# Set this to 32 for SciDB version 13.6
+  options(scidb.gemm_chunk_size=1000)
 }
 
 .onUnload = function(libpath)
 {
   options(scidb.index.sequence.limit=c())
-  options(scidb.default.value=c())
   options(scidb.max.array.elements=c())
+  options(scidb.version=c())
+  options(scidb.gemm_chunk_size=c())
 }
 
 # scidb array object type map. We don't yet support strings in scidb array
@@ -47,6 +59,16 @@
   character="char"
 )
 
+.typelen = list(
+  double=8,
+  integer=4,
+  logical=1,
+  character=1
+)
+
 # SciDB Integer dimension minimum, maximum
 .scidb_DIM_MIN = "-4611686018427387902"
-.scidb_DIM_MAX = "4611686018427387903"
+.scidb_DIM_MAX = "4611686018427387902"
+
+# To quiet a check NOTE:
+if(getRversion() >= "2.15.1")  utils::globalVariables(c("n", "p"))

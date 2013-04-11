@@ -19,7 +19,25 @@
 #*
 #* END_COPYRIGHT
 #*/
+# Element-wise operations
+Ops.scidbdf = function(e1,e2) {
+  switch(.Generic,
+    '<' = .compare(e1,e2,"<"),
+    '<=' = .compare(e1,e2,"<="),
+    '>' = .compare(e1,e2,">"),
+    '>=' = .compare(e1,e2,">="),
+    '==' = .compare(e1,e2,"="),
+    '!=' = .compare(e1,e2,"<>"),
+    default = stop("Unsupported binary operation.")
+  )
+}
 
+`cbind.scidbdf` = function(x)
+{
+  newdim=make.unique_(x@attributes, "j")
+  nd = sprintf("%s[%s,%s=0:0,1,0]",build_attr_schema(x) , build_dim_schema(x,bracket=FALSE),newdim)
+  redimension(bind(x,newdim,0), nd)
+}
 
 colnames.scidbdf = function(x)
 {
@@ -40,9 +58,27 @@ names.scidbdf = function(x)
   x@attributes
 }
 
+`names<-.scidbdf` = function(x,value)
+{
+  old = x@attributes
+  if(length(value)!=length(old)) stop(paste("Incorrect number of names (should be",length(old),")"))
+  arg = paste(paste(old,value,sep=","),collapse=",")
+  query = sprintf("attribute_rename(%s,%s)",x@name,arg)
+  iquery(query)
+}
+
 dimnames.scidbdf = function(x)
 {
   list(rownames.scidbdf(x), x@attributes)
+}
+
+`$.scidbdf` = function(x, ...)
+{
+  M = match.call()
+  M[1] = call("[.scidbdf")
+  M[4] = as.character(M[3])
+  M[3] = expression(NULL)
+  eval(M)
 }
 
 # Flexible array subsetting wrapper.
@@ -58,17 +94,18 @@ dimnames.scidbdf = function(x)
   M = M[3:length(M)]
   if(!is.null(names(M))) M = M[!(names(M) %in% c("drop","iterative","n"))]
 # i shall contain a list of requested index values
-  i = lapply(1:length(M), function(j) tryCatch(eval(M[j][[1]],parent.frame()),error=function(e)c()))
+  E = parent.frame()
+  i = lapply(1:length(M), function(j) tryCatch(eval(M[j][[1]],E),error=function(e)c()))
 # User wants this materialized to R...
   if(all(sapply(i,is.null)))
     if(iterative)
     {
-      ans = iquery(sprintf("scan(%s)",x@name),`return`=TRUE,iterative=TRUE,n=x@D$length+1,excludecol=1,colClasses=x@colClasses)
+      ans = iquery(sprintf("%s",x@name),`return`=TRUE,iterative=TRUE,n=n,excludecol=1,colClasses=x@colClasses)
       return(ans)
     }
     else
     {
-      ans = iquery(sprintf("scan(%s)",x@name),`return`=TRUE,n=x@D$length+1, colClasses=x@colClasses)
+      ans = iquery(sprintf("%s",x@name),`return`=TRUE,n=Inf, colClasses=x@colClasses)
       rownames(ans)= ans[,1]
       ans = ans[,-1,drop=FALSE]
       return(ans)
@@ -81,7 +118,13 @@ dimnames.scidbdf = function(x)
 `dim.scidbdf` = function(x)
 {
   if(length(x@dim)==0) return(NULL)
-  x@dim
+  d = x@dim
+# Try to make arrays with '*' upper bounds seem more reasonable
+    if(d[1] - as.numeric(.scidb_DIM_MAX) == 0)
+    {
+      d[1] = x@D$high - x@D$low + 1
+    }
+  d
 }
 
 `dim<-.scidbdf` = function(x, value)
@@ -92,7 +135,10 @@ dimnames.scidbdf = function(x)
 
 `str.scidbdf` = function(object, ...)
 {
-  cat("SciDB array name: ",object@name)
+  name = substr(object@name,1,20)
+  if(nchar(object@name)>20) name = paste(name,"...",sep="")
+  cat("SciDB array name: ",name)
+  cat("\nSciDB array schema: ",object@schema)
   cat("\nAttributes:\n")
   cat(paste(capture.output(print(data.frame(attribute=object@attributes,type=object@types,nullable=object@nullable))),collapse="\n"))
   cat("\nRow dimension:\n")
@@ -101,11 +147,17 @@ dimnames.scidbdf = function(x)
 }
 
 `ncol.scidbdf` = function(x) x@dim[2]
-`nrow.scidbdf` = function(x) x@dim[1]
-`dim.scidbdf` = function(x) {if(length(x@dim)>0) return(x@dim); NULL}
+`nrow.scidbdf` = function(x) 
+  {
+    n = x@dim[1]
+# Try to make arrays with '*' upper bounds seem more reasonable
+    if(n - as.numeric(.scidb_DIM_MAX) == 0)
+    {
+      n = x@D$high - x@D$low + 1
+    }
+    n
+  }
 `length.scidbdf` = function(x) x@length
-
-
 
 
 
@@ -133,27 +185,29 @@ scidbdf_subset = function(x, i)
 # Unspecified, return all rows:
     query = x@name
   }
-  else if(scidb:::checkseq(i))
+  else if(checkseq(i))
   {
 # Sequential numeric index
-    query = sprintf("subarray(%s, %.0f, %.0f)", x@name, min(i), max(i))
+    query = betweenbound(x,min(i),max(i))
   }
   else if(inherits(i,"function"))
   {
 # Bounding box
     r = i()
-    if(is.numeric(r))
-      query = sprintf("subarray(%s, %.0f, %.0f)", x@name, r[1], r[2])
-    else
-      query = sprintf("subarray(%s, '%s', '%s')", x@name, r[1], r[2])
+    query = betweenbound(x, r[1], r[2])
   }
   else
   {
-    if(!is.numeric(i)) stop("This kind of indexing is not yet supported for NID arrays :<")
+    stop("This kind of indexing is not yet supported.")
   }
   query = sprintf("project(%s, %s)",query, paste(attribute_range,collapse=","))
-  N = tmpnam("array")
-  query = sprintf("store(%s,%s)",query,N)
-  iquery(query)
-  scidb(N, `data.frame`=TRUE, gc=TRUE)
+  .scidbeval(query, `data.frame`=TRUE, gc=TRUE, eval=FALSE, depend=x)
+}
+
+betweenbound = function(x, m, n)
+{
+  ans = sprintf("between(%s, %.0f, %.0f)", x@name, m, n)
+# Reset just the upper dimension index (this redimension is really only a
+# meta data operation)
+  ans = sprintf("redimension(%s,%s[%s=%.0f:%.0f,%.0f,%.0f])", ans, build_attr_schema(x), x@D$name[1], x@D$start[1], n, x@D$chunk_interval[1], x@D$chunk_overlap[1])
 }

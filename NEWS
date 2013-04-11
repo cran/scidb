@@ -1,3 +1,53 @@
+CHANGES IN scidb 1.1-1:
+
+  TLS/SSL ENCRYPTION AND AUTHENTICATION
+
+    o The package now supports TLS/SSL encrypted communication with the
+      shim network service and authentication. The only function affected
+      by this is `scidbconnect` -- simply supply an SSL port number and
+      username and password arguments.
+
+  NEW `scidbexpr` CLASS:
+
+    o The `scidbexpr` class represents a potential SciDB array not yet
+      evaluated or stored in SciDB. The array is defined by a query and has a
+      basic schema.  Many operators now accept `scidbexpr` objects as input.
+      This class may replace the `scidbdf` and `scidb` objects in the future.
+
+  NEW COMPOSABLE OPERATORS
+
+    o Many new functions were introduced that closely follow underlying SciDB
+      AFL operators. All of the new functions are composable with lazy
+      evaluation of the underlying query using the new `scidbexpr` class.
+      Results are only computed and stored by SciDB when required or explicitly
+      requested.
+
+  R SPARSE MATRIX SUPPORT
+
+    o The package now maps sparse SciDB arrays to sparse R matrices. Only
+      matrices (2-d arrays) with double-precision attributes are supported.
+      Sparse array arithmetic uses the new P4 sparse matrix multiply operator
+      when available.
+
+  USING RCurl NOW
+
+    o We introduced a dependency on RCurl in order to support SSL and
+      authentication with the SciDB shim service.
+
+  NO MORE SciDB NID
+
+    o The package no longer tries to support SciDB arrays with NID dimensions,
+      which never really worked anyway. Instead, many functions now take
+      advantage of the new SciDB `uniq` and `index_lookup` operators if
+      available (>=SciDB 13.6).
+      Future package versions will take this further and introduce array
+      dimension labeling using the new operators.
+
+  MANY NEW DATABASE-LIKE FEATURES
+
+    o Aggregate was improved, merge sort, unique, index_lookup, and other new
+      functions were added. See the vignette for more information.
+
 CHANGES IN scidb 1.1-0:
 
   SIGNIFICANT BUG FIX:

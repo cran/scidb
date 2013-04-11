@@ -8,7 +8,7 @@ Remove an array.
 Remove (delete) an array from SciDB.
 }
 \usage{
-scidbremove(x, error = stop)
+scidbremove(x, error = warning, async)
 }
 \arguments{
   \item{x}{
@@ -16,6 +16,7 @@ The name of the SciDB array to remove (character). This
 may also be a vector of names to remove.
 }
   \item{error}{Error handling function.}
+  \item{async}{Optional boolean argument. If TRUE, use async option in newer versions of SciDB shim interface to return faster by not waiting for the query to complete. The default value is FALSE.}
 }
 \value{
 NULL is invisibly returned. SciDB errors are returned as

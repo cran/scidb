@@ -1,5 +1,12 @@
 Thanks for trying out the SciDB package for R. I hope you enjoy using it.
 
+The current development version of this R package can always be installed
+directly from GitHub using the devtools package as follows:
+
+library('devtools')
+install_github("SciDBR","paradigm4",quick=TRUE)
+
+
 The SciDB R package requires installation of a simple open-source HTTP network
 service called on the computer that SciDB is installed on. This service only
 needs to be installed on the SciDB machine, not on client computers that

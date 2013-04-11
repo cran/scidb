@@ -3,14 +3,14 @@
 \title{Simple SciDB query tool}
 \description{Issue SciDB queries and optionally return output in a data frame.}
 \usage{
-iquery(query, `return` = FALSE, afl = TRUE, iterative = FALSE, n = 1000, excludecol, ...)
+iquery(query, `return` = FALSE, afl = TRUE, iterative = FALSE, n = Inf, excludecol, ...)
 }
 \arguments{
   \item{query}{A SciDB query string (character). Separate multiple queries with semicolons. }
   \item{return}{Set to TRUE to return output. Otherwise don't return query output. Only available when \code{afl=TRUE}}
   \item{afl}{TRUE indicates query is in AFL form, FALSE indicates AQL. }
   \item{iterative}{Set to TRUE to return a result iterator. FALSE returns entire result at once.}
-  \item{n}{Maximum number of rows to return when iterating through results.}
+  \item{n}{Maximum number of rows to return when iterating through results. Set to \code{Inf} to return everything.}
   \item{excludecol}{An optional numeric range of columns to exclude from iterative results (only applies when iterative=TRIE).}
   \item{...}{Options passed on to \code{read.table} used to parse results.}
 }

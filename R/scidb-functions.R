@@ -20,122 +20,56 @@
 #* END_COPYRIGHT
 #*/
 
-# This file defines functions that support a Bigmemory-like SciDB R
-# object. See the scidb-class.R file.
+# Various functions that support S3 methods for the SciDB class
 
-# Create a new scidb reference to an existing SciDB array.
-# name (character): Name of the backing SciDB array
-# attribute (character): Attribute in the backing SciDB array (applies to n-d arrays)
-# gc (logical): Remove backing SciDB array when R object is garbage collected?
-# data.frame (logical): Return a SciDB data frame object (class scidbdf)
-scidb = function(name, attribute, `data.frame`, gc)
+cbind.scidb = function(x)
 {
-  if(missing(name)) stop("array name must be specified")
-  if(missing(attribute)) attribute=""
-  if(missing(gc)) gc=FALSE
-  D = .scidbdim(name)
-  x = .scidbattributes(name)
-  if(missing(`data.frame`)) `data.frame` = ( (dim(D)[1]==1) &&  (length(x$attributes)>1))
-  if(dim(D)[1]>1 && `data.frame`) stop("SciDB data frame objects can only be associated with 1-D SciDB arrays")
-  TYPES = x$types
-  A = x$attributes
-  NULLABLE = x$nullable
-  if(attribute=="") w = 1
-  else w = which(A == attribute)
-  if(length(w)<1) stop(paste(attribute,"is not a valid attribute name. The array ",name," contains the attributes:\n\n",paste(A,collapse="\n"),"\nTry selecting one of those.",sep=""))
-  attribute = A[w]
-  TYPE = TYPES[w]
-
-  DIM = D$length
-  LENGTH = prod(DIM)
-
-  if(`data.frame`)
-  {
-# Set default column types
-    ctypes = c("int64",TYPES)
-    cc = rep(NA,length(ctypes))
-    cc[ctypes=="datetime"] = "Date"
-    cc[ctypes=="float"] = "double"
-    cc[ctypes=="double"] = "double"
-    cc[ctypes=="bool"] = "logical"
-    st = grep("string",ctypes)
-    if(length(st>0)) cc[st] = "character"
-    obj = new("scidbdf",
-            call=match.call(),
-            name=name,
-            attributes=A,
-            types=TYPES,
-            nullable=NULLABLE,
-            D=D,
-            dim=c(DIM,length(A)),
-            colClasses=cc,
-            gc=new.env(),
-            length=length(A)
-        )
-  } else
-  {
-    obj = new("scidb",
-            call=match.call(),
-            name=name,
-            attribute=attribute,
-            type=TYPE,
-            attributes=A,
-            types=TYPES,
-            nullable=NULLABLE,
-            D=D,
-            dim=DIM,
-            gc=new.env(),
-            length=LENGTH
-        )
-  }
-  if(gc){
-    obj@gc$name   = name
-    obj@gc$remove = TRUE
-    reg.finalizer(obj@gc, function(e) if(e$remove) 
-                  tryCatch(scidbremove(e$name),error=function(e) invisible()),
-                  onexit=TRUE)
-  }
-  obj
+  if(length(dim(x))!=1) return(x)
+  newdim=make.unique_(x@attributes, "j")
+  nd = sprintf("%s[%s,%s=0:0,1,0]",build_attr_schema(x) , build_dim_schema(x,bracket=FALSE),newdim)
+  redimension(x, nd)
 }
 
-
-# .scidbdim is an internal function that retirieves dimension metadata from a
-# scidb array called "name."
-.scidbdim = function(name)
+log.scidb = function(x, base=exp(1))
 {
-#  if(!.scidbexists(name)) stop ("not found") 
-  d = iquery(paste("dimensions(",name,")"),return=TRUE)
-# R is unfortunately interpreting 'i' as an imaginary unit I think.
-  if(any(is.na(d))) d[is.na(d)] = "i"
-  d
-}
-
-# Retrieve list of attributes for a named SciDB array (internal function).
-.scidbattributes = function(name)
-{
-  x = iquery(paste("attributes(",name,")",sep=""),return=TRUE,colClasses=c(NA,"character",NA,NA))
-# R is unfortunately interpreting 'i' as an imaginary unit I think.
-  if(any(is.na(x))) x[is.na(x)] = "i"
-  list(attributes=x[,2],types=x[,3],nullable=(x[,4]=="true"))
+  log_scidb(x,base) 
 }
 
 colnames.scidb = function(x)
 {
-  if(length(x@D$name)<2) return(NULL)
-  if(x@D$type[2] != "string") return(c(x@D$start[2],x@D$start[2]+x@D$length[2]-1))
-  if(x@D$length[2] > options("scidb.max.array.elements"))
-    stop("Result will be too big. Perhaps try a manual query with an iterative result.")
-  Q = sprintf("scan(%s:%s)",x@name,x@D$name[2])
-  iquery(Q,return=TRUE,n=x@D$length[2]+1)[,2]
+  if(is.null(x@gc$dimnames)) return(NULL)
+  if(length(x@gc$dimnames)<2) return(NULL)
+  x@gc$dimnames[[2]]
+}
+
+`colnames<-.scidb` = function(x, value)
+{
+  if(is.null(x@gc$dimnames)) x@gc$dimnames = vector("list",length(dim(x)))
+  if(length(dim(x))<2)
+    stop("attempt to set 'colnames' on an object with less than two dimensions")
+  if(!(is.scidb(value) || is.scidbdf(value)))
+    stop("Labels must be in a SciDB array")
+  if(length(value) != dim(x)[2])
+    stop("Label array length does not match number of columns")
+  x@gc$dimnames[[2]] = value
+  x
 }
 
 rownames.scidb = function(x)
 {
-  if(x@D$type[1] != "string") return(c(x@D$start[1],x@D$start[1]+x@D$length[1]-1))
-  if(x@D$length[1] > options("scidb.max.array.elements"))
-    stop("Result will be too big. Perhaps try a manual query with an iterative result.")
-  Q = sprintf("scan(%s:%s)",x@name,x@D$name[1])
-  iquery(Q,return=TRUE,n=x@D$length[1]+1)[,2]
+  if(is.null(x@gc$dimnames)) return(NULL)
+  x@gc$dimnames[[1]]
+}
+
+`rownames<-.scidb` = function(x, value)
+{
+  if(is.null(x@gc$dimnames)) x@gc$dimnames = vector("list",length(dim(x)))
+  if(!(is.scidb(value) || is.scidbdf(value)))
+    stop("Labels must be in a SciDB array")
+  if(length(value) != dim(x)[1])
+    stop("Label array length does not match number of rows")
+  x@gc$dimnames[[1]] = value
+  x
 }
 
 names.scidb = function(x)
@@ -144,21 +78,21 @@ names.scidb = function(x)
   colnames(x)
 }
 
+`names<-.scidb` = function(x, value)
+{
+  colnames(x) <- value
+}
+
 dimnames.scidb = function(x)
 {
-  lapply(1:length(x@D$name), function(j)
-  {
-    if(x@D$type[j] != "string") return(c(x@D$start[j],x@D$start[j]+x@D$length[j]-1))
-    if(x@D$length[j] > options("scidb.max.array.elements"))
-      stop("Result will be too big. Perhaps try a manual query with an iterative result.")
-    Q = sprintf("scan(%s:%s)",x@name,x@D$name[j])
-    iquery(Q,return=TRUE,n=Inf)[,2]
-  })
+  x@gc$dimnames
 }
 
 `dimnames<-.scidb` = function(x, value)
 {
-  stop("unsupported")
+# XXX Add many checks here. See rownames,colnames
+  x@gc$dimnames = value
+  x
 }
 
 summary.scidb = function(x)
@@ -168,34 +102,33 @@ summary.scidb = function(x)
 }
 
 # XXX this will use insert, write me.
-#`[<-.scidb` = function(x,j,k, ..., value,default)
+#`[<-.scidb` = function(x,j,k, ..., value)
 #{
 #  stop("Sorry, scidb array objects are read only for now.")
 #}
 
-# Flexible array subsetting wrapper.
+# Array subsetting wrapper.
 # x: A Scidb array object
 # ...: list of dimensions
-# defailt: default fill-in value
 # 
 # Returns a materialized R array if length(list(...))==0.
-# Or, a scidb array object that represents the subarray.
-`[.scidb` = function(x, ..., default)
+# Or, a scidb subarray promise.
+`[.scidb` = function(x, ...)
 {
   M = match.call()
   drop = ifelse(is.null(M$drop),TRUE,M$drop)
+  eval = ifelse(is.null(M$eval),FALSE,M$eval)
   M = M[3:length(M)]
-  if(!is.null(names(M))) M = M[!(names(M) %in% c("drop","default"))]
-# Check for user-specified default fill-in value
-  if(missing(default)) default = options("scidb.default.value")
+  if(!is.null(names(M))) M = M[!(names(M) %in% c("drop","eval"))]
 # i shall contain a list of requested index values
-  i = lapply(1:length(M), function(j) tryCatch(eval(M[j][[1]],parent.frame()),error=function(e)c()))
+  E = parent.frame()
+  i = lapply(1:length(M), function(j) tryCatch(eval(M[j][[1]],E),error=function(e)c()))
 # User wants this materialized to R...
   if(all(sapply(i,is.null)))
-    return(materialize(x,default=default,drop=drop))
+    return(materialize(x,drop=drop))
 # Not materializing, return a SciDB array
   if(length(i)!=length(dim(x))) stop("Dimension mismatch")
-  dimfilter(x,i)
+  dimfilter(x,i,eval,drop=drop)
 }
 
 `dim.scidb` = function(x)
@@ -212,8 +145,11 @@ summary.scidb = function(x)
 
 `str.scidb` = function(object, ...)
 {
-  cat("SciDB array name: ",object@name)
-  cat("\tattribute in use: ",object@attribute)
+  name = substr(object@name,1,20)
+  if(nchar(object@name)>20) name = paste(name,"...",sep="")
+  cat("SciDB array name: ",name)
+  cat("\nSciDB array schema: ",object@schema)
+  cat("\nattribute in use: ",object@attribute)
   cat("\nAll attributes: ",object@attributes)
   cat("\nArray dimensions:\n")
   cat(paste(capture.output(print(data.frame(object@D))),collapse="\n"))
@@ -241,86 +177,84 @@ summary.scidb = function(x)
 `dim.scidb` = function(x) {if(length(x@dim)>0) return(x@dim); NULL}
 `length.scidb` = function(x) x@length
 
-# Vector, matrix, or data.frame only.
+# Vector, Matrix, matrix, or data.frame only.
+# XXX Future: Add n-d array support here (TODO)
 as.scidb = function(X,
-                    name=ifelse(exists(as.character(match.call()[2])),
-                                as.character(match.call()[2]),
-                                tmpnam("array")),
-                    rowChunkSize=1000L,
-                    colChunkSize=1000L,
-                    start=c(0L,0L),
-                    gc=FALSE, ...)
+                    name=tmpnam(),
+                    chunkSize,
+                    overlap,
+                    start,
+                    gc=TRUE, ...)
 {
   if(inherits(X,"data.frame"))
-    return(df2scidb(X,name=name,chunkSize=rowChunkSize,gc=gc,...))
-  X0 = X
+    if(missing(chunkSize))
+      return(df2scidb(X,name=name,gc=gc,start=start,...))
+    else
+      return(df2scidb(X,name=name,chunkSize=chunkSize[[1]],gc=gc,start=start,...))
+  if(missing(chunkSize))
+  {
+# Note nrow, ncol might be NULL here if X is not a matrix. That's OK, we'll
+# deal with that case later.
+    chunkSize=c(min(1000L,nrow(X)),min(1000L,ncol(X)))
+  }
+  if(length(chunkSize)==1) chunkSize = c(chunkSize, chunkSize)
+  if(!missing(overlap)) warning("Sorry, overlap is not yet supported by the as.scidb function. Consider using the reparition function for now.")
+  overlap = c(0,0)
+  if(missing(start)) start=c(0,0)
+  if(length(start)==1) start=c(start,start)
+  if(inherits(X,"dgCMatrix"))
+  {
+# Sparse matrix case
+    return(.Matrix2scidb(X,name=name,rowChunkSize=chunkSize[[1]],colChunkSize=chunkSize[[2]],start=start,gc=gc,...))
+  }
   D = dim(X)
-  rowOverlap=0L
-  colOverlap=0L
-  if(length(start)<1) stop ("Invalid starting coordinates")
-  if(length(start)>2) start = start[1:2]
-  if(length(start)<2) start = c(start, 0)
   start = as.integer(start)
+  overlap = as.integer(overlap)
   type = .scidbtypes[[typeof(X)]]
   if(is.null(type)) {
     stop(paste("Unupported data type. The package presently supports: ",
        paste(.scidbtypes,collapse=" "),".",sep=""))
    }
   if(is.null(D)) {
-# X is a vector, make into a matrix
+# X is a vector
     if(!is.vector(X)) stop ("X must be a matrix or a vector")
+    chunkSize = min(chunkSize[[1]],length(X))
     X = as.matrix(X)
     schema = sprintf(
       "< val : %s >  [i=%.0f:%.0f,%.0f,%.0f]", type, start[[1]],
-      nrow(X)-1+start[[1]], min(nrow(X),rowChunkSize), rowOverlap)
+      nrow(X)-1+start[[1]], min(nrow(X),chunkSize), overlap[[1]])
+    load_schema = schema
   } else {
+# X is a matrix
     schema = sprintf(
       "< val : %s >  [i=%.0f:%.0f,%.0f,%.0f, j=%.0f:%.0f,%.0f,%.0f]", type, start[[1]],
-      nrow(X)-1+start[[1]], min(nrow(X),rowChunkSize), rowOverlap, start[[2]], ncol(X)-1+start[[2]],
-      min(ncol(X),colChunkSize), colOverlap)
+      nrow(X)-1+start[[1]], chunkSize[[1]], overlap[[1]], start[[2]], ncol(X)-1+start[[2]],
+      chunkSize[[2]], overlap[[2]])
+    load_schema = sprintf("<val:%s>[row=1:%.0f,1000000,0]",type,length(X))
   }
   if(!is.matrix(X)) stop ("X must be a matrix or a vector")
-  schema1d = sprintf("<i:int64, j:int64, val : %s>[idx=0:*,10000,0]",type)
-
-# Create the array, might error out here if array already exists
-  query = sprintf("create_array(%s,%s)",name,schema)
-  scidbquery(query,async=FALSE)
 
 # Obtain a session from shim for the upload process
-  u = url(paste(URI(),"/new_session",sep=""))
-  session = readLines(u, warn=FALSE)[1]
-  close(u)
+  session = getSession()
+  on.exit( GET("/release_session",list(id=session)) ,add=TRUE)
 
 # Upload the data
-  f = .m2scidb(X, session,start)
+# XXX I couldn't get RCurl to work using the fileUpload(contents=x), with 'x'
+# a raw vector. But we need RCurl to support SSL. As a work-around, we save
+# the object. This extra local copy sucks and must be improved !!! XXX
+  fn = tempfile()
+  bytes = writeBin(as.vector(t(X)),con=fn)
+  url = URI("upload_file",list(id=session))
+  ans = postForm(uri = url, uploadedfile = fileUpload(filename=fn),
+           .opts = curlOptions(httpheader = c(Expect = ""),'ssl.verifypeer'=0))
+  unlink(fn)
+  ans = ans[[1]]
+  ans = gsub("\r","",ans)
+  ans = gsub("\n","",ans)
 
 # Load query
-#  query = sprintf("input(%s,'%s', 0, '(int64,int64,%s)')",tmparray,f,type)
-  query = sprintf("input(%s,'%s', 0, '(int64,int64,%s)')",schema1d,f,type)
-  query = sprintf("redimension_store(%s, %s)",query, name)
-  tryCatch( scidbquery(query, async=FALSE, release=1, session=session),
-    error = function(e) {
-      stop(e)
-    })
-  unlink(f)
-
+  query = sprintf("store(reshape(input(%s,'%s', 0, '(%s)'),%s),%s)",load_schema,ans,type,schema,name)
+  iquery(query)
   ans = scidb(name,gc=gc)
-
-# Check for NIDs
-#  dn = dimnames(X0)
-#  if(is.null(dn)) dn = list(x=names(X0))
-#  if(any(!unlist(lapply(dn,is.null))))
-#    ans=addnids(ans, dn)
-
   ans
-}
-
-
-# Transpose array
-t.scidb = function(x)
-{
-  tmp = tmpnam("array")
-  query = paste("store(transpose(",x@name,"),",tmp,")",sep="")
-  scidbquery(query)
-  scidb(tmp,gc=TRUE)
 }
