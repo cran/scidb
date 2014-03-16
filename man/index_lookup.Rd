@@ -33,9 +33,7 @@ B. W. Lewis<blewis@paradigm4.com>
 }
 \examples{
 \dontrun{
-library("scidb")
-scidbconnect()
-
+data("iris")
 x <- as.scidb(iris)
 
 # Create a unique list of elements of the "Species" attribute.

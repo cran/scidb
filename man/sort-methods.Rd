@@ -29,9 +29,6 @@ B. W. Lewis <blewis@paradigm4.com>
 }
 \examples{
 \dontrun{
-library("scidb")
-scidbconnect()
-
 # Create a copy of the iris data frame in a 1-d SciDB array named "iris."
 # Note that SciDB attribute names will be changed to conform to SciDB
 # naming convention.

@@ -28,7 +28,7 @@ B. W. Lewis<blewis@paradigm4.com>
 }
 \examples{
 \dontrun{
-x <- build("i",dim=10,names=c("x","i"),start=1)
+x <- build("i",dim=10,names=c("x","i"),start=1,type="double")
 y <- lag(x)
 merge(x,y,by="i",all=TRUE)
 }}

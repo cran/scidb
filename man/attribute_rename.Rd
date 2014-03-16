@@ -18,11 +18,17 @@ attribute_rename(x, old, `new`, `eval`=FALSE)
 \value{
 A new \code{scidb} or \code{scidbdf} object.
 }
+\note{
+If you don't specify the \code{old} argument, it will default to the attribute
+names of \code{x}.
+}
 \author{
 B. W. Lewis <blewis@paradigm4.com>
 }
 \seealso{
   \code{\link{scidb}}
+  \code{\link{dimension_rename}}
+  \code{\link{cast}}
 }
 \examples{
 \dontrun{

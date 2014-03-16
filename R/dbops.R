@@ -1,10 +1,45 @@
+#
+#    _____      _ ____  ____
+#   / ___/_____(_) __ \/ __ )
+#   \__ \/ ___/ / / / / __  |
+#  ___/ / /__/ / /_/ / /_/ / 
+# /____/\___/_/_____/_____/  
+#
+#
+#
+# BEGIN_COPYRIGHT
+#
+# This file is part of SciDB.
+# Copyright (C) 2008-2014 SciDB, Inc.
+#
+# SciDB is free software: you can redistribute it and/or modify
+# it under the terms of the AFFERO GNU General Public License as published by
+# the Free Software Foundation.
+#
+# SciDB is distributed "AS-IS" AND WITHOUT ANY WARRANTY OF ANY KIND,
+# INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY,
+# NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR PURPOSE. See
+# the AFFERO GNU General Public License for the complete license terms.
+#
+# You should have received a copy of the AFFERO GNU General Public License
+# along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
+#
+# END_COPYRIGHT
+#
+
 # The functions and methods defined below are based closely on native SciDB
 # functions, some of which have weak or limited analogs in R. The functions
 # defined below work with objects of class scidb (arrays), scidbdf (data
 # frames). They can be efficiently nested by explicitly setting eval=FALSE on
 # inner functions, deferring computation until eval=TRUE.
-`reshape_scidb` = function(data, shape, dimnames, chunks, `eval`=FALSE)
+reshape_scidb = function(data, schema, shape, dimnames, start, chunks, `eval`=FALSE)
 {
+  if(!missing(schema))
+  {
+    if(is.scidb(schema)||is.scidbdf(schema)) schema=schema(schema)
+    query = sprintf("reshape(%s,%s)",data@name,schema)
+    return(.scidbeval(query,eval,depend=list(data)))
+  }
   if(missing(shape)) stop("Missing dimension shape")
   N = length(shape)
   if(missing(dimnames))
@@ -13,79 +48,255 @@
   }
   if(missing(chunks))
   {
-    chunks = rep(1000,N)
+    chunks = ceiling(1e6^(1/N))
   }
-  D = paste(paste(dimnames,"=",0,":",shape-1,",",chunks,",0",sep=""),collapse=",")
-  D = sprintf("[%s]",D)
+  if(missing(start)) start = rep(0,N)
+  shape = shape - 1 + start
+  D = build_dim_schema(data, newstart=start, newnames=dimnames, newend=shape, newchunk=chunks)
   query = sprintf("reshape(%s,%s%s)",data@name,build_attr_schema(data),D)
   .scidbeval(query,eval,depend=list(data))
 }
 
-`unpack_scidb` = function(x, `eval`=FALSE)
+# SciDB rename wrapper
+# Note! that the default garbage collection option here is to *not* remove.
+rename = function(A, name=A@name, gc)
 {
-  dimname = make.unique_(c(x@D$name,x@attributes), "i")
+  if(!(inherits(A,"scidb") || inherits(A,"scidbdf"))) stop("`A` must be a scidb object.")
+  if(missing(gc)) gc = FALSE
+  query = sprintf("rename(%s,%s)",A@name, name)
+  iquery(query)
+  scidb(name,gc=gc)
+}
+
+unpack_scidb = function(x, `eval`=FALSE)
+{
+  dimname = make.unique_(c(dimensions(x),scidb_attributes(x)), "i")
   query = sprintf("unpack(%s, %s)",x@name, dimname)
   .scidbeval(query,eval,depend=list(x))
 }
 
-`attribute_rename` = function(x, old, `new`, `eval`=FALSE)
+attribute_rename = function(x, old, `new`, `eval`=FALSE)
 {
+  atr = scidb_attributes(x)
+  if(missing(old)) old=x@attributes
+# Positional attributes
+  if(is.numeric(old))
+  {
+    old = atr[old]
+  }
   query = sprintf("attribute_rename(%s,%s)",x@name,
     paste(paste(old,new,sep=","),collapse=","))
   .scidbeval(query,eval,depend=list(x))
 }
 
-`slice` = function(x, d, n, `eval`=FALSE)
+dimension_rename = function(x, old, `new`, `eval`=FALSE)
 {
-  query = sprintf("slice(%s, %s, %d)", x@name, d, n)
+  if(!(is.scidb(x) || is.scidbdf(x))) stop("Requires a scidb or scidbdf object")
+  if(missing(old)) old = dimensions(x)
+  dnames = dimensions(x)
+  if(!is.numeric(old))
+  {
+    old = which(dnames %in% old)
+  }
+  idx = old
+  if(length(idx)!=length(new)) stop("Invalid old dimension name specified")
+  dnames[idx] = `new`
+  query = sprintf("cast(%s, %s%s)", x@name, build_attr_schema(x),
+             build_dim_schema(x, newnames=dnames))
+  .scidbeval(query,eval,depend=list(x))
+}
+
+slice = function(x, d, n, `eval`=FALSE)
+{
+  if(!(is.scidb(x) || is.scidbdf(x))) stop("Requires a scidb or scidbdf object")
+  N = length(dimensions(x))
+  i = d
+  if(is.character(d))
+  {
+    i = which(dimensions(x) %in% d)
+  }
+  if(length(i)==0 || i>N)
+  {
+    stop("Invalid dimension specified")
+  }
+  query = sprintf("slice(%s, %s)",x@name,paste(paste(x@dimensions[i],noE(n),sep=","),collapse=","))
+  .scidbeval(query,eval,depend=list(x))
+}
+
+# SciDB substitute wrapper. Default behavior strips nulls in a clever way.
+substitute = function(x, value, `attribute`, `eval`=FALSE)
+{
+  if(!(is.scidb(x) || is.scidbdf(x))) stop("Requires a scidb or scidbdf object")
+  if(!any(scidb_nullable(x))) return(x)
+  if(missing(attribute))
+  {
+    attribute = ""
+  }
+  if(is.numeric(attribute)) attribute = x@attributes[attribute]
+  if(missing(value))
+    value = sprintf("build(%s[i=0:0,1,0],i)",build_attr_schema(x,I=1))
+  if(nchar(attribute)<1)
+    query = sprintf("substitute(%s,%s)",x@name, value)
+  else
+    query = sprintf("substitute(%s,%s,%s)",x@name, value, attribute)
   .scidbeval(query, `eval`, depend=list(x))
 }
 
-`substitute` = function(x, value, `attribute`, `eval`=FALSE)
-{
-  if(missing(attribute)) attribute = x@attribute
-  if(missing(value)) value = "build(<v:double>[i=0:0,1,0],nan)"
-  query = sprintf("substitute(%s,%s,%s)",x@name, value, attribute)
-  .scidbeval(query, `eval`, depend=list(x))
-}
-
-`cast` = function(x, s, `eval`=FALSE)
+subarray = function(x, limits, schema, between=FALSE, `eval`=FALSE)
 {
   if(!(class(x) %in% c("scidb","scidbdf"))) stop("Invalid SciDB object")
-# Default cast strips "Not nullable" array property
-  if(missing(s)) s = extract_schema(scidb_from_schemastring(x@schema))
-  query = sprintf("cast(%s,%s)",x@name,s)
-  .scidbeval(query,eval,depend=list(x))
+  if(missing(limits)) limits=paste(rep("null",2*length(dimensions(x))),collapse=",")
+  if(!missing(schema))
+  {
+    if(!is.character(schema)) schema = schema(schema)
+    limits = paste(between_coordinate_bounds(schema),collapse=",")
+  }
+  limits = gsub("\\*",.scidb_DIM_MAX,limits)
+  if(between)
+    query = sprintf("between(%s,%s)",x@name,limits)
+  else
+    query = sprintf("subarray(%s,%s)",x@name,limits)
+  .scidbeval(query, `eval`, depend=list(x))
 }
 
-`repart` = function(x, upper, chunk, overlap, `eval`=FALSE)
+cast = function(x, schema, `eval`=FALSE)
 {
-  a = build_attr_schema(x)
-  if(missing(upper)) upper = x@D$start + x@D$length - 1
-  if(missing(chunk)) chunk = x@D$chunk_interval
-  if(missing(overlap)) overlap = x@D$chunk_overlap
-  y = x
-  y@D$length = upper - y@D$start + 1
-  y@D$chunk_interval = chunk
-  y@D$chunk_overlap = overlap
-  d = build_dim_schema(y)
-  query = sprintf("repart(%s, %s%s)", x@name, a, d)
+  if(!(class(x) %in% c("scidb","scidbdf"))) stop("Invalid SciDB object")
+  if(missing(schema)) stop("Missing cast schema")
+  if(is.scidb(schema) || is.scidbdf(schema)) schema = schema(schema) # wow!
+  query = sprintf("cast(%s,%s)",x@name,schema)
   .scidbeval(query,eval,depend=list(x))
 }
 
-`redimension` = function(x, s, `eval`=FALSE)
+repart = function(x, schema, upper, chunk, overlap, `eval`=FALSE)
+{
+  if(!missing(schema))
+  {
+    query = sprintf("repart(%s, %s)", x@name, schema)
+    return(.scidbeval(query,eval,depend=list(x)))
+  }
+  if(missing(upper)) upper = scidb_coordinate_end(x)
+  if(missing(chunk)) chunk = scidb_coordinate_chunksize(x)
+  if(missing(overlap)) overlap = scidb_coordinate_overlap(x)
+  a = build_attr_schema(x)
+  schema = sprintf("%s%s", a, build_dim_schema(x,newend=upper,newchunk=chunk,newoverlap=overlap))
+  query = sprintf("repart(%s, %s)", x@name, schema)
+  .scidbeval(query,eval,depend=list(x))
+}
+
+# SciDB redimension wrapper
+# Either supply s or dim. dim is a list of new dimensions made up
+# from the attributes and existing dimensions. FUN is a limited scidb
+# aggregation expression.
+redimension = function(x, schema, dim, FUN, `eval`=FALSE)
 {
   if(!(class(x) %in% c("scidb","scidbdf"))) stop("Invalid SciDB object")
 # NB SciDB NULL is not allowed along a coordinate axis prior to SciDB 12.11,
 # which could lead to a run time error here.
+  if(missing(schema)) schema = NULL
+  if(missing(dim)) dim = NULL
+  s = schema
+  if(is.null(s) && is.null(dim) ||
+    (!is.null(s) && !is.null(dim)))
+  {
+    stop("Exactly one of s or dim must be specified")
+  }
+  if((class(s) %in% c("scidb","scidbdf"))) s = schema(s)
+  if(!is.null(dim))
+  {
+    d = unlist(dim)
+    ia = which(scidb_attributes(x) %in% d)
+    id = which(dimensions(x) %in% d)
+    if(length(ia)<1 && length(id)<1) stop("Invalid dimensions")
+    as = build_attr_schema(x, I=-ia)
+    if(length(id>0))
+    {
+      ds = build_dim_schema(x, I=id, bracket=FALSE)
+    } else
+    {
+      ds = c()
+    }
+    if(length(ia)>0)
+    {
+# We'll be converting attributes to dimensions here.
+# First, we make sure that they are all int64. If not, we add a new
+# auxiliary attribute with index_lookup and dimension along that instead.
+      reindexed = FALSE
+      xold = x
+      for(nid in x@attributes[ia])
+      {
+        idx = which(x@attributes %in% nid)
+        if(scidb_types(x)[idx] != "int64")
+        {
+          reindexed = TRUE
+          newat = sprintf("%s_index",nid)
+          newat = make.unique_(x@attributes, newat)
+          x = index_lookup(x, unique(xold[,nid]), nid, newat)
+          d[d %in% nid] = newat
+        }
+      }
+      if(reindexed)
+      {
+        ia = which(x@attributes %in% d)
+        as = build_attr_schema(x, I=-ia)
+      }
+
+# Add the new dimension(s)
+      a = x@attributes[ia]
+      x@attributes = x@attributes[-ia]
+      f = paste(paste("min(",a,"), max(",a,")",sep=""),collapse=",")
+      m = matrix(aggregate(x, FUN=f, unpack=FALSE)[],ncol=2,byrow=TRUE)
+      p = prod(as.numeric(scidb_coordinate_chunksize(x)[-id]))
+      chunk = ceiling((1e6/p)^(1/length(ia)))
+      new = apply(m,1,paste,collapse=":")
+      new = paste(a,new,sep="=")
+      new = paste(new, noE(chunk), "0", sep=",")
+      new = paste(new,collapse=",")
+      ds = ifelse(length(ds)>0,paste(ds,new,sep=","),new)
+    }
+    s = sprintf("%s[%s]",as,ds)
+  }
+  if(!missing(FUN))
+  {
+    if(!is.function(FUN)) stop("`FUN` must be a function")
+    fn = .scidbfun(FUN)
+    if(is.null(fn))
+      stop("`FUN` requires an aggregate function")
+    reduce = paste(sprintf("%s(%s) as %s",fn,x@attributes,x@attributes),
+               collapse=",")
+    s = sprintf("%s,%s", s, reduce)
+  }
   query = sprintf("redimension(%s,%s)",x@name,s)
   .scidbeval(query,eval,depend=list(x))
 }
 
 # SciDB build wrapper, intended to act something like the R 'array' function.
-`build` = function(data, dim, names, type="double",
+build = function(data, dim, names, type,
                  start, name, chunksize, overlap, gc=TRUE, `eval`=FALSE)
 {
+  if(missing(type))
+  {
+    type = typeof(data)
+    if(is.character(data))
+    {
+      if(length(grep("\\(",data))>0) type="double"
+      else
+      {
+        type = "string"
+        data = sprintf("'%s'",data)
+      }
+    }
+  }
+# Special case:
+  if(is.scidb(dim) || is.scidbdf(dim))
+  {
+    schema = sprintf("%s%s",build_attr_schema(dim,I=1),build_dim_schema(dim))
+    query = sprintf("build(%s,%s)",schema,data)
+    ans = .scidbeval(query,eval)
+# We know that the output of build is not sparse
+    attr(ans,"sparse") = FALSE
+    return(ans)
+  }
   if(missing(start)) start = rep(0,length(dim))
   if(missing(overlap)) overlap = rep(0,length(dim))
   if(missing(chunksize))
@@ -117,18 +328,10 @@
 }
 
 # Count the number of non-empty cells
-`count` = function(x)
+count = function(x)
 {
   if(!(class(x) %in% c("scidb","scidbdf"))) stop("Invalid SciDB object")
-  iquery(sprintf("count(%s)",x@name),return=TRUE)$count
-}
-
-# The new (SciDB 13.9) cumulate
-`cumulate` = function(x, expression, dimension, `eval`=FALSE)
-{
-  if(missing(dimension)) dimension = x@D$name[[1]]
-  query = sprintf("cumulate(%s, %s, %s)",x@name,expression,dimension)
-  .scidbeval(query,eval,depend=list(x))
+  iquery(sprintf("aggregate(%s, count(*) as count)",x@name),return=TRUE)$count
 }
 
 # Filter the attributes of the scidb, scidbdf object to contain
@@ -137,9 +340,13 @@
 # attributes: a character vector describing the list of attributes to project onto
 # eval: a boolean value. If TRUE, the query is executed returning a scidb array.
 #       If FALSE, a promise object describing the query is returned.
-`project` = function(X,attributes,`eval`=FALSE)
+project = function(X,attributes,`eval`=FALSE)
 {
   xname = X
+  if(is.logical(attributes))
+    attributes = X@attributes[which(attributes)]
+  if(is.numeric(attributes))
+    attributes = X@attributes[attributes]
   if(class(X) %in% c("scidbdf","scidb")) xname = X@name
   query = sprintf("project(%s,%s)", xname,paste(attributes,collapse=","))
   .scidbeval(query,eval,depend=list(X))
@@ -158,142 +365,6 @@
   .scidbeval(query,eval,depend=list(X))
 }
 
-# SciDB cross_join wrapper internal function to support merge on various
-# classes (scidb, scidbdf). This is an internal function to support
-# merge on various SciDB objects.
-# X and Y are SciDB array references of any kind (scidb, scidbdf)
-# by is either a single character indicating a dimension name common to both
-# arrays to join on, or a two-element list of character vectors of array
-# dimensions to join on.
-# eval=TRUE means run the query and return a scidb object.
-# eval=FALSE means return a promise object representing the query.
-# Examples:
-# merge(x,y)        # Cross-product of x and y
-# merge(x,y,by='i') # Natural join on common dimension i
-# merge(x,y,by.x='i',by.y='i') # equiv. to the last expression
-`merge_scidb` = function(x,y,...)
-{
-  mc = list(...)
-  `by` = by.x = by.y = NULL
-  `all` = FALSE;
-  if(!is.null(mc$by)) `by` = mc$by
-  if(!is.null(mc$all)) `all` = mc$all
-  if(!is.null(mc$by.x)) by.x = mc$by.x
-  if(!is.null(mc$by.y)) by.y = mc$by.y
-  `eval` = ifelse(is.null(mc$eval), FALSE, mc$eval)
-  xname = x@name
-  yname = y@name
-
-# Check input
-  if(!is.null(`by`) && (!is.null(by.x) || !is.null(by.y)))
-  {
-    stop("`by` may not also be specified with `by.x` or `by.y`")
-  }
-
-# Check for simple cross case
-  if(is.null(`by`) && is.null(by.x) && is.null(by.y))
-  {
-    query = sprintf("cross(%s, %s)",xname,yname)
-    return(.scidbeval(query,eval,depend=list(x,y)))
-  }
-
-# Convert identically specified by int separate by.x by.y
-  if(length(by)>0)
-  {
-    by.x = `by`
-    by.y = `by`
-  }
-# Check for special join on attributes case (limited applicability)
-# In particular:
-# - join on only one attribute per array
-# - only inner join
-  if(all(by.x %in% x@attributes) && all(by.y %in% y@attributes))
-  {
-    by.x = by.x[[1]]  # Limitation: only one attribute for now
-    by.y = by.y[[1]]  # Ditto
-    lkup = unique(project(x,by.x),attributes=by.x)
-    XI = index_lookup(x,lkup,by.x,`eval`=FALSE)
-    YI = index_lookup(y,lkup,by.y,`eval`=FALSE)
-
-    new_dim_name = make.unique_(c(x@D$name,y@D$name),"row")
-    a = XI@attributes %in% paste(by.x,"index",sep="_")
-    n = XI@attributes[a]
-    redim = paste(paste(n,"=-1:*,100000,0",sep=""), collapse=",")
-    S = build_attr_schema(x, I=!(x@attributes %in% by.x))
-    D = sprintf("[%s,%s]",redim,build_dim_schema(x,bracket=FALSE))
-    q1 = sprintf("redimension(substitute(%s,build(<_i_:int64>[_j_=0:0,1,0],-1),%s),%s%s)",XI@name,n,S,D)
-
-    a = YI@attributes %in% paste(by.y,"index",sep="_")
-    n = YI@attributes[a]
-    redim = paste(paste(n,"=-1:*,100000,0",sep=""), collapse=",")
-    S = build_attr_schema(y)
-    D = sprintf("[%s,%s]",redim,build_dim_schema(y,bracket=FALSE))
-    D2 = sprintf("[%s,_%s]",redim,build_dim_schema(y,bracket=FALSE))
-    q2 = sprintf("cast(redimension(substitute(%s,build(<_i_:int64>[_j_=0:0,1,0],-1),%s),%s%s),%s%s)",YI@name,n,S,D,S,D2)
-    query = sprintf("unpack(cross_join(%s as _cazart, %s as _yikes, _cazart.%s_index, _yikes.%s_index),%s)",q1,q2,by.x,by.y,new_dim_name)
-    return(.scidbeval(query,eval,depend=list(x,y)))
-  }
-
-# New attribute schema for y that won't conflict with x:
-  newas = build_attr_schema(y,newnames=make.unique_(x@attributes,y@attributes))
-# Check for join case (easy case)
-  if((length(by.x) == length(by.y)) && all(x@D$name %in% by.x) && all(y@D$name %in% by.y))
-  {
-    newds = build_dim_schema(y,newnames=x@D$name)
-    castschema = sprintf("%s%s", newas, newds)
-    reschema = sprintf("%s%s", newas,build_dim_schema(x))
-# Cast and redimension y conformably with x:
-    z = redimension(cast(y,castschema),reschema)
-    if(all)
-    {
-# Experimental outer join XXX XXX
-      x = make_nullable(x)
-      z = make_nullable(z)
-# Form a null-valued version of each array in the alternate array coordinate system
-      xnames = make.unique_(z@attributes,x@attributes)
-      vals = paste(x@types, rep("(null)",length(x@types)))
-      xnull = attribute_rename(project(bind(z,xnames,vals),xnames),xnames,x@attributes)
-      znames = make.unique_(x@attributes,z@attributes)
-      vals = paste(z@types, rep("(null)",length(z@types)))
-      znull = attribute_rename(project(bind(x,znames,vals),znames),znames,z@attributes)
-# Merge each array with its nullified counterpart, then join:
-      query = sprintf("join(merge(%s,%s),merge(%s,%s))",x@name,xnull@name,z@name,znull@name)
-    }
-    else
-      query = sprintf("join(%s,%s)",x@name,z@name)
-    return(.scidbeval(query,eval,depend=list(x,y)))
-  }
-
-# Cross-join case (trickiest)
-# Cast and redimension y conformably with x along join dimensions:
-  idx.x = which(x@D$name %in% by.x)
-  msk.y = y@D$name %in% by.y
-  newds = lapply(1:length(y@D$name),
-    function(j) {
-      if(!msk.y[j])
-      {
-        d = build_dim_schema(y,I=j,bracket=FALSE)
-      } else
-      {
-        k = sum(msk.y[1:j])
-        d = build_dim_schema(x,I=idx.x[k],newnames=y@D$name[j],bracket=FALSE)
-      }
-    })
-  newds = sprintf("[%s]",paste(newds,collapse=","))
-  reschema = sprintf("%s%s", build_attr_schema(y),newds)
-  castschema = sprintf("%s%s",newas,newds)
-  z = cast(redimension(y,reschema),castschema)
-
-# Join on dimensions.
-  query = sprintf("cross_join(%s as __X, %s as __Y", xname, z@name)
-  cterms = paste(c("__X","__Y"), as.vector(rbind(by.x,by.y)), sep=".")
-  cterms = paste(cterms,collapse=",")
-  query  = paste(query,",",cterms,")",sep="")
-  ans = .scidbeval(query,eval,depend=list(x,y))
-# Fix up bogus dimension names ... todo XXX
-  ans 
-}
-
 
 
 `index_lookup` = function(X, I, attr, new_attr, `eval`=FALSE)
@@ -309,17 +380,22 @@
 }
 
 # Sort of like cbind for data frames.
-`bind` = function(X, name, FUN, `eval`=FALSE)
+bind = function(X, name, FUN, `eval`=FALSE)
 {
   aname = X
   if(class(X) %in% c("scidb","scidbdf")) aname=X@name
+# Auto-generate names like X_n:
+  if(missing(name))
+  {
+    name = make.unique_(c(scidb_attributes(X),dimensions(X)), rep("X",length(FUN)))
+  }
   if(length(name)!=length(FUN)) stop("name and FUN must be character vectors of identical length")
   expr = paste(paste(name,FUN,sep=","),collapse=",")
   query = sprintf("apply(%s, %s)",aname, expr)
   .scidbeval(query,eval,depend=list(X))
 }
 
-`unique_scidb` = function(x, incomparables=FALSE, sort=TRUE, ...)
+unique_scidb = function(x, incomparables=FALSE, sort=TRUE, ...)
 {
   mc = list(...)
   `eval` = ifelse(is.null(mc$eval), FALSE, mc$eval)
@@ -332,10 +408,17 @@
   }
   if(sort)
   {
+# XXX XXX There is a problem here if there is an attribute named 'n' (see sort function
+# below)...this must be fixed.
+    rs = sprintf("%s[n=0:%s,%s,0]",build_attr_schema(x,I=1),.scidb_DIM_MAX,noE(min(1e6,prod(dim(x)))))
     if(length(x@attributes)>1)
-      query = sprintf("uniq(sort(project(%s,%s)))",x@name,x@attributes[[1]])
+    {
+      query = sprintf("uniq(redimension(sort(project(%s,%s)),%s))",x@name,x@attributes[[1]],rs)
+    }
     else
-      query = sprintf("uniq(sort(%s))",x@name,x@attributes[[1]])
+    {
+      query = sprintf("uniq(redimension(sort(%s),%s))",x@name,rs)
+    }
   } else
   {
     query = sprintf("uniq(%s)",x@name)
@@ -343,7 +426,7 @@
   .scidbeval(query,eval,depend=list(x),`data.frame`=TRUE)
 }
 
-`sort_scidb` = function(X, decreasing = FALSE, ...)
+sort_scidb = function(X, decreasing = FALSE, ...)
 {
   mc = list(...)
   if(!is.null(mc$na.last))
@@ -358,20 +441,22 @@
   }
   if(is.null(mc$attributes))
   {
-    if(length(X@attributes)>1) stop("Array contains more than one attribute. Specify one or more attributes to sort on with the attributes= function argument")
+    if(length(X@attributes)>1) warning("Array contains more than one attribute, sorting on all of them.\nUse the attributes= option to restrict the sort.")
     mc$attributes=X@attributes
   }
   `eval` = ifelse(is.null(mc$eval), FALSE, mc$eval)
   a = paste(paste(mc$attributes, dflag, sep=" "),collapse=",")
   if(!is.null(mc$chunk_size)) a = paste(a, mc$chunk_size, sep=",")
 
+#  rs = sprintf("%s[n=0:%s,%s,0]",build_attr_schema(X,I=1),.scidb_DIM_MAX,noE(min(1e6,prod(dim(X)))))
+#  query = sprintf("redimension(sort(%s,%s),%s)", X@name,a,rs)
   query = sprintf("sort(%s,%s)", X@name,a)
   .scidbeval(query,eval,depend=list(X))
 }
 
 # S3 methods
-`merge.scidb` = function(x,y,...) merge_scidb(x,y,...)
-`merge.scidbdf` = function(x,y,...) merge_scidb(x,y,...)
+`merge.scidb` = function(x,y,by=intersect(dimensions(x),dimensions(y)),...) merge_scidb(x,y,by,...)
+`merge.scidbdf` = function(x,y,by=intersect(dimensions(x),dimensions(y)),...) merge_scidb(x,y,by,...)
 `sort.scidb` = function(x,decreasing=FALSE,...) sort_scidb(x,decreasing,...)
 `sort.scidbdf` = function(x,decreasing=FALSE,...) sort_scidb(x,decreasing,...)
 `unique.scidb` = function(x,incomparables=FALSE,...) unique_scidb(x,incomparables,...)

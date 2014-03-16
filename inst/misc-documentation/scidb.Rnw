@@ -1,0 +1,1059 @@
+% \VignetteIndexEntry{scidb Manual}
+% \VignetteDepends{scidb}
+% \VignettePackage{scidb}
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{caption}
+\usepackage[pdftex]{graphicx}
+\usepackage{color}
+\usepackage{xspace}
+\usepackage[T1]{fontenc}
+%%\usepackage{xcolor,beramono}
+%%\usepackage{tikz}
+%%\usetikzlibrary{calc,positioning}
+%%\usetikzlibrary{shapes.multipart,shapes.geometric,shapes.symbols,shapes.arrows}
+%%\usetikzlibrary{decorations.shapes,decorations.text,decorations.pathreplacing}
+
+\usepackage{float}
+\newfloat{rcode}{h!t}{rcode}
+\floatname{rcode}{Code Example}
+
+\usepackage{fancyvrb}
+\usepackage{fancyhdr}
+\usepackage[
+     colorlinks=true,
+     linkcolor=blue,
+     citecolor=blue,
+     urlcolor=blue]
+     {hyperref}
+\usepackage{lscape}
+\usepackage{Sweave}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{mdwlist}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% define new colors for use
+\definecolor{darkgreen}{rgb}{0,0.6,0}
+\definecolor{darkred}{rgb}{0.6,0.0,0}
+\definecolor{lightbrown}{rgb}{1,0.9,0.8}
+\definecolor{brown}{rgb}{0.6,0.3,0.3}
+\definecolor{lgray}{rgb}{0.85,0.85,0.85}
+\definecolor{darkblue}{rgb}{0,0,0.8}
+\definecolor{darkmagenta}{rgb}{0.5,0,0.5}
+\definecolor{mgray}{rgb}{0.65,0.65,0.65}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\newcommand{\code}[1]{\tt{#1}}
+\newcommand{\bld}[1]{\mbox{\boldmath $#1$}}
+\newcommand{\shell}[1]{\mbox{$#1$}}
+\renewcommand{\vec}[1]{\mbox{\bf {#1}}}
+\newcommand{\ReallySmallSpacing}{\renewcommand{\baselinestretch}{.6}\Large\normalsize}
+\newcommand{\SmallSpacing}{\renewcommand{\baselinestretch}{1.1}\Large\normalsize}
+\def\tm{\leavevmode\hbox{$\rm {}^{TM}$}}
+
+\setlength{\oddsidemargin}{-.25 truein}
+\setlength{\evensidemargin}{0truein}
+%%\setlength{\topmargin}{0.2truein}
+\setlength{\textwidth}{7 truein}
+%%\setlength{\textheight}{8.0 truein}
+\setlength{\parindent}{0.00truein}
+\setlength{\parskip}{0.10truein}
+\setlength{\headheight}{15pt} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagestyle{fancy}
+\lhead{}
+\chead{The {\tt scidb} Package}
+\rhead{}
+\lfoot{}
+\cfoot{}
+\rfoot{\thepage}
+\renewcommand{\headrulewidth}{1pt}
+\renewcommand{\footrulewidth}{1pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{The {\tt scidb} Package}
+\author{Bryan W. Lewis \\ 
+blewis@paradigm4.com}
+
+\begin{document}
+
+\floatstyle{plain}
+\newfloat{Code}{H}{myc}
+\lstset{
+  columns=fixed,
+  breaklines=true,
+  mathescape=false,
+  basicstyle={\ttfamily\footnotesize},
+%%  backgroundcolor=\color{lgray},
+%%  aboveskip=0pt,belowskip=0pt
+}
+
+
+\thispagestyle{empty}
+
+%%\vbox{}
+%%\vspace{0.25\textheight}
+%%\begin{tikzpicture}[remember picture,overlay]
+%%\node[anchor=west,scale=2, inner sep=0pt, outer sep=0pt] (title) at (-1cm,0) 
+%%{\LARGE\bfseries {\color{red}SciDB}\thinspace\Huge and R};
+%%\draw[line width=5pt] ([yshift=-5pt]title.base west) -- ([yshift=-5pt]title.base east);	
+%%\coordinate (titleOut) at ($(title.north east) + (24pt,0pt)$);
+%%\coordinate (titleIn) at ($(title.base west) - (6pt,24pt)$);
+%%\node[color=black!80,below=24pt of title.base east,anchor=east] (sub)
+%%{\bfseries\itshape\Large Using the scidb package for R.};
+%%\end{tikzpicture}
+%%\vfill	
+%\vspace{0.5in}
+%{\Huge{{\textbf{The SciDB package for R}}}}
+%\\[3in]
+
+%\includegraphics[width=0.4\textwidth]{scidblogo}$\qquad\qquad$
+%\includegraphics[width=0.2\textwidth]{Rlogo}
+
+%\begin{minipage}[b]{\textwidth}
+%\raggedleft
+%\includegraphics{p4logo}
+%\end{minipage}
+%\newpage
+
+\maketitle
+\tableofcontents
+
+\section{Introduction}
+
+SciDB is an open-source database that organizes data in $n$-dimensional arrays.
+SciDB features include ACID transactions, parallel processing, distributed
+storage, efficient sparse array storage, and native linear algebra operations.
+The \verb+scidb+ package for R provides two ways to interact with SciDB from R:
+\begin{enumerate}
+\item Through SciDB array classes for R.
+The arrays mimic standard R arrays and data frames, but operations on them
+are performed by the SciDB engine.  Data are materialized to R only
+when requested.
+\item By running SciDB queries from R, optionally transferring data through
+data frames or data frame iterators.
+\end{enumerate}
+The SciDB array classes facilitate programming large-scale SciDB computation in
+R using natural R syntax.  This vignette illustrates using SciDB from R by
+example. For more detailed information on the functions described in this
+vignette, see the manual pages in the package.
+
+
+\section{Connecting to SciDB}
+
+The \verb+scidbconnect+ function establishes a connection to a simple HTTP
+network service called shim running on a SciDB coordinator instance (see
+Section \ref{shim}). The function may be safely called multiple times.  Once a
+connection is established, connection information is maintained until a
+different connection is established or the R session ends.
+
+The network interface optionally supports SSL encryption and user
+authentication. Users are defined by the operating system users on the SciDB
+coordinator instance.  The shim service can be configured to support either
+open/unencrypted or encrypted/authenticated ports, or both.
+
+<<eval=TRUE,echo=FALSE>>=
+library("scidb")
+scidbconnect(Sys.getenv("SCIDB_TEST_HOST")[1])
+tryCatch(scidbrm(scidbls()),error=invisible)
+@
+{\bf Connect to localhost by default on unencrypted port 8080:}
+<<eval=FALSE>>=
+library("scidb")
+scidbconnect()
+@
+
+{\bf Connect to SciDB on an encrypted port 8083 with example authentication:}
+<<eval=FALSE>>=
+scidbconnect(host="localhost", port=8083,
+             username="scidbuser", password="test")
+@
+We recommend using only encrypted/authenticated sessions when communicating
+with SciDB over public networks.
+
+
+\subsection{Listing and removing SciDB arrays}
+
+The \verb+scidblist+ function lists SciDB objects (arrays, instances, etc.),
+optionally showing detailed schema information for arrays. Returned
+results may be filtered using regular expression-style syntax.
+
+The \verb+scidbremove+ function removes a SciDB array, or optionally a
+set of SciDB arrays defined by regular expression. The function
+accepts a vector of array names, resulting in the removal of all the
+specified arrays. Combine this feature with the regular expression filtering
+output of \verb+scidblist+ to remove sets of arrays matching the filter.
+
+
+
+
+\section{SciDB Arrays for R users}\label{arrays}
+
+Data are organized by SciDB in $n$-dimensional sparse arrays.  ``Sparse''  in
+SciDB arrays means that array elements may be left undefined, and such array
+elements are omitted from computations. Note that this interpretation of sparse
+differs in a subtle way from that used by sparse matrices defined by R's
+Matrix package (whose sparse matrix elements are implicitly zero).
+
+
+The elements of a SciDB array, called {\it cells}, contain one or more {\it
+attributes} (similar to R variables).  The number and data types of attributes
+are uniform across all cells in an array, and SciDB stores data for each
+attribute separately. Thus, a one-dimensional SciDB array is conceptually very
+similar to a data frame in R: the SciDB dimension index corresponds to data
+frame row index, and SciDB attributes to data frame columns.
+Higher-dimensional arrays in SciDB don't correspond directly to objects in R;
+the {\tt scidb} $n$-dimensional array class described below is limited to
+working with one attribute at a time to more closely emulate standard R
+arrays.
+
+The \verb+scidb+ package defines two array classes for R with data backed
+by SciDB arrays: the \verb+scidbdf+ class for data frame-like objects,
+and the \verb+scidb+ class for matrix and general array objects.
+
+
+\subsection{The {\tt scidbdf} data frame-like class}
+
+The \verb+scidbdf+ class defines a data frame-like class backed by
+one-dimensional SciDB arrays. Like data frames, the columns represent variables
+of distinct types and the rows represent observations. Each attribute in  the
+backing SciDB array represents a column in the \verb+scidbdf+ object. The
+\verb+scidbdf+ object elements are read-only (the backing SciDB array may be
+manually updated, for example using the iquery function).
+
+Use the \verb+as.scidb+ function to create new SciDB arrays and corresponding
+\verb+scidbdf+ R objects by copying R data frames into SciDB. The \verb+types+
+and \verb+nullable+ options may be used to explicitly specify the SciDB type
+and nullability values of each data frame column.  See the R help page for
+\verb+as.scidb+ and related \verb+df2scidb+ functions for more information.
+
+The \verb+scidb+ function returns an R \verb+scidbdf+ or \verb+scidb+ object
+representation of an existing SciDB array.
+
+Objects of class \verb+scidbdf+ obey a subset of R indexing operations.
+Columns may be selected by numeric positional index, variable name, or with the
+shorthand dollar sign notation similarly to standard data frames.  Rows may be
+selected by numeric ranges--see the following section on array indexing for
+details.
+
+Subsets of \verb+scidbdf+ objects are returned as new \verb+scidbdf+ objects of
+the appropriate size (dimension, number of attributes/columns). The package
+uses the special empty-bracket notation, \verb+[]+, to indicate that data
+should be materialized to R as an R data frame. Illustrations are provided in
+the examples.
+
+<<>>=
+# Upload the Michelson-Morley experiment data to SciDB,
+# returning a scidbdf data frame-like object:
+X <- as.scidb(morley, name="morely")
+str(X)
+
+# Materialize the first four rows of X and the "Run" and "Speed"
+# columns to R (using [] to return results to R):
+X[1:4, c("Run","Speed")][]
+@
+%%\caption*{Example of a scidbdf object}
+
+
+
+\subsection{The {\tt scidb} array class}
+
+Similarly to the data frame-like class, the package defines the \verb+scidb+
+array class for R that represents vectors, matrices and general $n$-dimensional
+arrays. Array objects defined by the {\tt scidb} class behave in some ways like
+standard R arrays.  But their data reside in SciDB and most operations on them
+are computed by SciDB.
+
+The \verb+scidb+ array class typically support working with a single array
+attribute at a time to conform to R arrays (which generally support a single
+value per cell).  Note that, unlike R, SciDB array origin indices are arbitrary
+and may be zero or negative (matrices and vectors in SciDB are generally
+zero-indexed). Data from {\tt scidb} array objects are not materialized to R
+until extracted with the empty indexing function, \verb+[]+.  Additional notes
+and examples about indexing appear in the next section.
+
+<<>>=
+# Upload the iris data to SciDB storing it in an array named `iris`
+# and create a data frame-like object `df` that refers to it:
+df <- as.scidb(iris)
+dim(df)
+
+# Alternatively, make a SciDB 1-d array object.
+x <- scidb(df, data.frame=FALSE)
+dim(x)
+
+# List all available attributes in the SciDB array:
+x@attributes
+@
+
+
+
+\subsection{Arithmetic operations}
+
+The \verb+scidb+ array class supports a few standard linear algebra operations
+for dense and sparse matrices and vectors.
+
+The example below shows a dense matrix example that compares matrix arithmetic
+in R and SciDB.  Like previous data frame examples, use {\tt as.scidb}
+to export R matrices and vectors to SciDB arrays.
+
+We generally use {\tt as.scidb} for convenience--it's far from the most
+efficient way to import data into SciDB. For very large data, use the SciDB
+bulk data load utility as outlined in the SciDB documentation instead.
+
+<<>>=
+v <- as.scidb(matrix(rnorm(25),5))
+str(v)
+crossprod( v[] )              # Compute t(v) %*% v using R
+
+# Now compute using SciDB, and materialize the result to R:
+crossprod(v)[]
+@
+
+Basic matrix/vector arithmetic operations on SciDB arrays (addition,
+subtraction, matrix and matrix vector products, scalar products,
+\verb+crossprod+ and \verb+tcrossprod+) use standard R syntax.  You can mix R
+and SciDB matrices and vectors and the {\tt scidb} package will try to do the
+right thing by assigning R data to temporary SciDB arrays conforming to
+required database schema.  The next example shows an example of computations
+that mix {\tt scidb} array objects with R vectors.
+
+
+\begin{table}[!h]\label{ops}
+\centering
+\resizebox{0.95\textwidth}{!}{
+\begin{tabularx}{1.15\textwidth}{llXl}
+Expression & Operation & Operands & Output \\
+\hline
+$A$ {\tt \%*\%} $B$ & Matrix multiplication & $A,B$ Conformable SciDB arrays or R matrices/vectors & SciDB array\\
+$A \pm B$ & Matrix summation/difference & $A,B$ SciDB arrays or R matrices/vectors & SciDB array\\
+{\tt crossprod(}$A$,$B${\tt)} & Cross product {\tt t(A) \%*\% B} & $A,B$ SciDB arrays or R matrices/vectors & SciDB array\\
+{\tt tcrossprod(}$A$,$B${\tt)} & Cross product {\tt A \%*\% t(B)} & $A,B$ SciDB arrays or R matrices/vectors & SciDB array\\
+$A$ {\tt */} $B$ & Elementwise product/quotient & $A,B$ Conformable SciDB arrays or R matrices/vectors & SciDB array\\
+$\alpha$ {\tt */} $A$ & Scalar multiplication/division & SciDB array $A$, scalar $\alpha$ & SciDB array\\
+{\tt t(}$A${\tt )}& Transpose & SciDB array $A$& SciDB array\\
+{\tt sin(}$A${\tt )}& Sine function, also other trig functions & SciDB array $A$& SciDB array\\
+{\tt log(}$A,base${\tt )}& Logarithm function & SciDB array $A$, numeric base& SciDB array\\
+{\tt diff(}$A,lag=1${\tt )}& Finite differences & SciDB array $A$, integer lag& SciDB array\\
+$A[\hbox{range},\hbox{range},\ldots]$ & Subarray &  SciDB array $A$ & SciDB Array\\
+$A[\,]$ & Materialize & SciDB array A& R array \\
+{\tt diag}$(A)$ & Matrix diagonal & SciDB array or vector A& SciDB arrays \\
+{\tt svd}$(A)$ & Singular value decomposition & Dense SciDB array A& SciDB arrays \\
+{\tt svd}$(A,nu)$ & Truncated SVD& Sparse or dense SciDB array A& SciDB arrays \\
+\hline
+\end{tabularx}}
+\vspace{28px}
+\caption*{Some scidb math operations}
+\end{table}
+
+
+\section{Subsetting and indexing SciDB objects}
+
+The \verb+scidb+ and \verb+scidbdf+ classes generally follow SciDB database
+indexing convention, which exhibits some differences with standard R indexing.
+In particular, note that the starting SciDB integer index is arbitrary, but
+often zero. The upper-left corner of R arrays is always indexed by
+\verb+[1,1,...]+.  Subarray indexing operations use the SciDB convention. Thus,
+zero and negative indices are literally interpreted and passed to SciDB. In
+particular, negative indices do not indicate index omission, unlike standard R
+arrays.
+
+Important indexing notes include:
+\itemize{
+\item Use empty brackets, \verb+[]+, to materialize data back to R. Otherwise,
+indexing operations produce new SciDB array objects.
+\item Use numeric indices in any dimension in the units of the underlying SciDB
+array coordinate system. Note that SciDB arrays generally are zero-indexed
+and may even have negative indices. SciDB data frame-like objects generally
+use 1-based indexing. When in doubt about the base index, use the \verb+str+
+or \verb+dimensions+ functions to interrogate the SciDB object for details.
+\item Numeric indexing may include contiguous ranges or vectors of distinct
+coordinate values, but repeated coordinate values in a single dimension are
+not allowed right now (sorry about that). Examples of valid index ranges include
+\verb+[1:4, c(3,1,5), -10:15]+, but not \verb+[c(1,3,1)]+.
+\item The \verb+scidbdf+ class represents 1-d SciDB arrays as data frame
+objects with SciDB array attribute as columns. Use either positional numeric
+or name-based indexing along columns, either with the dollar-sign notation
+or string indexing.
+\item The \verb+scidb+ supports labeled dimension indexing using
+R \verb+rownames, colnames+, or \verb+dimnames+ settings. Labels assigned
+in this way must be provided by 1-d SciDB arrays that map the integer
+coordinates to character label values. See the examples below.
+\item The \verb+scidb+ class supports indexing by other SciDB arrays
+to achieve the effect of filtering by boolean expressions and similar
+operations, also illustrated below in the examples.
+\item Use the utility \verb_between_ function to avoid forming large sequences
+representing huge indexing ranges. For example, use \verb+[between(1,1e9)]+
+instead of \verb+[1:1e9]+.
+\item The \verb+diag+ function is supported to
+extract a vector of diagonal elements from a matrix, or to create a
+sparse diagonal matrix from a vector.
+}
+
+\subsection{Comparison operators and filtering}
+
+The package follows R convention and returns a logical-valued object after
+comparison. Additionally, the package defines special comparison operators
+enclosed in the \verb+%+ symbol that return a sparse SciDB array object
+whose values not meeting the condition are masked as empty (preserving
+the values that do meet the condition).
+
+The difference is illustrated in the following example.
+<<>>=
+x <- as.scidb(head(iris))
+# Standard R-style logical comparison:
+(x$Petal_Length > 1.4 )[]
+# Special SciDB-style masked comparison:
+(x$Petal_Length %>% 1.4)[]
+@
+
+Comparison results can be used as filters in scidb and scidbdf objects.
+This works mostly like R, except that such filters may only be applied
+along coordinate axes. (That is, R's special single-index indexing mode
+is not supported.)
+
+Additional examples showing dimension labels and filtering follow.
+<<>>=
+# Example of labeling indices with a label array.
+set.seed(1)
+X <- as.scidb( matrix(rnorm(20),nrow=5) )
+# SciDB matrix objects like X default to zero-based indexing.
+# It's important that the label array have the same starting index:
+rownames(X) <- as.scidb( data.frame(letters[1:5]), start=0)
+
+X[c("b","a","d"), ]
+@
+
+<<>>=
+# Example of indexing by a condition on an auxiliary array.
+# Determine a subset of the rownames of X (another SciDB array):
+idx <- rownames(X) > "b"
+# Subset X by the condition on its rows:
+X[idx, ]
+@
+
+
+\section{Data manipulation functions}
+
+The package defines a number of common SciDB data manipulation functions for
+SciDB array objects.
+
+\subsection{Apply, sweep and other array functions}
+
+R's \verb+apply+ function applies a function along margins of an array or
+matrix.  A version of \verb+apply+ limited to SciDB aggregation functions is
+available for \verb+scidb+ and \verb+scidbdf+ objects. The SciDB
+aggregation function is supplied as a string and references the array
+attributes. The next example uses \verb+apply+ together with \verb+sweep+
+to center the columns of a matrix.
+<<>>=
+# Create an example matrix and upload to SciDB. Its single numeric array
+# attribute will be called "val" be default.
+A <- as.scidb( matrix(rnorm(100), nrow=10) )
+
+# Create a centered version of the matrix by computing its column means
+# with apply and subtracting them with sweep. Note that apply uses a
+# SciDB expression. We specify `eval=TRUE` below to compute and cache
+# the result of  sweep, improving the efficiency of the subsequent
+# crossprod operation.
+
+A0 <- sweep(A, 2, apply(A, 2, "avg(val)"), eval=TRUE)
+
+# The covariance matrix of A:
+crossprod(A0)/(nrow(A) - 1)
+@
+%%\caption*{Compute a covariance matrix}
+
+More general aggregation and data manipulation functions are outlined
+in the next section.
+
+The \verb+diff+ function works similarly to R's usual one for
+computing finite differences along vectors and matrices.
+
+Use the \verb+cumulate+  function to compute running operations along data, for
+example cumulative sums. The operation to be performed must be a valid SciDB
+aggregation function expressed as a character string. Here is a simple example:
+<<>>=
+x <- as.scidb(iris)
+y <- cumulate(x, "sum(Petal_Width)")
+print(head(y, n=4))
+@
+
+The \verb+count+ function applied to a {\tt scidb} array object returns the
+count of non-empty cells in in the backing SciDB array.
+
+The \verb+image+ function displays a heatmap of a regrid of a 2-d {\tt scidb}
+array object, and returns the regridded array to R.  The \verb+grid=c(m,n)+
+function parameter specifies the regrid window sizes in each array dimension,
+and defaults to the array chunk sizes. The regrid aggregation function may be
+specified using the \verb+op+ function argument, and by default averages the
+array values over the regrid windows.
+
+
+
+\subsection{Conditional subset operations}
+
+Use the \verb+subset+ function to filter array contents by a boolean expression
+somewhat similarly to the standard R \verb+subset+ function. Under the hood,
+this function uses the SciDB \verb+filter+ operator--the function name
+\verb+subset+ more closely matches standard R syntax.
+
+The \verb+subset+ function requires two arguments, a SciDB array reference
+and a valid SciDB logical expression represented as a string.
+Here is a simple example:
+<<>>=
+df <- as.scidb(iris)
+
+subset(df,"Petal_Width > 2.4")[]
+@
+
+The \verb+subset+ function applied to arrays returns a sparse SciDB array with
+entries not meeting the filter condition omitted. This behavior differs from
+the standard R \verb+subset+ function, which can only operate on rows and
+columns.  The \verb+scidb+ class also supports a short-hand notation for
+\verb+subset+ for infix comparison operations.
+
+<<>>=
+# Upload a 5x5 matrix to SciDB. Its single numeric attribute name
+# defaults to 'val' (see help for as.scidb):
+set.seed(1)
+A <- as.scidb( matrix(rnorm(9),nrow=3) )
+# Apply a filter to the SciDB array and return the results to R:
+subset(A, "val>0")[]
+# Alternatively, achieve the same filter with an infix comparison:
+(A > 0)[]
+@
+%%\caption*{Example of array value filtering with subset}
+
+
+
+\subsection{Database joins}
+
+The package supports a limited form of the R \verb+merge+ function, enabling a
+number of database join-like operations on SciDB array objects. See
+\verb+help("merge",package="scidb")+ function for detailed help.  Here is an
+example that performs an inner join on array attributes:
+<<>>=
+authors <-
+  data.frame(
+    surname = c("Tukey", "Venables", "Tierney", "Ripley", "McNeil"),
+    nationality = c("US", "Australia", "US", "UK", "Australia"),
+    deceased = c("yes", rep("no", 4)),
+    stringsAsFactors=FALSE)
+books <-
+  data.frame(
+    name = c("Tukey", "Venables", "Tierney",
+             "Ripley", "Ripley", "McNeil", "R Core"),
+    title = c("Exploratory Data Analysis",
+              "Modern Applied Statistics ...",
+              "LISP-STAT", "Spatial Statistics", "Stochastic Simulation",
+              "Interactive Data Analysis", "An Introduction to R"),
+    other.author = c(NA, "Ripley", NA, NA, NA, NA, "Venables & Smith"),
+    stringsAsFactors=FALSE)
+a <- as.scidb(authors)
+b <- as.scidb(books)
+
+merge(a,b,by.x="surname",by.y="name")[,4:8][]
+# cf. The standard R data.frame merge function:
+# merge(authors,books,by.x="surname",by.y="name")
+@
+
+The \verb+merge+ implementation has some limitations outlined in its man page.
+Joins on attributes (instead of along coordinate axes) are presently the most
+limited kinds and outer joins are only supported in certain cases.
+
+
+\subsection{Aggregation}
+The \verb+aggregate+ function performs various aggregation operations
+on SciDB array objects.  Aggregation may be defined over array dimensions
+and/or array attributes very similarly to standard R aggregation syntax, except
+that aggregation functions must be valid SciDB aggregate expressions,
+represented as strings.
+
+<<>>=
+# Aggregation example
+df <- as.scidb(iris)
+aggregate(df, by="Species", FUN="avg(Petal_Length), stdev(Petal_Width)")[]
+@
+
+Although limited support for aggregation by data frame column is available (see
+the example in this section), the \verb+aggregate+ function performs best along
+SciDB array dimensions. The \verb+aggregate+ function also supports single- and
+multi-dimensional moving window aggregation along array coordinate systems, and
+1-d aggregation along consecutive data values in sparse arrays.  See the on-line
+man page for additional details and examples.
+
+\subsection{Binding new variables to an array}
+The SciDB package defines the \verb+bind+ function to add variables to arrays
+similar to the R \verb+cbind+ function for data frames.  However, \verb+bind+
+can also operate on higher-dimensional arrays. The example below adds a
+variable named `prod` to the SciDB array \verb+df+ defined in the last example.
+
+<<>>=
+y  <- bind(df, "prod", "Petal_Length * Petal_Width")
+head(y, n=3)
+@
+
+
+\subsection{Sorting and enumerating factors}
+
+Use the \verb+sort+ function to sort on a subset of dimensions and/or
+attribute of a SciDB array object, creating a new sorted array.
+
+Use the \verb+unique+ function to return a SciDB array that removes
+duplicate elements of a single-attribute SciDB input array.
+
+Use the \verb+index_lookup+ function along with  \verb+unique+ to bind a new
+variable that enumerates unique values of a variable similarly to the R
+\verb+factor+ function.
+
+Examples follow. Note that we use the SciDB \verb+project+ function in one
+example. \verb+project+ presents an alternative syntax to the functionally
+equivalent column subset selection of variables using brackets.
+
+<<>>=
+x <- as.scidb(iris)
+
+# Sort x by Petal_Width and Species
+a <- sort(x, attributes=c("Petal_Width","Species"))
+head(a, n=3)
+
+# Find unique values of Species:
+unique(x$Species)[]
+
+# Add a new variable that enumerates factor levels of Species:
+head(index_lookup(x, unique(x$Species), "Species"))
+@
+
+
+\subsection{Indexing details and missing values}
+
+The integer coordinate systems used to index SciDB arrays are similar to R,
+except that SciDB integer indices may be zero or negative, and are represented
+by 62-bit signed integers (R indices use either unsigned positive 31-bit
+integer or positive 52-bit integer-valued double values). This means that SciDB
+arrays can't always be indexed by R In practice, R users should avoid creating
+SciDB arrays with coordinate systems that extend past R's limits.
+
+SciDB attribute values within a cell may be explicitly marked missing,
+indicated by a special SciDB missing code also referred to as a NULL code.
+SciDB internally supports a large number of possible missing codes. All SciDB
+missing code values are mapped to \verb+NA+ values in R.
+ 
+
+
+\section{Lazy evaluation, array promises, and garbage collection}
+
+Most operations on SciDB array objects return array promises--new SciDB array
+objects that have not been fully evaluated by SciDB yet, but that promise to
+return values when asked. SciDB array promises are essentially just SciDB query
+expressions together with a schema that the resulting output array will have
+once it's been evaluated and an environment providing context for the
+evaluation. In such cases, the \verb+name+ slot of a \verb+scidb+ or
+\verb+scidbdf+ object shows the SciDB query expression.
+
+Sometimes it can be more efficient to explicitly evaluate and cache a SciDB
+array then to use it as an array promise. This can always be achieved by using
+the \verb+scidbeval+ function, or by using the \verb+`eval`=TRUE+ argument in
+the functions that support that.  Dynamically allocated arrays use a naming
+convention that begins with ``R\_array'' and end with a unique numeric
+identifier determined by the current SciDB session.
+
+Ephemeral intermediate arrays are by default connected to R's garbage collector
+and automatically deleted from the SciDB catalog when they are no longer needed
+by R.  Users can disconnect SciDB array objects from R's garbage collector
+(making stored arrays persistent in SciDB), by using the \verb+gc=FALSE+ flag
+in the \verb+as.scidb+ and \verb+scidbeval+ functions.
+
+SciDB arrays keep references to other SciB array dependencies in a list within
+an environment, preventing them from automatic garbage collection so that the
+promise can be evaluated. The environment is slot is named \verb+@gc+ in the
+array objects and the dependency list is \verb+@gc$depend+.
+
+Here is an example:
+<<>>=
+# Create a 5x4 SciDB matrix named 'test' in the database. We set `gc=TRUE`
+# so that the SciDB array `test` will be deleted by R's garbage collector
+# for us automatically:
+A <- as.scidb(matrix(rnorm(20),nrow=5), name="test", gc=TRUE)
+A@name
+
+# Assign the third row of the transpose to a scidb object B:
+B <- t(A)[3,]
+# B is a promise object--it's name is an (unevaluated) SciDB query expression
+# that depends on A. But it has a valid output schema, and we also see that
+# it depends ultimately on the SciDB array `test`:
+B@name
+B@schema
+B@gc$depend[[1]]@gc$depend[[1]]@name
+
+# We can use `scidbeval` to force B's evaluation and storage inside SciDB:
+C <- scidbeval(B)
+# C has the same schema as B, but is now evaluated and stored inside SciDB
+# using an automatically-generated name. Unlike B, C does not depend on
+# the `test` array any more.
+C@name
+C@schema
+@
+
+
+\section{SciDB-specific functions}
+
+This section briefly summarizes a number of utility functions that are simple
+wrappers of miscellaneous SciDB operators.  Except for \verb+count+, which
+returns a number, the listed functions return references to new SciDB array
+objects.
+
+\begin{itemize}
+\item \verb+attribute_rename+ Rename one or more attributes of a SciDB array.
+\item \verb+build+ Creates new dense arrays from SciDB expressions and schema.
+\item \verb+cast+ Create a new array by altering the schema of an array.
+\item \verb+count+ Return the number of nonempty cells of an array.
+\item \verb+cumulate+ Compute a cumulative aggregate function, for example
+  a cumulative sum or product.
+\item \verb+dimension_rename+ Rename one or more dimensions of a SciDB array.
+\item \verb+index_lookup+ Look up attribute values in a mapping array, adding
+  a new attribute with the index.
+\item \verb+project+ Pick out one or more attributes from an array.
+\item \verb+redimension+ Redimension an array into the provided new schema.
+\item \verb+regrid+ Decimate an array by binning it along one or more dimensions
+  and applying an aggregate function to the bins.
+\item \verb+rename+ Rename a SciDB array.
+\item \verb+repart+ Repartition an array.
+\item \verb+reshape+ Reshape an array.
+\item \verb+schema+ Show the schema of a SciDB array object.
+\item \verb+scidblist+ List SciDB arrays (also \verb+scidbls+).
+\item \verb+scidbremove+ Delete SciDB arrays (also \verb+scidbrm+).
+\item \verb+slice+ Slice a SciDB array along one of its axes, returning a
+  lower-dimensional array.
+\item \verb+sort+ Sort the elements of an array.
+\item \verb+subarray+ Perform a SciDB subarray or between operation on an array.
+\item \verb+unique+ Return a set of unique elements of a sorted array.
+\item \verb+unpack+ Unpack a SciDB array into a 1-d table.
+\item \verb+xgrid+ Prolong one or more coordinate axes by replicating
+  cell values.
+\end{itemize}
+See the online manual pages for more details and examples.
+
+
+\section{Miscellaneous functions}
+
+This catch-all section summarizes miscellaneous functions.
+
+\subsection{Histograms}
+
+The generic function \verb+hist+ computes a histogram of the given data values
+in a SciDb array object.  If \verb+plot=TRUE+, the resulting object of class
+histogram is plotted by \verb+plot.histogram+, before it is returned.
+
+This histogram function only supports equidistant breaks. If \verb+right=TRUE+
+(default), the histogram cells are intervals of the form '(a, b]', i.e.,
+they include their right-hand endpoint, but not their left one.
+
+\subsection{Last-value imputation}
+
+The \code{na.locf} function is a generic function for replacing each missing or
+empty value with the most recent non-missing value prior to it.
+
+Unlike the usual \code{na.locf} function from the \code{zoo} package, the SciDB
+\code{na.locf} function fills in both missing (SciDB \code{null} values) and
+empty (SciDB sparse) values with the last non-missing and non-sparse value
+along the indicated dimension.
+
+Time series represented in SciDB are often sparse arrays. The \code{na.locf}
+function defines a conveniet way to  fill in all missing values along the time
+coordinate axis down to the time resolution.
+
+Caution! The output array is a mostly dense, filled-in version of the input
+array. If the time resolution is very fine and the input array very sparse,
+then the output array can be huge. Consider using \code{regrid} first on
+very fine time scales to reduce their resolution.
+
+The default \code{na.locf} method in the \code{zoo} package unforunately
+overrides this function (it uses \code{ANY} in its method signature). If
+you need to use SciDB arrays and the \code{zoo} package, prefix SciDB's
+version with \code{scidb::na.locf(...)}.
+
+
+
+\section{Running SciDB queries}
+
+The \verb+iquery+ function executes SciDB queries using either the SciDB array
+functional language (AFL) or declarative array query language (AQL) syntax.
+When AFL is used, the \verb+iquery+ function optionally returns query results
+in an R data frame if the argument \verb+return=TRUE+ is specified.  Returned
+output is similar to output obtained by the SciDB \verb+iquery+ command-line
+program with the \verb$-olcsv+$ option.  The \verb+iquery+ function does not
+return anything by default.
+
+Query results returned by the \verb+iquery+ function are internally presented
+to R using a generic CSV format, providing very flexible support for many data
+types.  (The $n$-dimensional array class described in the next section uses a
+binary data exchange method between R and SciDB.) Note that, although R and
+SciDB have a number of common data types, each system contains types not
+supported by the other.  Thus, conversion errors may arise. The \verb+iquery+
+function is designed to reasonably minimize such issues and simplify basic data
+transfer between the systems.  Data types common to R and SciDB include
+double-precision numeric, character string, logical, and 32-bit
+integers. The \verb+iquery+ function supports
+standard R \verb+read.table+ parameter options to facilitate type conversion.
+
+The following code example illustrates basic use of \verb+iquery+.
+<<>>=
+# Manually build a 1-d SciDB array named "P:"
+iquery("store(build(<x:double>[i=0:99,100,0],asin(1)*i/25),P)")
+
+# Return a query as a data.frame, manually specifying returned column classes:
+S <- iquery("apply(P,y,sin(x))",return=TRUE,
+            colClasses=c("integer","double","complex"))
+head(S, n=3)
+@
+
+
+\subsection{Iterating over query results}
+
+The \verb+iquery+ function returns query results into a single R data frame by
+default. Large results expected to contain lots of rows may be iterated over
+by setting the \verb+iterative=TRUE+ argument. When \verb+iquery+ is
+used with the \verb+iterative=TRUE+ setting, it returns an iterator that
+iterates over chunks of rows of the result data frame.  Iterators are defined
+by the \verb+iterators+ package. Their data may be directly accessed with the
+\verb+nextElem+ method, or indirectly with \verb+foreach+. See the
+\verb+iterators+ and \verb+foreach+ packages for many examples and further
+documentation of their use. 
+
+<<>>=
+# Build a small 1-d SciDB test array:
+iquery("store(build(<x:double>[i=1:10,10,0],i/10.0),A)")
+
+# Return the result of a SciDB apply operator in an R iterator with a
+# block size of at most 7 rows at a time:
+library("iterators")
+it <- iquery("apply(A,y,sqrt(x))", return=TRUE, iterative=TRUE, n=7)
+
+nextElem(it)
+
+nextElem(it)
+@
+
+
+\section{Error handling}
+
+SciDB errors are trapped and converted to R errors that can be handled by
+standard R mechanisms. Some operations might try to return too much data to R,
+exceeding R's indexing limitations, system memory, or both. The package tries
+to avoid this kind of error using package options that limit returned data size
+shown in the package options section below.
+
+\section{Function and method list}
+
+Here is a summary list of functions and methods defined by  the package.  See
+online help for examples and more information on each one.
+
+\begin{verbatim}
+$                 %<%               Filter            Ops
+[                 abs               acos              aggregate
+all.equal         antijoin          apply             as.scidb
+asin              atan              attribute_rename  between
+bind              build             c                 cast
+cbind             colnames          colnames<-        cos
+count             crossprod         cumulate          default
+df2scidb          diag              diff              dim
+dimension_rename  dimensions        dimnames          dimnames<-
+glm.fit           glm_scidb         head              hist
+image             index_lookup      iquery            is.scidb
+is.scidbdf        lag               length            log
+max               mean              median            merge
+min               model_scidb       na.locf           names
+names<-           ncol              nrow              persist
+phyper            predict           print             project
+qhyper            quantile          rbind             redimension
+regrid            rename            repart            reshape
+rownames          rownames<-        schema            scidb
+scidb_attributes  scidb_fisher.test scidbconnect      scidbdf
+scidbeval         scidblist         scidbls           scidbremove
+scidbrm           sd                show              show_commit_log
+sin               slice             solve             sort
+sqrt              str               subarray          subset
+substitute        sum               summary           svd
+sweep             t                 tail              tan
+tcrossprod        unique            unpack            var
+xgrid
+\end{verbatim}
+
+
+
+\section{Package installation}
+
+Installation proceeds in two steps: installing the R package on any computer
+that has a network connection to a SciDB database, and installing a simple
+network service on the SciDB database coordinator computer.
+
+\subsection{Installing the R package from sources on GitHub}
+
+The \verb+scidb+ package source is maintained in the SciDBR GitHub repository.
+That's where the most up-to-date version of the package is available. Released
+versions of the package posted to CRAN are updated much less frequently,
+approximately semiannually. A git tag indicates each CRAN release version of
+the package in the source code repository.
+
+The wonderful {\tt devtools} R package makes installation of source
+packages from GitHub nearly as simple as installation from CRAN.
+%%\begin{Code}
+%%\begin{lstlisting}[caption=Installing the R package from GitHub, label=github]
+\begin{verbatim}
+library("devtools")
+install_github("SciDBR", "Paradigm4", quick=TRUE)
+\end{verbatim}
+%%\end{lstlisting}
+%%\end{Code}
+
+\subsection{Installing the R package from CRAN}
+The \verb+scidb+ package is available on CRAN. Start an R session and run:
+%%\begin{Code}
+%%\begin{lstlisting}[caption=Installing the R package from CRAN, label=cran]
+\begin{verbatim}
+install.packages("scidb")
+\end{verbatim}
+%%\end{lstlisting}
+%%\end{Code}
+
+
+\subsection{Installing the simple HTTP service for SciDB}
+\label{shim}
+
+The SciDB R package requires installation of a simple open-source HTTP network
+service called \verb+shim+ on the computer that SciDB is installed on. The
+service needs to be installed only on the SciDB coordinator computer, not on
+client computers that connect to SciDB from R.  It's available in packaged
+binary form for supported SciDB operating systems, and as source code which can
+be compiled and deployed on any SciDB installation.
+
+Both installation approaches install the \verb+shim+ network service on the
+SciDB coordinator computer. Installing as a service requires root permission.
+The compiled source code version requires no special permissions to run.
+
+Installation from binary software packages for SciDB-supported operating
+systems is easiest. Detailed up-to-date information can be found on
+Paradigm4's laboratory on Paradigm4's Github repository at 
+\href{https://github.com/Paradigm4/shim/wiki/Installing-shim}
+{https://github.com/Paradigm4/shim/wiki/Installing-shim}.
+We outline installation for each supported operating system below. See our github page
+for source code. The open source package author, Bryan Lewis, maintains
+binary packages for SciDB-supported operating systems. They are tied to specific
+versions of SciDB. The present version is 13.12 (December, 2013).
+
+
+\subsubsection{Installation on RHEL/CentOS 6}
+%%\begin{Code}
+%%\begin{lstlisting}[caption=Installing the simple HTTP service on RHEL, label=shimrhel]
+\begin{verbatim}
+# Install with:
+wget http://paradigm4.github.io/shim/shim-13.12-1.x86_64.rpm
+rpm -i shim-13.12-1.x86_64.rpm
+
+# (Uninstall, if desired, with:)
+yum remove shim
+\end{verbatim}
+%%\end{lstlisting}
+%%\end{Code}
+
+
+\subsubsection{Installation on Ubuntu 12.04}
+%%\begin{Code}
+%%\begin{lstlisting}[caption=Installing the simple HTTP service on Ubuntu, label=shimubuntu]
+\begin{verbatim}
+# Install with:
+wget http://paradigm4.github.io/shim/shim_13.12_amd64.deb
+sudo gdebi shim_13.12_amd64.deb
+
+# (Uninstall, if desired, with:)
+apt-get remove shim
+\end{verbatim}
+%%\end{lstlisting}
+%%%\end{Code}
+See the Wiki and web pages at 
+\href{https://github.com/Paradigm4/shim/}
+{https://github.com/Paradigm4/shim/} for up to date package information and source code.
+
+The installed \verb+shim+ network service exposes SciDB as a very simple HTTP
+API.  It includes a simple browser-based status and query tool. After
+installing shim, point your browser to the I.P. address of the SciDB
+coordinator machine and port 8080.  Note that this API is not official and may
+change in the future. Help drive those changes by contributing ideas, code and
+bugfixes to the project on Github, or feel free to discuss the service on the
+SciDB.org/forum or via Github issues.
+
+
+\subsection{Package options, miscellaneous notes, and software license}
+
+The \verb+scidb+ package defines several global package options.
+Package options may be set and retrieved with the R
+\verb+options+ function, and are listed in Table 2.
+\begin{table}[ht!]
+\label{options}
+\centering
+%%\resizebox{0.95\textwidth}{!}{
+\begin{tabularx}{0.9\textwidth}{llX}
+Option & Default value & Description \\
+\hline
+scidb.debug & NULL & Set to TRUE to display all queries issued to the SciDB engine and
+other debugging information.\\
+scidb.index.sequence.limit & 100 000 000 &  Maximum allowed scidb array object sequential indexing limit (for larger ranges, use between)\\
+scidb.max.array.elements & 100 000 000 & Maximum allowed non-empty elements to return in a subsetting operation of a scidb array object.\\
+\hline
+\end{tabularx}
+%%}
+\\[24pt]
+\caption*{Package options}
+\end{table}
+
+Miscellaneous notes:
+\begin{itemize}
+\item R does not support 64-bit integer types. 64-bit signed and unsigned
+integers smaller than $2^{53}$  in magnitude will be represented as
+double-precision floating point numbers.  64-bit integers outside that range
+appear as $+/-$\verb+Inf+.  All other integers (int8, uint8, int16, uint16,
+etc.) are represented in R by 32-bit signed integers. The SciDB
+uint32 type is not supported.
+\item R doesn't support single-precision floating point numbers.  {\tt iquery}
+results convert single-precision numbers within SciDB to double-precision
+floating-point numbers in R.  Single-precision SciDB numbers are not supported
+by the {\tt scidb} array class.
+\item SciDB does not natively support complex numbers. Loading complex numbers
+directly into SciDB from R is not defined.
+\item The {\tt iquery} function provides the most flexible mechanism for type
+conversion between the systems, fully under user control using {\tt read.table}
+options.
+\item Naming convention and associated restrictions vary between R and SciDB.
+For example, SciDB does not allow decimal points in attribute names. The
+package may alter names with character substitution to reconcile names when it
+is reasonable to do so.  A warning is emitted whenever an object is
+automatically renamed in this way.
+\end{itemize}
+
+
+%%\newpage
+\small{
+\begin{verbatim}
+Copyright (C) 2008-2013 SciDB, Inc.
+
+The SciDB package for R is free software: you can redistribute it and/or modify
+it under the terms of the AFFERO GNU General Public License as published by the
+Free Software Foundation.
+
+The SciDB package for R is distributed "AS-IS" AND WITHOUT ANY WARRANTY OF ANY
+KIND, INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY, NON-INFRINGEMENT, OR
+FITNESS FOR A PARTICULAR PURPOSE. See the AFFERO GNU General Public License for
+the complete license terms.
+
+You should have received a copy of the AFFERO GNU General Public License along
+with the package.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
+\end{verbatim}
+}
+\end{document}

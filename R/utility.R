@@ -1,24 +1,31 @@
-#/*
-#**
-#* BEGIN_COPYRIGHT
-#*
-#* This file is part of SciDB.
-#* Copyright (C) 2008-2013 SciDB, Inc.
-#*
-#* SciDB is free software: you can redistribute it and/or modify
-#* it under the terms of the AFFERO GNU General Public License as published by
-#* the Free Software Foundation.
-#*
-#* SciDB is distributed "AS-IS" AND WITHOUT ANY WARRANTY OF ANY KIND,
-#* INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY,
-#* NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR PURPOSE. See
-#* the AFFERO GNU General Public License for the complete license terms.
-#*
-#* You should have received a copy of the AFFERO GNU General Public License
-#* along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
-#*
-#* END_COPYRIGHT
-#*/
+#
+#    _____      _ ____  ____
+#   / ___/_____(_) __ \/ __ )
+#   \__ \/ ___/ / / / / __  |
+#  ___/ / /__/ / /_/ / /_/ / 
+# /____/\___/_/_____/_____/  
+#
+#
+#
+# BEGIN_COPYRIGHT
+#
+# This file is part of SciDB.
+# Copyright (C) 2008-2014 SciDB, Inc.
+#
+# SciDB is free software: you can redistribute it and/or modify
+# it under the terms of the AFFERO GNU General Public License as published by
+# the Free Software Foundation.
+#
+# SciDB is distributed "AS-IS" AND WITHOUT ANY WARRANTY OF ANY KIND,
+# INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY,
+# NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR PURPOSE. See
+# the AFFERO GNU General Public License for the complete license terms.
+#
+# You should have received a copy of the AFFERO GNU General Public License
+# along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
+#
+# END_COPYRIGHT
+#
 
 # This file contains general utility routines including most of the shim
 # network interface.
@@ -37,38 +44,37 @@ scidbeval = function(expr, eval=TRUE, name, gc=TRUE)
   .scidbeval(ans@name, `eval`=eval, name=name, gc=gc)
 }
 
-
 # Create a new scidb reference to an existing SciDB array.
-# name (character): Name of the backing SciDB array
-# attribute (character): Attribute in the backing SciDB array
-#   (applies to n-d arrays, not data.frame-like 1-d arrays)
+# name (character): SciDB expression or array name
 # gc (logical, optional): Remove backing SciDB array when R object is
 #     garbage collected? Default is FALSE.
 # data.frame (logical, optional): If true, return a data.frame-like object.
 #   Otherwise an array.
-`scidb` = function(name, attribute, gc, `data.frame`)
+scidb = function(name, gc, `data.frame`)
 {
   if(missing(name)) stop("array or expression must be specified")
   if(missing(gc)) gc=FALSE
   if(is.scidb(name) || is.scidbdf(name))
   {
-    return(.scidbeval(name@name, eval=FALSE, attribute=attribute, gc=gc, `data.frame`=`data.frame`, depend=list(name)))
+    return(.scidbeval(name@name, eval=FALSE, gc=gc, `data.frame`=`data.frame`, depend=list(name)))
   }
-  query = sprintf("show('%s as array','afl')",gsub("'","\\\\'",name,perl=TRUE))
-  schema = iquery(query,`return`=1)$schema
+  query = sprintf("show('filter(%s,true)','afl')",gsub("'","\\\\'",name,perl=TRUE))
+  schema = gsub("^.*<","<",iquery(query,`return`=1)$schema, perl=TRUE)
   obj = scidb_from_schemastring(schema, name, `data.frame`)
-  if(!missing(attribute))
-  {
-    if(!(attribute %in% obj@attributes)) warning("Requested attribute not found")
-    obj@attribute = attribute
-  }
   if(gc)
   {
-    obj@gc$name = name
+    if(length(grep("\\(",name))==0)
+    {
+      obj@gc$name = name
+    }
     obj@gc$remove = TRUE
-    reg.finalizer(obj@gc, function(e) if (e$remove) 
-        tryCatch(scidbremove(e$name,async=TRUE), error = function(e) invisible()), 
-            onexit = TRUE)
+    reg.finalizer(obj@gc, function(e)
+        {
+          if (e$remove && exists("name",envir=e))
+            {
+              tryCatch(scidbremove(e$name,warn=FALSE), error = function(e) invisible())
+            }
+        }, onexit = TRUE)
   } else obj@gc = new.env()
   obj
 }
@@ -86,8 +92,6 @@ scidbeval = function(expr, eval=TRUE, name, gc=TRUE)
 # depend: (optional list) An optional list of other scidb or scidbdf objects
 #         that this expression depends on (preventing their garbage collection
 #         if other references to them go away).
-# attribute: (optional character) Set the attribute on a scidb object,
-#             requires data.frame=TRUE
 # data.frame: (optional, logical) If TRUE, return a data.frame object, false
 #             return a scidb object. Default is missing, in which case an
 #             automatic decision is made about the object return class.
@@ -96,8 +100,9 @@ scidbeval = function(expr, eval=TRUE, name, gc=TRUE)
 # A `scidb` or `scidbdf` array object.
 #
 # NOTE
-# AFL only in SciDB expressions--AQL is not supported.
-`.scidbeval` = function(expr,eval,name,gc=TRUE, depend, attribute, `data.frame`)
+# SciDB versions up to 13.12 only support AFL here. As of SciDB version
+# 14.3, expression can be AFL or AQL.
+`.scidbeval` = function(expr,eval,name,gc=TRUE, depend, `data.frame`)
 {
   ans = c()
   if(missing(depend)) depend=c()
@@ -107,102 +112,25 @@ scidbeval = function(expr, eval=TRUE, name, gc=TRUE)
     if(missing(name)) newarray = tmpnam()
     else newarray = name
     query = sprintf("store(%s,%s)",expr,newarray)
-    scidbquery(query)
-    ans = scidb(newarray,gc=gc,attribute=attribute,`data.frame`=`data.frame`)
+    scidbquery(query, interrupt=TRUE)
+    ans = scidb(newarray,gc=gc,`data.frame`=`data.frame`)
   } else
   {
-    ans = scidb(expr,gc=gc,attribute=attribute,`data.frame`=`data.frame`)
+    ans = scidb(expr,gc=gc,`data.frame`=`data.frame`)
 # Assign dependencies
     if(length(depend)>0)
     {
       assign("depend",depend,envir=ans@gc)
     }
   }
-
   ans
 }
 
 
-# Construct a scidb promise from a SciDB schema string.
-scidb_from_schemastring = function(s,expr=character(), `data.frame`)
-{
-  a=strsplit(strsplit(strsplit(strsplit(s,">")[[1]][1],"<")[[1]][2],",")[[1]],":")
-  attributes=unlist(lapply(a,function(x)x[[1]]))
-  attribute=attributes[[1]]
-
-  ts = lapply(a,function(x)x[[2]])
-  nullable = rep(FALSE,length(ts))
-  n = grep("null",ts,ignore.case=TRUE)
-  if(any(n)) nullable[n]=TRUE
-
-  types = gsub(" .*","",ts)
-  type = types[1]
-
-  d = gsub("\\]","",strsplit(s,"\\[")[[1]][[2]])
-  d = strsplit(strsplit(d,"=")[[1]],",")
-  dname = unlist(lapply(d[-length(d)],function(x)x[[length(x)]]))
-  dtype = rep("int64",length(dname))
-  chunk_interval = as.numeric(unlist(lapply(d[-1],function(x)x[[2]])))
-  chunk_overlap = as.numeric(unlist(lapply(d[-1],function(x)x[[3]])))
-  d = lapply(d[-1],function(x)x[[1]])
-
-  dlength = unlist(lapply(d,function(x)diff(as.numeric(gsub("\\*",.scidb_DIM_MAX,strsplit(x,":")[[1]])))+1))
-  dstart = unlist(lapply(d,function (x)as.numeric(strsplit(x,":")[[1]][[1]])))
-
-  D = list(name=dname,
-           type=dtype,
-           start=dstart,
-           length=dlength,
-           chunk_interval=chunk_interval,
-           chunk_overlap=chunk_overlap,
-           low=rep(NA,length(dname)),
-           high=rep(NA,length(dname))
-           )
-  if(missing(`data.frame`)) `data.frame` = ( (length(dname)==1) &&  (length(attributes)>1))
-  if(length(dname)>1 && `data.frame`) stop("SciDB data frame objects can only be associated with 1-D SciDB arrays")
-
-  if(`data.frame`)
-  {
-# Set default column types
-    ctypes = c("int64",dtype)
-    cc = rep(NA,length(ctypes))
-    cc[ctypes=="datetime"] = "Date"
-    cc[ctypes=="float"] = "double"
-    cc[ctypes=="double"] = "double"
-    cc[ctypes=="bool"] = "logical"
-    st = grep("string",ctypes)
-    if(length(st>0)) cc[st] = "character"
-    return(new("scidbdf",
-                schema=s,
-                name=expr,
-                attributes=attributes,
-                types=types,
-                nullable=nullable,
-                D=D,
-                dim=c(D$length,length(attributes)),
-                colClasses=cc,
-                gc=new.env(),
-                length=length(attributes)
-             ))
-  }
-
-  new("scidb",
-      name=expr,
-      schema=s,
-      attribute=attribute,
-      type=type,
-      attributes=attributes,
-      types=types,
-      nullable=nullable,
-      D=D,
-      dim=D$length,
-      gc=new.env(),
-      length=prod(D$length)
-  )
-}
-
 # store the connection information and obtain a unique ID
-scidbconnect = function(host='localhost', port=8080L, username, password)
+scidbconnect = function(host=options("scidb.default_shim_host")[[1]],
+                        port=options("scidb.default_shim_port")[[1]],
+                        username, password)
 {
   scidbdisconnect()
   assign("host",host, envir=.scidbenv)
@@ -222,9 +150,12 @@ scidbconnect = function(host='localhost', port=8080L, username, password)
 # Use the query ID from a query as a unique ID for automated
 # array name generation.
   x = scidbquery(query="setopt('precision','16')",release=1,resp=TRUE)
-  id = strsplit(x$response, split="\\r\\n")[[1]]
-  id = id[[length(id)]]
-  assign("uid",id,envir=.scidbenv)
+  if(is.null(.scidbenv$uid))
+  {
+    id = strsplit(x$response, split="\\r\\n")[[1]]
+    id = id[[length(id)]]
+    assign("uid",id,envir=.scidbenv)
+  }
 # Try to load the dense_linear_algebra library
   tryCatch(
     scidbquery(query="load_library('dense_linear_algebra')",
@@ -245,6 +176,11 @@ scidbconnect = function(host='localhost', port=8080L, username, password)
   if("major" %in% names(v))
   {
     options(scidb.version=paste(v$major,v$minor,sep="."))
+  }
+# Update the gemm_bug option
+  if(compare_versions(options("scidb.version")[[1]],14.3))
+  {
+    options(scidb.gemm_bug=FALSE) # Yay
   }
   invisible()
 }
@@ -276,9 +212,8 @@ make.names_ = function(x)
 # returns a set the same size as y with non-conflicting value names
 make.unique_ = function(x,y)
 {
-  x = make.names(x,unique=TRUE)
-  z = make.names(c(x,y),unique=TRUE)
-  gsub("\\.","_",setdiff(union(x,z),x))
+  z = make.names(gsub("_",".",c(x,y)),unique=TRUE)
+  gsub("\\.","_",tail(z,length(y)))
 }
 
 # Make a name from a prefix and a unique SciDB identifier.
@@ -321,21 +256,41 @@ URI = function(resource="", args=list())
   ans
 }
 
-# Send an HTTP GET message
-GET = function(resource, args=list(), header=TRUE, async=FALSE)
+# Send an HTTP GET message to the shim service
+# resource: URI service name
+# args: named list of HTTP GET query parameters
+# header: TRUE=return the HTTP response header, FALSE=don't return it
+# async: Doesn't really do anything
+# interrupt: Set to FALSE to disable SIGINT, otherwise handle gracefully.
+GET = function(resource, args=list(), header=TRUE, async=FALSE, interrupt=FALSE)
 {
   if(!(substr(resource,1,1)=="/")) resource = paste("/",resource,sep="")
   uri = URI(resource, args)
   uri = URLencode(uri)
   uri = gsub("\\+","%2B",uri,perl=TRUE)
+  on.exit(sigint(SIG_DFL)) # Reset signal handler on exit
+  callback = curl_signal_trap
+  if(interrupt)
+  {
+    sigreset ()
+    sigint(SIG_TRP)          # Handle SIGINT
+  } else
+  {
+    sigint(SIG_IGN)          # Ignore SIGINT
+  }
   if(async)
   {
-    getURI(url=uri,.opts=list(header=header,'ssl.verifypeer'=0),async=TRUE)
+    getURI(url=uri,
+      .opts=list(header=header,
+                 'ssl.verifyhost'=as.integer(options("scidb.verifyhost")),
+                 'ssl.verifypeer'=0,
+                 noprogress=!interrupt, progressfunction=curl_signal_trap),
+      async=TRUE)
     return(NULL)
   }
-  getURI(url=uri, .opts=list(header=header,'ssl.verifypeer'=0))
+  getURI(url=uri, .opts=list(header=header,'ssl.verifyhost'=as.integer(options("scidb.verifyhost")),'ssl.verifypeer'=0,
+                         noprogress=!interrupt, progressfunction=curl_signal_trap))
 }
-
 
 # Check if array exists
 .scidbexists = function(name)
@@ -373,7 +328,7 @@ scidbls = function(...) scidblist(...)
 # Basic low-level query. Returns query id. This is an internal function.
 # query: a character query string
 # afl: TRUE indicates use AFL, FALSE AQL
-# async: TRUE=Ignore return value and return immediately, FALSE=wait for return
+# async: Does not do anything right now. Maybe in the future.
 # save: Save format query string or NULL. If async=TRUE, save is ignored.
 # release: Set to zero preserve web session until manually calling release_session
 # session: if you already have a SciDB http session, set this to it, otherwise NULL
@@ -384,7 +339,8 @@ scidbls = function(...) scidblist(...)
 # save="(double NULL, int32)"
 #
 # Returns the HTTP session in each case
-scidbquery = function(query, afl=TRUE, async=FALSE, save=NULL, release=1, session=NULL, resp=FALSE)
+scidbquery = function(query, afl=TRUE, async=FALSE, save=NULL,
+                      release=1, session=NULL, resp=FALSE, interrupt=FALSE)
 {
   DEBUG = FALSE
   if(!is.null(options("scidb.debug")[[1]]) && TRUE==options("scidb.debug")[[1]]) DEBUG=TRUE
@@ -400,36 +356,38 @@ scidbquery = function(query, afl=TRUE, async=FALSE, save=NULL, release=1, sessio
     cat(query, "\n")
     t1=proc.time()
   }
-  if(async)
-  {
-    ans =tryCatch(
-      GET("/execute_query",list(id=sessionid,release=release,query=query,async='1',afl=as.integer(afl)),async=TRUE),
-      error=function(e) {
-        GET("release_session", list(id=sessionid))
-        stop("HTTP/1.0 500 ERROR")
-      })
-  } else
-  {
-    ans = tryCatch(
-      {
-      if(is.null(save))
-        GET("/execute_query",list(id=sessionid,release=release,query=query,afl=as.integer(afl)))
-      else
-        GET("/execute_query",list(id=sessionid,release=release,save=save,query=query,afl=as.integer(afl)))
-      },
-      error=function(e) {
-        GET("/release_session",list(id=sessionid))
-        "HTTP/1.0 500 ERROR"
-      })
-    w = ans
-    err = 200
-    if(nchar(w)>9)
-      err = as.integer(strsplit(substr(w,1,20)," ")[[1]][[2]])
-    if(err>399)
+  ans = tryCatch(
     {
-      w = paste(strsplit(w,"\r\n\r\n")[[1]][-1],collapse="\n")
-      stop(w)
-    }
+      if(is.null(save))
+        GET("/execute_query",list(id=sessionid,release=release,
+             query=query,afl=as.integer(afl)),
+             interrupt=interrupt)
+      else
+        GET("/execute_query",list(id=sessionid,release=release,
+            save=save,query=query,afl=as.integer(afl)), 
+            interrupt=interrupt)
+    }, error=function(e)
+    {
+# User cancel? Note not interruptable.
+      GET("/cancel", list(id=sessionid,async='1'), async=TRUE)
+      GET("/release_session", list(id=sessionid))
+      "HTTP/1.0 206 ERROR"
+    }, interrupt=function(e)
+    {
+      GET("/cancel", list(id=sessionid,async='1'), async=TRUE)
+      GET("/release_session", list(id=sessionid))
+      "HTTP/1.0 206 ERROR"
+    })
+  w = ans
+  err = 200
+  if(nchar(w)>9)
+    err = as.integer(strsplit(substr(w,1,20)," ")[[1]][[2]])
+  if(err==206)
+  {
+    stop("HTTP request canceled\n")
+  } else if(err>206)
+  {
+    stop(strsplit(w,"\r\n\r\n")[[1]][[2]])
   }
   if(DEBUG) print(proc.time()-t1)
   if(resp) return(list(session=sessionid, response=ans))
@@ -441,18 +399,44 @@ scidbquery = function(query, afl=TRUE, async=FALSE, save=NULL, release=1, sessio
 # x (character): a vector or single character string listing array names
 # error (function): error handler. Use stop or warn, for example.
 # async (optional boolean): If TRUE use expermental shim async option for speed
+# force (optional boolean): If TRUE really remove this array, even if scidb.safe_remove=TRUE
+# recursive (optional boolean): If TRUE, recursively remove this array and its dependency graph
 # Output:
 # null
-scidbremove = function(x, error=warning, async)
+scidbremove = function(x, error=warning, async, force, warn=TRUE, recursive=FALSE) UseMethod("scidbremove")
+scidbremove.default = function(x, error=warning, async, force, warn=TRUE, recursive=FALSE)
 {
   if(is.null(x)) return(invisible())
   if(missing(async)) async=FALSE
-  if(inherits(x,"scidb")) x = x@name
-  if(!inherits(x,"character")) stop("Invalid argument. Perhaps you meant to quote the variable name(s)?")
-  for(y in x) {
-    if(grepl("\\(",y)) next
-    tryCatch( scidbquery(paste("remove(",y,")",sep=""),async=async, release=1),
-              error=function(e) error(e))
+  if(missing(force)) force=FALSE
+
+  safe = options("scidb.safe_remove")[[1]]
+  if(is.null(safe)) safe = TRUE
+  if(!safe) force=TRUE
+  uid = get("uid",envir=.scidbenv)
+  if(is.scidb(x) || is.scidbdf(x)) x = list(x)
+  for(y in x)
+  {
+# Depth-first, a bad way to traverse this XXX improve
+    if(recursive && (is.scidb(y) || is.scidbdf(y)) && !is.null(unlist(y@gc$depend)))
+    {
+      for(z in y@gc$depend) scidbremove(z,error,async,force,warn,recursive)
+    }
+    if(is.scidb(y) || is.scidbdf(y)) y = y@name
+    if(grepl("\\(",y)) next  # Not a stored array
+    query = sprintf("remove(%s)",y)
+    if(grepl(sprintf("^R_array.*%s$",uid),y,perl=TRUE))
+    {
+      tryCatch( scidbquery(query,async=async, release=1),
+                error=function(e) if(!recursive && warn)print(e))
+    } else if(force)
+    {
+      tryCatch( scidbquery(query,async=async, release=1),
+                error=function(e) if(!recursive && warn)print(e))
+    } else if(warn)
+    {
+      warning("The array ",y," is protected from easy removal. Specify force=TRUE if you really want to remove it.")
+    }
   }
   invisible()
 }
@@ -472,8 +456,9 @@ df2scidb = function(X,
 {
   if(!is.data.frame(X)) stop("X must be a data frame")
   if(missing(start)) start=1
+  start = as.numeric(start)
   if(missing(gc)) gc=FALSE
-  if(missing(nullable)) nullable = as.vector(unlist(lapply(X,function(x) any(is.na(x)))))
+  if(missing(nullable)) nullable = TRUE
   if(length(nullable)==1) nullable = rep(nullable, ncol(X))
   if(length(nullable)!=ncol(X)) stop ("nullable must be either of length 1 or ncol(X)")
   if(!is.null(types) && length(types)!=ncol(X)) stop("types must match the number of columns of X")
@@ -492,6 +477,7 @@ df2scidb = function(X,
   if(missing(chunkSize)) {
     chunkSize = min(nrow(X),10000)
   }
+  chunkSize = as.numeric(chunkSize)
   m = ceiling(nrow(X) / chunkSize)
 
 # Default type is string
@@ -539,7 +525,7 @@ df2scidb = function(X,
 
 # Post the input string to the SciDB http service
   uri = URI("upload_file",list(id=session))
-  tmp = postForm(uri=uri, uploadedfile=fileUpload(contents=scidbInput,filename="scidb",contentType="application/octet-stream"),.opts=curlOptions(httpheader=c(Expect=""),'ssl.verifypeer'=0))
+  tmp = postForm(uri=uri, uploadedfile=fileUpload(contents=scidbInput,filename="scidb",contentType="application/octet-stream"),.opts=curlOptions(httpheader=c(Expect=""),'ssl.verifyhost'=as.integer(options("scidb.verifyhost")),'ssl.verifypeer'=0))
   tmp = tmp[[1]]
   tmp = gsub("\r","",tmp)
   tmp = gsub("\n","",tmp)
@@ -568,10 +554,10 @@ df2scidb = function(X,
   }
   if(type!="double") stop("Sorry, the package only supports double-precision sparse matrices right now.")
   schema = sprintf(
-      "< val : %s >  [i=%.0f:%.0f,%.0f,%.0f, j=%.0f:%.0f,%.0f,%.0f]", type, start[[1]],
+      "< val : %s null>  [i=%.0f:%.0f,%.0f,%.0f, j=%.0f:%.0f,%.0f,%.0f]", type, start[[1]],
       nrow(X)-1+start[[1]], min(nrow(X),rowChunkSize), rowOverlap, start[[2]], ncol(X)-1+start[[2]],
       min(ncol(X),colChunkSize), colOverlap)
-  schema1d = sprintf("<i:int64, j:int64, val : %s>[idx=0:*,100000,0]",type)
+  schema1d = sprintf("<i:int64 null, j:int64 null, val : %s null>[idx=0:*,100000,0]",type)
 # Obtain a session from shim for the upload process
   session = getSession()
   if(length(session)<1) stop("SciDB http session error")
@@ -584,18 +570,19 @@ df2scidb = function(X,
 # Upload the data
 # XXX I couldn't get RCurl to work using the fileUpload(contents=x), with 'x'
 # a raw vector. But we need RCurl to support SSL. As a work-around, we save
-# the object. This copy sucks and must be fixed.
+# the object. This copy sucks and must be fixed. XXX problem is in RCurl, see
+# scidb-functions.R.
   fn = tempfile()
-  bytes = writeBin(as.vector(t(matrix(c(X@i + start[[1]],j + start[[2]], X@x),length(X@x)))),con=fn)
+  bytes = writeBin(.Call("scidb_raw",as.vector(t(matrix(c(X@i + start[[1]],j + start[[2]], X@x),length(X@x)))),PACKAGE="scidb"),con=fn)
   url = URI("/upload_file",list(id=session))
   ans = postForm(uri = url, uploadedfile = fileUpload(filename=fn),
-                 .opts = curlOptions(httpheader = c(Expect = ""),'ssl.verifypeer'=0))
+                 .opts = curlOptions(httpheader = c(Expect = ""),'ssl.verifyhost'=as.integer(options("scidb.verifyhost")),'ssl.verifypeer'=0))
   unlink(fn)
   ans = ans[[1]]
   ans = gsub("\r","",ans)
   ans = gsub("\n","",ans)
 
-  query = sprintf("store(redimension(input(%s,'%s',0,'(double,double,double)'),%s),%s)",schema1d, ans, schema, name)
+  query = sprintf("store(redimension(input(%s,'%s',0,'(double null,double null, double null)'),%s),%s)",schema1d, ans, schema, name)
   iquery(query)
   scidb(name,gc=gc)
 }
@@ -603,7 +590,7 @@ df2scidb = function(X,
 
 iquery = function(query, `return`=FALSE,
                   afl=TRUE, iterative=FALSE,
-                  n=Inf, excludecol, ...)
+                  n=10000, excludecol, ...)
 {
   if(!afl && `return`) stop("return=TRUE may only be used with AFL statements")
   if(iterative && !`return`) stop("Iterative result requires return=TRUE")
@@ -611,7 +598,7 @@ iquery = function(query, `return`=FALSE,
   if(missing(excludecol)) excludecol=NA
   if(iterative)
   {
-    sessionid = scidbquery(query,afl,async=FALSE,save="lcsv+",release=0)
+    sessionid = scidbquery(query,afl,async=FALSE,save="lcsv+",release=0,interrupt=TRUE)
     return(iqiter(con=sessionid,n=n,excludecol=excludecol,...))
   }
   qsplit = strsplit(query,";")[[1]]
@@ -623,22 +610,33 @@ iquery = function(query, `return`=FALSE,
     {
       ans = tryCatch(
        {
-        sessionid = scidbquery(query,afl,async=FALSE,save="lcsv+",release=0)
-        result = GET("/read_lines",list(id=sessionid,n=as.integer(n+1)),header=FALSE)
+        sessionid = scidbquery(query,afl,async=FALSE,save="lcsv+",release=0, interrupt=TRUE)
+        result = tryCatch(
+          {
+            GET("/read_lines",list(id=sessionid,n=as.integer(n+1)),header=FALSE,interrupt=TRUE)
+          },
+          error=function(e)
+          {
+# Not used yet. It will be important when shim is modified to stream
+# results back. XXX TODO
+#            GET("/cancel",list(id=sessionid))
+             GET("/release_session",list(id=sessionid))
+             stop(e)
+          })
+        GET("/release_session",list(id=sessionid))
 # Handle escaped quotes
-        result = gsub("\\\\'","''",result)
-        result = gsub("\\\\\"","''",result)
+        result = gsub("\\\\'","''",result, perl=TRUE)
+        result = gsub("\\\\\"","''",result, perl=TRUE)
+# Map SciDB missing (aka null) to NA, but preserve DEFAULT null.
+# This sucks, need to avoid this parsing and move on to binary xfer.
+        result = gsub("DEFAULT null","@#@#@#kjlkjlkj@#@#@555namnsaqnmnqqqo",result,perl=TRUE)
+        result = gsub("null","NA",result, perl=TRUE)
+        result = gsub("@#@#@#kjlkjlkj@#@#@555namnsaqnmnqqqo","DEFAULT null",result,perl=TRUE)
         val = textConnection(result)
         ret = tryCatch({
                 read.table(val,sep=",",stringsAsFactors=FALSE,header=TRUE,...)},
                 error=function(e){ warning(e);c()})
         close(val)
-        GET("/release_session",list(id=sessionid))
-        chr = sapply(ret, function(x) "character" %in% class(x))
-        if(any(chr))
-        {
-          for(j in which(chr)) ret[ret[,j]=="null",j] = NA
-        }
         ret
        }, error = function(e)
            {
@@ -744,155 +742,30 @@ iqiter = function (con, n = 1, excludecol, ...)
 #  x = paste(x,collapse="")
 #  ans = paste(x,collapse="")
 
-  ans = .Call("df2scidb",X,as.integer(chunksize), as.double(round(start)), "%.15f")
+  ans = .Call("df2scidb",X,as.integer(chunksize), as.double(round(start)), "%.15f",PACKAGE="scidb")
   ans
 }
 
-# Return a SciDB schema of a scidb object x.
-# Explicitly indicate attribute part of schema with remaining arguments
-`extract_schema` = function(x, at=x@attributes, ty=x@types, nu=x@nullable)
-{
-  if(!(inherits(x,"scidb") || inherits(x,"scidbdf"))) stop("Not a scidb object")
-  op = options(scipen=20)
-  nullable = rep("",length(nu))
-  if(any(nu)) nullable[nu] = " NULL"
-  attr = paste(at,ty,sep=":")
-  attr = paste(attr, nullable,sep="")
-  attr = sprintf("<%s>",paste(attr,collapse=","))
-  dims = sprintf("[%s]",paste(paste(paste(paste(paste(paste(x@D$name,"=",sep=""),x@D$start,sep=""),x@D$start+x@D$length-1,sep=":"),x@D$chunk_interval,sep=","),x@D$chunk_overlap,sep=","),collapse=","))
-  options(op)
-  paste(attr,dims,sep="")
-}
-
 # Internal utility function, make every attribute of an array nullable
-`make_nullable` = function(x)
+make_nullable = function(x)
 {
   cast(x,sprintf("%s%s",build_attr_schema(x,nullable=TRUE),build_dim_schema(x)))
 }
 
-# Build the attribute part of a SciDB array schema from a scidb, scidbdf object.
-# Set prefix to add a prefix to all attribute names.
-# I: optional vector of dimension indices to use, if missing use all
-# newnames: optional vector of new dimension names, must be the same length
-#    as I.
-# nullable: optional vector of new nullability expressed as FALSE or TRUE,
-#    must be the same length as I.
-`build_attr_schema` = function(A, prefix="", I, newnames, nullable)
-{
-  if(missing(I)) I = rep(TRUE,length(A@attributes))
-  if(!(class(A) %in% c("scidb","scidbdf"))) stop("Invalid SciDB object")
-  if(is.logical(I)) I = which(I)
-  N = rep("", length(I))
-  N[A@nullable[I]] = " NULL"
-  if(!missing(nullable))
+noE = function(w) sapply(w,
+  function(x)
   {
-    N = rep("", length(I))
-    N[nullable] = " NULL"
-  }
-  N = paste(A@types[I],N,sep="")
-  attributes = paste(prefix,A@attributes[I],sep="")
-  if(!missing(newnames)) attributes = newnames
-  S = paste(paste(attributes,N,sep=":"),collapse=",")
-  sprintf("<%s>",S)
-}
-
-`noE` = function(w) sapply(w, function(x) sprintf("%.0f",x))
-
-# Build the dimension part of a SciDB array schema from a scidb,
-# scidbdf object.
-# A: A scidb or scidbdf object
-# bracket: if TRUE, enclose dimension expression in square brackets
-# I: optional vector of dimension indices to use, if missing use all
-# newnames: optional vector of new dimension names, must be the same length
-#    as I.
-# newlen: optional vector of new dimension lengths, must be the same length
-#    as I.
-# newstart: optional vector of new start values, must be the same length
-#    as I.
-`build_dim_schema` = function(A,bracket=TRUE, I, newnames, newlen, newstart)
-{
-  if(!(class(A) %in% c("scidb","scidbdf"))) stop("Invalid SciDB object")
-  if(!missing(I))
-  {
-    A@D$type = A@D$type[I]
-    A@D$name = A@D$name[I]
-    A@D$start = A@D$start[I]
-    A@D$length = A@D$length[I]
-    A@D$low = A@D$low[I]
-    A@D$high = A@D$high[I]
-    A@D$chunk_interval = A@D$chunk_interval[I]
-    A@D$chunk_overlap = A@D$chunk_overlap[I]
-  }
-  if(!missing(newnames))
-  {
-    A@D$name = newnames
-  }
-  if(!missing(newstart))
-  {
-    A@D$start = newstart
-  }
-  if(!missing(newlen))
-  {
-    A@D$length = newlen
-  }
-
-  low = noE(A@D$start)
-  hi = noE(A@D$length - 1 + A@D$start)
-  hi[as.numeric(hi)>=as.numeric(.scidb_DIM_MAX)] = "*"
-  hi[is.na(hi)] = "*"
-  R = paste(low,hi,sep=":")
-  S = paste(A@D$name,R,sep="=")
-  S = paste(S,noE(A@D$chunk_interval),sep=",")
-  S = paste(S,noE(A@D$chunk_overlap),sep=",")
-  S = paste(S,collapse=",")
-  if(bracket) S = sprintf("[%s]",S)
-  S
-}
-
-# SciDB rename wrapper
-rename = function(A, name=A@name, gc)
-{
-  if(!(inherits(A,"scidb") || inherits(A,"scidbdf"))) stop("`A` must be a scidb object.")
-  if(missing(gc)) gc = FALSE
-  if(exists("remove",envir=A@gc)) A@gc$remove=FALSE
-  if(A@name != name) scidbquery(sprintf("rename(%s,%s)",A@name, name))
-  A@name = name
-  if(gc)
-  {
-    A@gc$name = name
-    A@gc$remove = TRUE
-    reg.finalizer(A@gc, function(e) if (e$remove) 
-        tryCatch(scidbremove(e$name, async=TRUE), error=function(e){invisible()}), 
-            onexit = TRUE)
-  } else A@gc = new.env()
-  A
-}
-
-# .scidbdim is an internal function that retirieves dimension metadata from a
-# scidb array called "name."
-.scidbdim = function(name)
-{
-#  if(!.scidbexists(name)) stop ("not found") 
-  d = iquery(paste("dimensions(",name,")"),return=TRUE)
-# R is unfortunately interpreting 'i' as an imaginary unit I think.
-  if(any(is.na(d))) d[is.na(d)] = "i"
-  d
-}
-
-# Retrieve list of attributes for a named SciDB array (internal function).
-.scidbattributes = function(name)
-{
-  x = iquery(paste("attributes(",name,")",sep=""),return=TRUE,colClasses=c(NA,"character",NA,NA))
-# R is unfortunately interpreting 'i' as an imaginary unit I think.
-  if(any(is.na(x))) x[is.na(x)] = "i"
-  list(attributes=x[,2],types=x[,3],nullable=(x[,4]=="true"))
-}
+    if(is.character(x)) return(x)
+    sprintf("%.0f",x)
+  })
 
 # If a scidb object has the "sparse" attribute set, return that. Otherwise
-# interrogate the backing array to determine if it's sparse or not.
-is.sparse = function(x)
+# interrogate the backing array to determine if it's sparse or not.  Set
+# count=FALSE to skip the count and return TRUE if the attribute is not set.
+is.sparse = function(x, count=TRUE)
 {
   ans = attr(x,"sparse")
+  if(is.null(ans) && !count) return(TRUE)
   if(is.null(ans))
   {
     return(count(x) < prod(dim(x)))
@@ -900,23 +773,176 @@ is.sparse = function(x)
   ans
 }
 
+# Check for scidb missing flag
+is.nullable = function(x)
+{
+  any(scidb_nullable(x))
+}
+
 # Returns TRUE if version string x is greater than or equal to than version y
 compare_versions = function(x,y)
 {
- as.logical(prod(as.numeric(strsplit(as.character(x),"\\.")[[1]]) >= as.numeric(strsplit(as.character(y),"\\.")[[1]])))
+  b = as.numeric(strsplit(as.character(x),"\\.")[[1]])
+  a = as.numeric(strsplit(as.character(y),"\\.")[[1]])
+  ans = b[1] > a[1]
+  if(b[1] == a[1]) ans = b[2] >= a[2]
+  ans
 }
 
 # Reset array coordinate system to zero-indexed origin
 origin = function(x)
 {
-  N = paste(rep("null",2*length(x@D$name)),collapse=",")
-  query = sprintf("sg(subarray(%s,%s),1,-1)",x@name,N)
+  N = paste(rep("null",2*length(dimensions(x))),collapse=",")
+  GEMM.BUG = ifelse(is.logical(options("scidb.gemm_bug")[[1]]),options("scidb.gemm_bug")[[1]],FALSE)
+  if(GEMM.BUG) query = sprintf("sg(subarray(%s,%s),1,-1)",x@name,N)
+  else query = sprintf("subarray(%s,%s)",x@name,N)
   .scidbeval(query,`eval`=FALSE,depend=list(x),gc=TRUE)
 }
 
-# Silly function to return schema string from object
-schema = function(x)
+chunk_map = function()
 {
-  if(!(inherits(x,"scidb") || inherits(x,"scidbdf"))) return(NULL)
-  gsub("^array","",x@schema)
+iquery("
+project(
+ cross_join(
+  redimension(
+   apply(filter(list('chunk map'), inst=instn and attid=0), iid, int64(inst), aid, int64(arrid)),
+   <nchunks:uint64 null,
+    min_ccnt:uint32 null,
+    avg_ccnt:double null,
+    max_ccnt:uint32 null,
+    total_cnt: uint64 null>
+   [iid = 0:*,1000,0, aid= 0:*,1000,0],
+   count(*) as nchunks,
+   min(nelem) as min_ccnt,
+   avg(nelem) as avg_ccnt,
+   max(nelem) as max_ccnt,
+   sum(nelem) as total_cnt
+  ) as A,
+  redimension(
+   apply( list('arrays', true), aid, int64(id)),
+   <name: string null>
+   [aid = 0:*,1000,0]
+  ) as B,
+  A.aid, B.aid
+ ),
+ name, nchunks, min_ccnt, avg_ccnt, max_ccnt, total_cnt
+)",`return`=TRUE)
+}
+
+# Map scidbdf object column classes into R, adding an extra integer at the start for the index!
+scidbdfcc = function(x)
+{
+  if(!is.null(options("scidb.test")[[1]]))
+  {
+    cat("Using old method for data.frame import")
+    return(NA)
+  }
+  c("integer",as.vector(unlist(lapply(.scidbdftypes[scidb_types(x)],function(x) ifelse(is.null(x),NA,x)))))
+}
+
+.scidbstr = function(object)
+{
+  name = substr(object@name,1,35)
+  if(nchar(object@name)>35) name = paste(name,"...",sep="")
+  dn = "\nDimension:"
+  if(length(dimensions(object))>1) dn = "\nDimensions:"
+  cat("SciDB expression: ",name)
+  cat("\nSciDB schema: ",schema(object))
+  cat("\n\nAttributes:\n")
+  cat(paste(capture.output(print(data.frame(attribute=object@attributes,type=scidb_types(object),nullable=scidb_nullable(object)))),collapse="\n"))
+  cat(dn,"\n")
+  bounds = scidb_coordinate_bounds(object)
+  cat(paste(capture.output(print(data.frame(dimension=dimensions(object),start=bounds$start,end=bounds$end,chunk=scidb_coordinate_chunksize(object),row.names=NULL,stringsAsFactors=FALSE))),collapse="\n"))
+  cat("\n")
+}
+
+# The RCurl package does not handle interruption well, sometimes segfaulting.
+#
+# Here is an example:
+#
+#    sigint(SIG_TRP)
+#    x=getBinaryURL(url,
+#        .opts=list(noprogress=FALSE, progressfunction=curl_signal_trap))
+#    sigint(SIG_DFL)
+#
+# Note that users might have to hold down CTRL+C a while because of the tiny
+# time window it's available.
+sigint = function(val)
+{
+  .Call("sig",as.integer(val),PACKAGE="scidb")
+}
+sigstate = function()
+{
+  .Call("state",PACKAGE="scidb")
+}
+sigreset = function()
+{
+  .Call("reset",PACKAGE="scidb")
+}
+curl_signal_trap = function(down,up)
+{
+# Unforunately, RStudio doesn't seem to let us set up custom signal handlers.
+  if(SIG_TRP == SIG_IGN)
+  {
+    k = tryCatch(
+    {
+      sigint(SIG_DFL)    # Enable SIGINT
+      Sys.sleep(0.02)    # Just plain ugly
+      sigint(SIG_IGN)    # Disable
+      0L
+    }, interrupt = function(e)
+    {
+      cat("Canceling...\n",file=stderr())
+      1L
+    })
+    return(k)
+  }
+# Fast custom signal handler
+  k = sigstate()
+  if(k>0)
+  {
+    cat("Canceling...\n",file=stderr())
+    return(1L)
+  }
+  0L
+}
+
+# Walk the dependency graph, setting all upstreams array to persist
+# Define a generic persist
+persist = function(x, remove=FALSE, ...) UseMethod("persist")
+persist.default = function(x, remove=FALSE, ...)
+{
+  DEBUG = FALSE
+  if(!is.null(options("scidb.debug")[[1]]) && TRUE==options("scidb.debug")[[1]]) DEBUG=TRUE
+  if(!(is.scidb(x) || is.scidbdf(x))) return(invisible())
+  if(DEBUG) cat("Persisting ",x@name,"\n")
+  x@gc$remove = remove
+  if(is.null(unlist(x@gc$depend))) return()
+  for(y in x@gc$depend)
+  {
+    if(DEBUG) cat("Persisting ",y@name,"\n")
+    y@gc$remove = remove
+    if(!is.null(y@gc$depend)) persist(y, remove=remove)
+  }
+}
+
+# A special persist function for complicated model objects
+persist.glm_scidb = function(x, remove=FALSE, ...)
+{
+  .traverse.glm_scidb(x, persist, remove)
+}
+# A special remove function for complicated model objects
+scidbremove.glm_scidb = function(x, error=warning, async=FALSE, force=FALSE, warn=TRUE, recursive=TRUE)
+{
+  .traverse.glm_scidb(x, scidbremove, error, async, force, warn, recursive)
+}
+
+# Show the repository log (not in namespace)
+show_commit_log = function()
+{
+  log = system.file("misc/log",package="scidb")
+  if(file.exists(log))
+  {
+    file.show(log)
+  }
 }

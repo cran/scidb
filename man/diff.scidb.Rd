@@ -12,7 +12,7 @@ Apply a finite difference operator to a numeric series.
 \arguments{
   \item{x}{A \code{scidb} object with a numeric attribute.}
   \item{lag}{An intereger lag value (see description).}
-  \item{...}{Optional arguments, not presently used.}
+  \item{...}{Optional arguments, not used.}
 }
 \value{
 If 'x' is a vector of length 'n' and starting index 1, then the

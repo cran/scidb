@@ -1,24 +1,32 @@
-#/*
-#**
-#* BEGIN_COPYRIGHT
-#*
-#* This file is part of SciDB.
-#* Copyright (C) 2008-2013 SciDB, Inc.
-#*
-#* SciDB is free software: you can redistribute it and/or modify
-#* it under the terms of the AFFERO GNU General Public License as published by
-#* the Free Software Foundation.
-#*
-#* SciDB is distributed "AS-IS" AND WITHOUT ANY WARRANTY OF ANY KIND,
-#* INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY,
-#* NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR PURPOSE. See
-#* the AFFERO GNU General Public License for the complete license terms.
-#*
-#* You should have received a copy of the AFFERO GNU General Public License
-#* along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
-#*
-#* END_COPYRIGHT
-#*/
+#
+#    _____      _ ____  ____
+#   / ___/_____(_) __ \/ __ )
+#   \__ \/ ___/ / / / / __  |
+#  ___/ / /__/ / /_/ / /_/ / 
+# /____/\___/_/_____/_____/  
+#
+#
+#
+# BEGIN_COPYRIGHT
+#
+# This file is part of SciDB.
+# Copyright (C) 2008-2014 SciDB, Inc.
+#
+# SciDB is free software: you can redistribute it and/or modify
+# it under the terms of the AFFERO GNU General Public License as published by
+# the Free Software Foundation.
+#
+# SciDB is distributed "AS-IS" AND WITHOUT ANY WARRANTY OF ANY KIND,
+# INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY,
+# NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR PURPOSE. See
+# the AFFERO GNU General Public License for the complete license terms.
+#
+# You should have received a copy of the AFFERO GNU General Public License
+# along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
+#
+# END_COPYRIGHT
+#
+
 # Element-wise operations
 Ops.scidbdf = function(e1,e2) {
   switch(.Generic,
@@ -32,11 +40,23 @@ Ops.scidbdf = function(e1,e2) {
   )
 }
 
-`cbind.scidbdf` = function(x)
+cbind.scidbdf = function(x, y)
 {
-  newdim=make.unique_(x@attributes, "j")
-  nd = sprintf("%s[%s,%s=0:0,1,0]",build_attr_schema(x) , build_dim_schema(x,bracket=FALSE),newdim)
-  redimension(bind(x,newdim,0), nd)
+  if(missing(y))
+  {
+    newdim=make.unique_(x@attributes, "j")
+    nd = sprintf("%s[%s,%s=0:0,1,0]",build_attr_schema(x) , build_dim_schema(x,bracket=FALSE),newdim)
+    return(redimension(bind(x,newdim,0), nd))
+  }
+  if(!is.scidb(y) && !is.scidbdf(y)) stop("cbind requires either a single argument or two SciDB arrays")
+  i = intersect(dimensions(x),dimensions(y))
+  if(length(i)<1) stop("Non-conformable arrays") # XXX Should really try harder
+  merge(x,y,by=i)
+}
+
+rbind.scidbdf = function(x, y)
+{
+  c(x,y)
 }
 
 colnames.scidbdf = function(x)
@@ -46,11 +66,7 @@ colnames.scidbdf = function(x)
 
 rownames.scidbdf = function(x)
 {
-  if(x@D$type[1] != "string") return(c(x@D$start[1],x@D$start[1]+x@D$length[1]-1))
-  if(x@D$length[1] > options("scidb.max.array.elements"))
-    stop("Result might be too big. Perhaps try a manual query with an iterative result.")
-  Q = sprintf("scan(%s:%s)",x@name,x@D$name[1])
-  iquery(Q,return=TRUE,n=x@D$length[1]+1)[,2]
+  stop("Sorry, not implemented yet")
 }
 
 names.scidbdf = function(x)
@@ -100,31 +116,24 @@ dimnames.scidbdf = function(x)
   if(all(sapply(i,is.null)))
     if(iterative)
     {
-      ans = iquery(sprintf("%s",x@name),`return`=TRUE,iterative=TRUE,n=n,excludecol=1,colClasses=x@colClasses)
+      ans = iquery(sprintf("%s",x@name),`return`=TRUE,iterative=TRUE,n=n,excludecol=1,colClasses=scidbdfcc(x))
       return(ans)
     }
     else
     {
-      ans = iquery(sprintf("%s",x@name),`return`=TRUE,n=Inf, colClasses=x@colClasses)
+      ans = iquery(sprintf("%s",x@name),`return`=TRUE,n=Inf, colClasses=scidbdfcc(x))
       rownames(ans)= ans[,1]
       ans = ans[,-1,drop=FALSE]
       return(ans)
     }
 # Not materializing, return a SciDB array
   if(length(i)!=length(dim(x))) stop("Dimension mismatch")
-  scidbdf_subset(x,i)
+  scidbdf_subset(x,i,drop)
 }
 
 `dim.scidbdf` = function(x)
 {
-  if(length(x@dim)==0) return(NULL)
-  d = x@dim
-# Try to make arrays with '*' upper bounds seem more reasonable
-    if(d[1] - as.numeric(.scidb_DIM_MAX) == 0)
-    {
-      d[1] = x@D$high - x@D$low + 1
-    }
-  d
+  c(as.numeric(scidb_coordinate_bounds(x)$length), length(scidb_attributes(x)))
 }
 
 `dim<-.scidbdf` = function(x, value)
@@ -133,32 +142,18 @@ dimnames.scidbdf = function(x)
 }
 
 
-`str.scidbdf` = function(object, ...)
+str.scidbdf = function(object, ...)
 {
-  name = substr(object@name,1,20)
-  if(nchar(object@name)>20) name = paste(name,"...",sep="")
-  cat("SciDB array name: ",name)
-  cat("\nSciDB array schema: ",object@schema)
-  cat("\nAttributes:\n")
-  cat(paste(capture.output(print(data.frame(attribute=object@attributes,type=object@types,nullable=object@nullable))),collapse="\n"))
-  cat("\nRow dimension:\n")
-  cat(paste(capture.output(print(data.frame(object@D))),collapse="\n"))
-  cat("\n")
+  .scidbstr(object)
 }
 
-`ncol.scidbdf` = function(x) x@dim[2]
-`nrow.scidbdf` = function(x) 
+ncol.scidbdf = function(x) length(scidb_attributes(x))
+nrow.scidbdf = function(x) 
   {
-    n = x@dim[1]
-# Try to make arrays with '*' upper bounds seem more reasonable
-    if(n - as.numeric(.scidb_DIM_MAX) == 0)
-    {
-      n = x@D$high - x@D$low + 1
-    }
-    n
+    dim(x)[1]
   }
-`length.scidbdf` = function(x) x@length
-
+# This is consistent with regular data frames:
+length.scidbdf = function(x) ncol(x)
 
 
 
@@ -168,9 +163,10 @@ dimnames.scidbdf = function(x)
 # 'ui' not specified range (everything, by R convention)
 # 'ci' lookup-style range, a non-sequential numeric or labeled set, for example
 #      c(3,3,1,5,3)   or  c('a1','a3')
-scidbdf_subset = function(x, i)
+scidbdf_subset = function(x, i, drop=FALSE)
 {
   attribute_range = i[[2]]
+  if(is.logical(attribute_range)) attribute_range = which(attribute_range)
   if(is.null(attribute_range)) attribute_range = x@attributes
   if(is.numeric(attribute_range))
   {
@@ -198,16 +194,23 @@ scidbdf_subset = function(x, i)
   }
   else
   {
-    stop("This kind of indexing is not yet supported.")
+# Complicated indexing. Use scidb class. (XXX In future, do this for any index)
+    y = scidb(x, `data.frame`=FALSE)
+    return(dimfilter(y, list(i), `eval`=FALSE, drop=drop))
   }
   query = sprintf("project(%s, %s)",query, paste(attribute_range,collapse=","))
-  .scidbeval(query, `data.frame`=TRUE, gc=TRUE, eval=FALSE, depend=x)
+  if(drop && length(attribute_range)==1)
+  {
+    return(.scidbeval(query, `data.frame`=FALSE, gc=TRUE, `eval`=FALSE, depend=x))
+  }
+  .scidbeval(query, `data.frame`=TRUE, gc=TRUE, `eval`=FALSE, depend=x)
 }
 
 betweenbound = function(x, m, n)
 {
   ans = sprintf("between(%s, %.0f, %.0f)", x@name, m, n)
-# Reset just the upper dimension index (this redimension is really only a
-# meta data operation)
-  ans = sprintf("redimension(%s,%s[%s=%.0f:%.0f,%.0f,%.0f])", ans, build_attr_schema(x), x@D$name[1], x@D$start[1], n, x@D$chunk_interval[1], x@D$chunk_overlap[1])
+# Reset just the upper dimension index, use of redimension here is overkill
+# XXX FIX ME
+  schema = sprintf("%s%s",build_attr_schema(x), build_dim_schema(x,newstart=m,newend=n))
+  ans = sprintf("redimension(%s,%s)", ans, schema)
 }

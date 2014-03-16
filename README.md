@@ -8,6 +8,13 @@ library('devtools')
 install_github("SciDBR","paradigm4",quick=TRUE)
 ```
 
+Note! The SciDBR package depends on the RCurl R package, which in turn requires
+support for the curl library in your operating system. This might mean that
+you need to install a libcurl development library RPM or deb package on your
+OS. On RHEL and CentOS, this package is usually called `libcurl-devel` and on
+Ubuntu it's called `libcurl4-gnutls-dev`.
+
+
 The SciDB R package requires installation of a simple open-source HTTP network
 service called on the computer that SciDB is installed on. This service only
 needs to be installed on the SciDB machine, not on client computers that
@@ -18,8 +25,44 @@ Developers please note that R CMD check-style unit tests are skipped unless a
 system environment variable named SCIDB_TEST_HOST is set to the host name or
 I.P. address of SciDB. See the tests directory for test code.
 
+Wiki
+===
+Check out (and feel free to contribute to) examples in the wiki pages for
+this project here:
+
+https://github.com/Paradigm4/SciDBR/wiki/_pages
+
+This project also has a pretty web page on Github here:
+
+https://Paradigm4.github.io/SciDBR
+
 New features
 ===
+
+## Database-related updates
+
+* Support for SciDB version 14.3--also supports older SciDB releases, but not actively tested
+* Dropping arrays from other R sessions requires a non-default option facilitating multiple-user settings.
+* Queries can be canceled with R user interrupts now (for example with CTRL + C or ESC).
+
+## More functions
+
+* Support for Paradigm4 glm and a basic in-database model matrix builder
+* Support for Paradigm4 truncated SVD routine
+* Added hist, quantile, all.equal, antijoin, c (SciDB concat-like) function and many others
+
+
+## Better handling of missing values
+
+The array-like and dataframe-like classes now handle missing values in a
+uniform way. All SciDB missing codes are mapped to R NA values and R NA values
+are mapped to SciDB missing code zero.
+
+## Windowed and moving-window aggregates
+
+Multidimensional windowed and moving-window aggregates are now supported with
+simple syntax in the `aggregate` function. Windows can be defined along
+coordinate axes or number of (sparse) data values.
 
 ## Labeled coordinates
 

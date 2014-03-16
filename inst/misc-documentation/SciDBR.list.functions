@@ -1,0 +1,2 @@
+#!/bin/bash
+cat ../../NAMESPACE | sed /^useDyn/d | sed /^import/d | sed /^#/d | sed /^$/d  | sed -e 's/.*("//' | tr ',' '\n' | sed -e 's/".*//' | sed -e 's/)//' | sed /^$/d | sort | uniq  | pr -4 -a -t -e" 8" -i" 1" -

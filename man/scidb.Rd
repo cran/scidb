@@ -7,11 +7,10 @@ Create a \code{scidb} reference object.
 Create an array-like R object reference to a SciDB array.
 }
 \usage{
-scidb(name, attribute, gc, `data.frame`)
+scidb(name, gc, `data.frame`)
 }
 \arguments{
   \item{name}{Name of the SciDB array to reference. }
-  \item{attribute}{Name of an attribute within the array.}
   \item{gc}{TRUE means SciDB array shall be removed when R object is garbage collected or R exits. FALSE means SciDB array persists.}
   \item{data.frame}{Return a data.frame-like object (requires 1D SciDB array).}
 }
@@ -21,12 +20,7 @@ may be represented as data.frame-like objects in which the SciDB array
 attributes appear as data.frame columns. Alternatively, 1-d SciDB arrays
 may be represented as vectors by setting \code{data.frame=FALSE}.
 
-SciDB arrays of dimension 2 or more appear as R arrays. In such cases, one of
-the SciDB attributes is used as the primary attribute for display and
-arithmetic computation.  If the SciDB array contains more than one attribute,
-use the attribute argument to specify which attribute to use in the reference
-object. The first listed attribute is used by default if no attribute is
-specified.
+SciDB arrays of dimension 2 or more appear as R arrays.
 
 Data frame like representations use the \code{scidbdf} class.
 N-d array objects and vectors use the \code{scidb} class.

@@ -1,0 +1,3599 @@
+commit 64acd2e87e9dc1e6046c488d39be2612223485c7
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 16 11:19:14 2014 -0400
+
+    Updated README
+
+commit 89bf0bc77c73a8931d96f1f0cc1453bac59e9f25
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 16 11:14:01 2014 -0400
+
+    updated log
+
+commit f74215dde7e93d6c56e5cabb5afa4e9cc0a1fdf9
+Merge: ac7fa99 0746e04
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 16 11:13:22 2014 -0400
+
+    Merged laboratory branch
+
+commit 0746e045e00ffe4b70b2c216defc8b96a226e6a1
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 16 11:11:00 2014 -0400
+
+    Updated vignette
+
+commit e535509d45ad978876840274bae731693310972a
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 16 10:33:05 2014 -0400
+
+    Improved labeled indexing to try to automatically handle index arrays with more than one dimension by just using the first one; also improved slice
+
+commit 01e375486495c8d5358cddd262fbb3531fce672a
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 16 09:05:53 2014 -0400
+
+    Added count argument to internal is.sparse function
+
+commit e5534806a6523be14c95715873234396e7e42d4b
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 16 08:51:50 2014 -0400
+
+    log record update
+
+commit b7308ade9e60e28f42d0f505ccea8e94fb1315f1
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 16 08:51:28 2014 -0400
+
+    Removed dist function from namespace pending performance improvements
+
+commit 6b22ae9f5ddd574fadd4def3f5c4cf047927b9bd
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Apr 14 10:14:48 2014 -0400
+
+    typos
+
+commit 7a94377347ad1211ac21cf8abcf2164957ef03dc
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Apr 14 09:48:04 2014 -0400
+
+    Added scidb_fisher.test
+
+commit 5be619612a2b7f455137f82c3146ce983b6814b3
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Apr 11 09:50:11 2014 -0400
+
+    More aggregate changes for performance
+
+commit 5e8c684fa6099241462164dcbd1ee90a160dad56
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Apr 10 08:55:09 2014 -0400
+
+    Added an experimental attempt to rationally pick chunk sizes in aggregate when aggregating by attributes. This needs improvement.
+
+commit 005ad22a43784f29a19bfb6e61c9fa1428fafd32
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 9 23:37:35 2014 -0400
+
+    log update
+
+commit f54757520dc16227babfea142f7e2434729165da
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 9 23:35:43 2014 -0400
+
+    Added new tsvd option (low-level)
+
+commit cee26e39c9c6c38eccaa959914b8cfae0bf82459
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 9 23:23:48 2014 -0400
+
+    More merge fixes
+
+commit 730edb0be56e381dd1fb41887947bd68f7b0b9fb
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 9 22:56:35 2014 -0400
+
+    Experimental redim flag on bracket function for scidb objects
+
+commit ba96b00d04f26e7d3402e5a6eb7787f908cbe8ad
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 9 22:48:56 2014 -0400
+
+    merge cross case enforces sane chunk sizes in dense case
+
+commit a6493a6812408ba78c2e3723d05ca2e22cc822d8
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 9 22:09:20 2014 -0400
+
+    Generic head problem
+
+commit ac09cf73e4453a0f72cdb63d0c8dd886b365a46e
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 9 19:53:03 2014 -0400
+
+    More bugs in the merge full cross case
+
+commit a6d494e90d5e84a9091010927a7444bfa7429677
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 9 19:01:29 2014 -0400
+
+    Fixed attribute name conflict in merge cross case
+
+commit 200c2b2ca9dfa8461758ed4f7676cf7f6803362e
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 9 18:03:04 2014 -0400
+
+    Fixed a damn bug in build_attr_schema
+
+commit b977f2992cc937777faccf6d6b2023809e074dfd
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 9 08:55:03 2014 -0400
+
+    Improved dimname assignment (added reshape, but I'm wary about overuse of reshape...)
+
+commit 848ba2713ad66d3928189e7c5ce181f87a42d264
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Apr 7 22:58:14 2014 -0400
+
+    New package option: scidb.verifyhost. Still need to doc this
+
+commit ccce0005365878bf5cb01f9969d2cef766f56012
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Apr 7 22:46:54 2014 -0400
+
+    We disabled ssl.verifyhost because Amazon EC2 hostnames usually don't match their DNS host names, preventing us from talking on encrypted session to EC2 (where we need them most).
+
+commit b8a07a7ed470f60d853ae6070d5a3ccb1a3d05a2
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Apr 7 22:45:29 2014 -0400
+
+    Disabled ssl.verifyhost
+
+commit b3b2acdae4649331671b53d405d58d733c3b60bf
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Apr 7 20:57:39 2014 -0400
+
+    Renamed show_github_log to show_commit_log and promoted it to a function in the package namespace
+
+commit ac7fa99ae6f16d8e5e719065edfb9d0ede2edaee
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Apr 7 20:49:45 2014 -0400
+
+    Fixed https://github.com/Paradigm4/SciDBR/issues/36
+
+commit 1f1200b10edbec7b4cbc85039b27783ac85988c4
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Apr 7 19:49:08 2014 -0400
+
+    Fixed https://github.com/Paradigm4/SciDBR/issues/36
+
+commit 17c3947a3e1281d1cc02845bb374cc9343030834
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 29 19:31:29 2014 -0400
+
+    Added $ operator as shorthand for project to n-d arrays. Why not?
+
+commit 8099b427296d58402c2ad9dc280836ffd7a2757e
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 29 19:31:16 2014 -0400
+
+    Added $ operator as shorthand for project to n-d arrays. Why not?
+
+commit 0e8a8e4770e36bd6cbd5a041cdd3b4a226cb2bb4
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 29 10:06:19 2014 -0400
+
+    removed full outer join from all.equal (more efficient to use count)
+
+commit 369cc91ffb0dbe41080987958d0616fcc9378818
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 29 10:06:04 2014 -0400
+
+    removed full outer join from all.equal (more efficient to use count)
+
+commit e62a116d5135435dd2d32c813926aa8dd0234b72
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 29 09:55:21 2014 -0400
+
+    Merged important fixes, test passing
+
+commit 3710561e5f57b7be125c3830c943036caa72d680
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 29 09:51:35 2014 -0400
+
+    Fixed a bug in the cross_join merge case; improved all.equal
+
+commit 8efed3c0907bdd798ce9de12f7383a1149e92de6
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Thu Mar 27 12:20:53 2014 -0400
+
+    Work-around for schema bug in spgemm
+
+commit cb9d0a0b35cb458377dfe19bc9e19dcd9c96f27c
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Thu Mar 27 12:20:38 2014 -0400
+
+    Work-around for schema bug in spgemm
+
+commit f938a9dd3de95ee8c0e78222da3394dce0887574
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Thu Mar 27 11:59:14 2014 -0400
+
+    Work-around for schema bug in spgemm
+
+commit 079ec9b5e48613cb328b85015f62e900c0c81a9a
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Thu Mar 27 11:58:56 2014 -0400
+
+    Work-around for schema bug in spgemm
+
+commit b633f65ba0acc6c43921188e3bbf4dd36b191322
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Thu Mar 27 11:45:52 2014 -0400
+
+    Fixed a bug in rename
+
+commit 2c15a1780fae89f18facad8d5c65d5dde2bfb3f3
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Thu Mar 27 11:29:00 2014 -0400
+
+    Fixed a bug in rename
+
+commit f211328dc2d697c21e29036c33486d9caff621ca
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Thu Mar 27 08:55:24 2014 -0400
+
+    Fixed image bug
+
+commit 82d4c41411bbaa3407a2632b633193af2466540f
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Wed Mar 26 00:05:36 2014 -0400
+
+    Fixed bug with sparse arrays and negative exponents
+
+commit 7a8e0853c2f9c6c9093416e1476f2bd46e5f24e2
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Wed Mar 26 00:04:39 2014 -0400
+
+    Fixed bug with sparse arrays and negative exponents
+
+commit 5f2f582f4406af90dff6c98cdc4a6b1d0537a132
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 25 23:45:38 2014 -0400
+
+    Added show_github_log utility function
+
+commit cc387696336d79c21458416ca111e4a5bfee66b1
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 25 23:41:34 2014 -0400
+
+    Added show_github_log utility function
+
+commit 845197dd9df2ee75e00989d17666508ec1e95635
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 25 23:33:52 2014 -0400
+
+    Added doc for quantile
+
+commit b5f5a34c0da6f518f75d492179bd13c8c6755d9d
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 25 23:14:04 2014 -0400
+
+    Fixed yet another subtle merge bug affecting arrays with mismatched starting/ending indices
+
+commit 0f45edd19aa33f872906db2c6da6d57d2882417a
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 25 23:08:28 2014 -0400
+
+    The _rename functions now default old to the current list of attributes or dimensions
+
+commit 45943826a7ab2380f79180b83c5c08172ec62eae
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 25 21:50:49 2014 -0400
+
+    Many improvements to merge, fixed bugs in binary infix operators, new quantile function
+
+commit a66d0f944de8ec00a9ef35d4a4d30ad5410f5f0e
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Mon Mar 24 12:37:35 2014 -0400
+
+    New man pages for Alex's functions
+
+commit d0d32389d33e8faed417d77dfcdee54b42dd740d
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Mon Mar 24 12:06:12 2014 -0400
+
+    More improvements to scidbremove, respecting warn=FALSE quiet option now
+
+commit 4b70058fe125a69ccf7df1b61b67487ac3e2c707
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Mon Mar 24 11:25:11 2014 -0400
+
+    Improved scidbremove
+
+commit 7a91077c782179d1ab900d4392482ec0f71cc0bc
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sun Mar 23 23:29:15 2014 -0400
+
+    Added antijoin and all.equal
+
+commit b3ba29625407a3e4db0db24228e1bd0a281c0050
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sun Mar 23 22:17:53 2014 -0400
+
+    Fixed issues with new generic scidbremove function
+
+commit bbd341553fc7721542aea1a74fdf1e7cde4a75c0
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sun Mar 23 22:07:22 2014 -0400
+
+    Added deep option to scidbremove (recursive)
+
+commit fd80dcb22e6e7f010c2283ca6fe22d4c1476b14a
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sun Mar 23 20:52:46 2014 -0400
+
+    Fixed several bugs in persist, added new S3 generics and convenience methods for persisting and remove glm objects
+
+commit acfffc426c779beef646e22043d652301cf73116
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sun Mar 23 18:53:02 2014 -0400
+
+    Fixed S3 method argument lists
+
+commit 3ba3b017e12a93be86dedf88f37d98ffe09c6754
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sun Mar 23 16:45:33 2014 -0400
+
+    logical indexing in project, new glm prediction function
+
+commit ab5268b0a825275a7a9344c06248484cc140d2ae
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sun Mar 23 10:51:31 2014 -0400
+
+    Fixed a bug in attribute_rename
+
+commit 1dbd4cef8b6cddd7d3ebbbfd1098d31e4dd2cade
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sun Mar 23 00:15:17 2014 -0400
+
+    Modified model_scidb to handle missing response term
+
+commit bda2c5ad5152a84300575ce7a902d7339612a51a
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 22 21:34:18 2014 -0400
+
+    Fixed a bug in compare_versions
+
+commit 39a0f97cd10f21e4456e15a89b9508c548c2233f
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 22 20:53:21 2014 -0400
+
+    Fix to support changes in show in 14.x
+
+commit 549e5377693523cd9c64fd6fdc74a407948ff58d
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 22 18:52:57 2014 -0400
+
+    Nevermind, put the 'as array' back into the show operator. The SciDBR package does not work with SciDB versions > 13.12
+
+commit fadd0d0927e5075a1a0b0dd674be5a58aed67f9d
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 22 18:23:11 2014 -0400
+
+    Removed array aliasing in show operator
+
+commit 4b78376eb96d59d23b2f7259881c4869ecb7d655
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 22 14:08:33 2014 -0400
+
+    Added description of model_scidb output in doc
+
+commit fd558376532e858d25177d36a399e92ecc96672c
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 22 12:31:05 2014 -0400
+
+    fixed typo in glm summary
+
+commit b61d8f6bd15af18161100a220c73ac8c3641b444
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 22 12:28:58 2014 -0400
+
+    fixed typo in glm summary
+
+commit 8f984e3e1e33e248eb7acff422a959bc713ab3bf
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 22 11:19:38 2014 -0400
+
+    Man page typo
+
+commit 416da16867f9862f226b42ef0975d6d7ebc7a14a
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 22 11:05:06 2014 -0400
+
+    Formatting change in glm summary
+
+commit 03d477e426f4e3e78a4d263bfd52fbcd189a26bc
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 22 01:46:26 2014 -0400
+
+    gemm.bug option tied to version
+
+commit 38a543156d45cf8fe90e641bc3e40823f6696eb3
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 22 01:41:28 2014 -0400
+
+    Switch to disable sg gemm bug workaround (still enabled by default)
+
+commit 869006314b463df6330e6f09007b425965a33980
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sat Mar 22 00:37:17 2014 -0400
+
+    New glm_scidb and model_scidb functions
+
+commit 0ef06e936d76ed6d8bd7fd304d5a914ba98280f8
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Fri Mar 21 19:56:40 2014 -0400
+
+    Improved scidb array removal protection
+
+commit 914590c771a813c30b667bebd12a199ee7eb07f5
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Fri Mar 21 18:32:33 2014 -0400
+
+    Improved reshape (added start option)
+
+commit 47631b503420d67e7f30a49f27c678d822ae5afb
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Fri Mar 21 18:17:40 2014 -0400
+
+    Added persist function, warning to scidbremove
+
+commit 1a0c0b2e03abf4e7f47ca908c1db7867158f1619
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Fri Mar 21 17:26:14 2014 -0400
+
+    Fixed head/tail issues
+
+commit aedd31c1be1b438d98688d9babd1a171d437fd60
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Fri Mar 21 16:28:17 2014 -0400
+
+    Renamed glm_scidb in anticipation of some new methods
+
+commit ba1b1d378d8219303fef789a7e98c6aed5ff8607
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Fri Mar 21 15:10:01 2014 -0400
+
+    Added reshape method to scidbdf class
+
+commit 049aad8bb2215a7cfd1ce058003cf5e3908c213f
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Fri Mar 21 15:00:02 2014 -0400
+
+    More fixes for poorly masked errors due to sigint changes.
+
+commit 485b7f8e6d876beef1581820db77d117412c50e1
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Fri Mar 21 13:48:57 2014 -0400
+
+    Fixed a few error reporting bugs introduced in the signal trapping changes
+
+commit 2b546fdece1f5336c9e152f955833fe254da26de
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Fri Mar 21 04:21:29 2014 -0400
+
+    Improved package startup
+
+commit 3da8132eb3a12547f4e994a20028a5caf5d4bc5e
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Fri Mar 21 03:58:05 2014 -0400
+
+    More signal handling work, will it never end?
+
+commit dc9db9c09ce7ca4ba4204884226ab5432e65d8b9
+Author: Bryan W. Lewis <blewis@paradigm4.com>
+Date:   Thu Mar 20 22:44:52 2014 -0800
+
+    Crude windows signal handler
+
+commit b5313fd9d50c0059149ec9391dd746d7d1dd84c3
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Thu Mar 20 22:19:26 2014 -0400
+
+    Much better SIGINT handling, but still need to test on Windows and Mac OS X
+
+commit 18e68fc166bee6139d1fb491b79b77cb56ea85e9
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Thu Mar 20 22:18:15 2014 -0400
+
+    Much better SIGINT handling, but still need to test on Windows and Mac OS X
+
+commit cd9dba08b040eff94664463b819fac842b2bf324
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Thu Mar 20 20:41:21 2014 -0400
+
+    Disable interrupt option
+
+commit 8dbbe1399961c7395214897094b47c2c75901391
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Wed Mar 19 23:54:23 2014 -0400
+
+    Fixed bug in sort that projected onto one attribute
+
+commit c5b34efe1e66dc079a27ad4d0dca85afd9e8f03d
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Wed Mar 19 23:39:38 2014 -0400
+
+    Minor improvement to substitute
+
+commit b3cad0eaa3aaec33e890443d0e5499b84179b65c
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Wed Mar 19 23:35:27 2014 -0400
+
+    Corrected a schema parsing bug that resulted in 'DEFAULT NA' instead of 'DEFAULT null'
+
+commit edeab493fe33b86ee5830582e4f5330805ffe514
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Wed Mar 19 21:49:55 2014 -0400
+
+    Removed unused variable
+
+commit 6676e9180522bcfd23dda3bdfa12ca548027610d
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Wed Mar 19 15:15:04 2014 -0400
+
+    Query abort
+
+commit 89b743de77aef934307a6c51a8fc9f4fea7ee824
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Wed Mar 19 11:19:08 2014 -0400
+
+    Added work-around for RCurl SIGINT bad behavior
+
+commit e137f8e6c07d741c656f4e8a11e0bf113f5ab462
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Wed Mar 19 11:18:42 2014 -0400
+
+    Added work-around for RCurl SIGINT bad behavior
+
+commit 5d5f64f86636108d4bf8ccd4b46689eceb5dc305
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Wed Mar 19 00:32:41 2014 -0400
+
+    Improved printing
+
+commit 3c752dad6232e17ca671f67af7398edd75b5a0e5
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Wed Mar 19 00:32:19 2014 -0400
+
+    Improved printing
+
+commit 07f05558b364a209bd5738993ea5ec463e6f03df
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 18 20:50:59 2014 -0400
+
+    Improved str printing
+
+commit f9f0ee25148531eb1d9442ea6867004f86c112ca
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 18 20:44:49 2014 -0400
+
+    Improved str printing
+
+commit 5dac6f0d7720abd030764f8da0382226dd939e59
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 18 19:36:27 2014 -0400
+
+    New class structure, passing tests finally
+
+commit 4641a431df540ffdce1b6e11a9186e5dddf2fc3b
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 18 19:27:15 2014 -0400
+
+    Changed merge function default
+
+commit c35d8c18702969218830c1238a0a971ad0477ee6
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 18 19:20:01 2014 -0400
+
+    Changed merge function default
+
+commit 17b184a660d2eeaa65f01d7e109e675c9168398e
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 18 19:02:46 2014 -0400
+
+    Improved printing
+
+commit 76c47027add175a409329356317b62ec529dcef7
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 18 18:57:49 2014 -0400
+
+    Improved printing
+
+commit 69b4913b1f5b5e559264c7c0c799be6148fa0d72
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 18 17:36:55 2014 -0400
+
+    Misc typos
+
+commit c4f0d24992b7eb9b5f958c33df564565be906b0f
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 18 16:30:34 2014 -0400
+
+    bumped up version number
+
+commit 5affb7a1b69d93312a1991799e4434f250797074
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 18 16:25:44 2014 -0400
+
+    Class cleanup
+
+commit dd3e6ff7172bb8296e4061d502b6d40d47723989
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 18 16:05:30 2014 -0400
+
+    Class update nearly ready
+
+commit a3eaeb8fc67ec3318adc531b28e19819f7ec0760
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Tue Mar 18 15:28:45 2014 -0400
+
+    Class wrangling in process
+
+commit fcd177bc95dfcd508cee97ef2bc379193edf92d9
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Mon Mar 17 16:00:02 2014 -0400
+
+    Use of 'D' slot excised
+
+commit 768867fd8dffe99a0479b46dd42836fc89318ac2
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Mon Mar 17 15:26:26 2014 -0400
+
+    More object rejiggering
+
+commit 73d0dd0ca54c6f1f6ecba0bde189e9aa529533f9
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Mon Mar 17 14:07:16 2014 -0400
+
+    More object rejiggering
+
+commit d4556c6a885b89ea8b85b9c76da8279929e97597
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Mon Mar 17 12:31:01 2014 -0400
+
+    Working through object changes/approximately mid-way (tests OK)
+
+commit 2081e689611baecb33627a16e07fe0b257b12cb5
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sun Mar 16 21:01:40 2014 -0400
+
+    Moved generics back inline
+
+commit 6d7831cba44450fa1eaeb5380dc4e8548f681c34
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sun Mar 16 18:36:44 2014 -0400
+
+    Put generic declarations in one place; starting to consolidate schema manipulation functions in one place
+
+commit 5eaaa4469ed659d89638247144423ef519f30699
+Author: B. W. Lewis <blewis@illposed.net>
+Date:   Sun Mar 16 00:10:14 2014 -0400
+
+    Better error checking in merge function
+
+commit d35ecebba0ab3eb621fcbaec2542cd597a290d00
+Merge: 2cb5f3f fb50d2c
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Mar 13 08:25:15 2014 -0400
+
+    git Merge branch 'laboratory' Another test typo
+
+commit fb50d2c79cb8dc4408fd9d5687d97f2e8f5f2ecf
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Mar 13 08:25:05 2014 -0400
+
+    Sorry another syntax change/test failure
+
+commit 2cb5f3f5fb51bcf7f48fdb635b942b83f34d399f
+Merge: eb5f012 779a7fb
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Mar 13 08:17:23 2014 -0400
+
+    Merge branch 'laboratory'
+
+commit 779a7fb371af5b967d70095c4b4ab66c3a47b0dc
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Mar 13 08:17:02 2014 -0400
+
+    More tests
+
+commit eb5f01225fe451bf9e1069dfe54ee07f6f0d0015
+Merge: 93aad7c ab07c0d
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Mar 13 08:10:08 2014 -0400
+
+    Merge branch 'laboratory'
+
+commit ab07c0d114d8c12f19dba38efab0b77aae8bd808
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Mar 13 08:09:50 2014 -0400
+
+    Fixed build error in test
+
+commit 93aad7cb15b839bf22fcd914fa5febcc4847c4a3
+Merge: 42731ab f723272
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Mar 13 08:06:22 2014 -0400
+
+    Merge branch 'laboratory'
+
+commit f7232729f6da182059d9fce9049728ad5953bfb0
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Mar 13 08:03:55 2014 -0400
+
+    Positional or character arguments for attribute/dimension rename, doc update for c and distributions
+
+commit 90ae479b179785e216f87b72cd3214ec5efb7980
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Mar 13 07:56:49 2014 -0400
+
+    Positional or character arguments for attribute/dimension rename, doc update for c and distributions
+
+commit dcd61c5e06b6eb501f7a771c5705b3f9167c0d08
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Mar 12 22:59:24 2014 -0400
+
+    Fixed bug in experimental concat method
+
+commit 1a40d37f0dff74dc78b95f2f27f941407cbce5ec
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Mar 12 17:51:04 2014 -0400
+
+    Switched default aggregate behavior to unpack=FALSE
+
+commit 86dce1ed2b1c5402085263a33e92af9820f98d89
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Mar 12 17:20:41 2014 -0400
+
+    Fixed a bug in the hack that displays 'unsupported' array types
+
+commit 6736eb8bf9e35fbcf15bcdd87f4d737d787eb3ec
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Mar 12 16:51:36 2014 -0400
+
+    Fixed missing dependency in non-consecutive special indexing
+
+commit d50b685f7cced4f9ea2811d6ed49c98c8c7ed129
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Mar 12 15:38:36 2014 -0400
+
+    Added scidb.safe_remove option
+
+commit 99d14f9543159ad6ffc4b1ef330a8b93bd3e0aad
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Mar 12 15:37:11 2014 -0400
+
+    Added scidb.safe_remove option
+
+commit 479e3b443a53f04cc36d25c5dda705d887b1d466
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Mar 12 15:01:39 2014 -0400
+
+    Added scidb.safe_remove option
+
+commit 8e63927f48b138fbd9bf2e3833e51e22144933b2
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Mar 12 14:54:24 2014 -0400
+
+    Added scidb.safe_remove option
+
+commit 8866dfbbbb1944ca6998e061e0c849b0f41d0f33
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Mar 12 14:07:36 2014 -0400
+
+    Fixed special index integer indexing bug
+
+commit cda6eeb8122b7b8faa5e2b4fd4a0f9bcc82b8673
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Mar 12 13:56:57 2014 -0400
+
+    Removed deprecated (and broken) cross operator
+
+commit b3583e9febb50aa25330f9482c0307cd00cea2d4
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Mar 12 12:04:57 2014 -0400
+
+    Improved redimension auto chunk size selection
+
+commit a9597f31af9fda96c00ce14054f70ebea7ed0b06
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Mar 12 11:14:19 2014 -0400
+
+    Improved redimension auto chunk size selection
+
+commit b480ca84cfc2cef46f0efb78d1e23cd30a29528a
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Mar 12 09:37:18 2014 -0400
+
+    Tweaked redimension
+
+commit f264e07efec9c47ca966fefc108ef5ac3460094e
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Mar 12 09:16:05 2014 -0400
+
+    Tweaked redimension a bit, minor improvement
+
+commit d54e62a415393f184dfffdc0c85329e59a88ed75
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Mar 12 01:48:07 2014 -0400
+
+    An old big in reporting of scidbdf dim
+
+commit cf4bf2db602a9aad9e86847e0de0bf61942441bd
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Mar 12 00:21:42 2014 -0400
+
+    Tweaking build again
+
+commit 3c451b09045213a245311d6f431611d2c5af23ed
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Mar 12 00:20:49 2014 -0400
+
+    Tweaking build again
+
+commit d84c8214bf002fd3fc11b046f22798d2e10ab249
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Mar 12 00:18:09 2014 -0400
+
+    Tweaking build again
+
+commit bb52b708c917fe25bdfd2f34a9dcc1e9f9a54b80
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Mar 12 00:10:07 2014 -0400
+
+    Tweak to build function
+
+commit c6eecfd03cd33b0598607ca40e270127396e87a6
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Mar 12 00:07:01 2014 -0400
+
+    Improved scidb return for non-binary transfer types
+
+commit c87982461bb2572cedd534e72e9ffab610a038a2
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Mar 11 23:46:31 2014 -0400
+
+    scidbdf concat
+
+commit 003569814f9e9ab1c4c1fe96659fbc11a3405c93
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Mar 11 23:40:56 2014 -0400
+
+    scidbdf concat
+
+commit e112bbc1ee1e28e44b2f53ef45d3d30725150219
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Mar 11 21:58:22 2014 -0400
+
+    hypergeometric distribution; FIXed two bugs in scidbdf subsetting
+
+commit 6985cf9c0ae85d30df834975435e1e2a5e2aa6e3
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Mar 11 16:41:16 2014 -0400
+
+    Bug in new merge function (coordinate_bounds)
+
+commit 0be3fdab24290286093cae89d43b55607e8c288c
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Mar 11 15:48:58 2014 -0400
+
+    Added missing hist function import
+
+commit f7579809a08d071fe211f6d4adca40c7e46476b0
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Mar 11 15:33:10 2014 -0400
+
+    Fixed image and reshape method problems
+
+commit 42731ab9792db1ab2c0a144950eafd458b354ad2
+Merge: 84317c0 4d373fe
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Mar 10 12:03:21 2014 -0400
+
+    Merge branch 'laboratory'
+
+commit 4d373fed4f27cb88559c3245e38cde0931dcc0ed
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Mar 10 11:52:00 2014 -0400
+
+    Added glm dependency check in tests
+
+commit bc50178c6711fb2379398590e752b47a6d352346
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Mar 10 11:39:15 2014 -0400
+
+    Added glm dependency check in tests
+
+commit 3ded88f85f95c428afd6857476622448942203c1
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Mar 9 23:19:41 2014 -0400
+
+    doc cleanup
+
+commit 9fac6d38bdfcbdfc7f5d5851fbceb703e54b420a
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Mar 9 23:16:53 2014 -0400
+
+    doc cleanup
+
+commit a70725b32d270dab0a3cdee292a5770087ef16b5
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Mar 9 23:05:59 2014 -0400
+
+    Added scidb merge option to merge, doc cleanup
+
+commit 84317c061b3f04dd0e01bf918cfe94cd96beab0d
+Merge: 6243374 571f809
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Mar 9 20:41:47 2014 -0400
+
+    Merge branch 'laboratory'
+
+commit 571f8098181145eaf4ce35f187dc7abe45c65979
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Mar 9 20:38:07 2014 -0400
+
+    Updated man pages, vignette; passing tests...good to go for master merge
+
+commit d21743bfefdc58ce0c890f5d86b702b0c4a9273b
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Mar 9 20:21:23 2014 -0400
+
+    Improved filtering by SciDB arrays to accept standard R comparison syntax; fixed man page typos
+
+commit de286cb54490d552685f2e5f8602255ae116dbf9
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Mar 9 19:44:25 2014 -0400
+
+    scidbdf object now support special indices too
+
+commit 3c868a739e4a8b9f44f5a676556f430852ccf1d5
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Mar 9 18:12:05 2014 -0400
+
+    Added a between option to subarray, improved merge
+
+commit 7f798658047a66f932bc033712880e07e894e0ad
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Mar 9 17:54:44 2014 -0400
+
+    Moved merge to separate file 'cause it's so complicated. Fixed SciDB gemm bug with nullable attributes (will revise when SciDB bug is fixed); Doc cleanup. Tests are passing so we'll merge this into the master branch soon.
+
+commit 45aa905f751b248e1eecf0b63d5dd1de265409aa
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Mar 9 16:47:55 2014 -0400
+
+    Fixed a bug in merge discovered by Alex (with new test case); improved subarray function
+
+commit 2d9f761817adf2ecd3e7e6fdba1f583286555207
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Mar 9 15:49:12 2014 -0400
+
+    Fixed misuses of gsub with perl=TRUE options
+
+commit 2cf789f427d1aa694e0f8c69c4cd2ae78a235e55
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Mar 9 10:33:26 2014 -0400
+
+    Project now takes numeric attribute positions (1-indexed), better redimension
+
+commit 0edda05edc82e365ed9f2bef702708995f5d8a58
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Mar 8 18:21:31 2014 -0500
+
+    Bug in scidb-indexing-functions
+
+commit b26cc625eebb5a3553b5442e757c5069e70e66db
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Mar 7 09:12:29 2014 -0500
+
+    Added optios for default port and host
+
+commit 0be6ff23af4b677790639bce4498459826829dfa
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Feb 27 12:09:16 2014 -0500
+
+    Added median grand aggregate
+
+commit 390118b5b8aa7549c47cbf9dc597edf218f9c7a9
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Feb 27 12:07:40 2014 -0500
+
+    Added median grand aggregate
+
+commit b69fb6c53247b4e615ad561f6b9b4ba27f6e6e80
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Feb 27 12:07:23 2014 -0500
+
+    Added median grand aggregate
+
+commit 6208772cc5dcd096e5ee9d6b68d2b9d4e98d85d0
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Feb 27 10:18:29 2014 -0500
+
+    build options
+
+commit 2ab590f3ac723070e69f668293f50330c523fcb4
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Feb 27 10:12:54 2014 -0500
+
+    new build options
+
+commit 624337469fa88a2b30ac504238bf55c3d1a262bf
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Feb 25 17:11:33 2014 -0500
+
+    README mentions curl
+
+commit 3f2d65d403c0e280124b71d9219a408d56163e8d
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Feb 25 08:12:16 2014 -0500
+
+    Auto-quote character vectors in binary comparisons
+
+commit 7e49cf6355c2eeda1451afc024d43534b562b2cd
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Feb 18 11:40:22 2014 -0500
+
+    Bug in diff
+
+commit 50fc11934da22f2f5d66efdf308147e1ec614038
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Feb 18 10:10:10 2014 -0500
+
+    Added nonsparse flags to svd result to avoid count
+
+commit 50ab306ba0773d1ea9375065cc897dab8b8506aa
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Feb 18 09:41:59 2014 -0500
+
+    Added nonsparse flags to svd result to avoid count
+
+commit 36ff34b60da424fc8daf8ea578deaf39aa148249
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Feb 17 22:28:16 2014 -0500
+
+    Fixed inappropriate chunk size slection in tsvd
+
+commit 48097fa4a8e391ca87756bf232cbabf8d938929e
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Feb 17 14:59:29 2014 -0500
+
+    Added scidb.test option
+
+commit 7740a6441e3a64c803135429dfe797f14d4b3fcc
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Feb 17 12:24:06 2014 -0500
+
+    IMPORTANT: Serious architecture-specific regression bug fixed. All values could materialize to NA after this bug on amd64 architecture only. Now fixed.
+
+commit d18b8d12c105b09108ce110ffdbaf0e72b8eb4b9
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 22:12:59 2014 -0500
+
+    Note about NA values in README
+
+commit 4c0608bcbba9411e6dfb95e5f8f3c36747b3f71f
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 22:12:34 2014 -0500
+
+    Modified scidb_sample.int to produce a zero-indexed array
+
+commit 11ce64e5dbd4256c05648192fe7b1d01ef7932c4
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 21:58:37 2014 -0500
+
+    Big changes to support mapping from R NA into SciDB missing. Default array and data frame types are now flagged as nullable
+
+commit 8eb21b92efc92afaae91de97b0e00a8876574aaa
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 21:17:14 2014 -0500
+
+    Big changes to support mapping from R NA into SciDB missing. Default array and data frame types are now flagged as nullable
+
+commit 09720089529cc3e4f997cd0489fd31880024657e
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 15:44:52 2014 -0500
+
+    Man page cleanup;experimental scidb_postForm to fix bug in RCurl
+
+commit 63beeabd4e7fa368573f66ad9f628d868c281465
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 14:36:55 2014 -0500
+
+    Added hist, na.locf doc
+
+commit 77a1c2b47209a4a8f1c4ce8cd8231b53c14e103e
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 13:44:38 2014 -0500
+
+    Decided to forgo sample.int for now. Just use build and an expression
+
+commit 425ab4c4bd6c51cfb087111fae5beaea50103b16
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 13:32:51 2014 -0500
+
+    Modified scidb_sample.int to produce a zero-indexed array
+
+commit 68b8c895a5927e3110655252a7044d42a7230004
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 13:20:42 2014 -0500
+
+    Added scidb_sample.int convenience function
+
+commit 466405df4b78d263f21abce4ca104d782eeb229e
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 12:30:40 2014 -0500
+
+    Removed use of deprecated grand aggregates
+
+commit daf52ae9ee9197d63ce623550020d91e23d1d3d5
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 12:24:39 2014 -0500
+
+    Removed use of deprecated grand aggregates
+
+commit 9e3b48a4df13908edc3eb4d8774cabde73f828a1
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 12:17:37 2014 -0500
+
+    Fixed a bug in fn_scidbf
+
+commit 3bd1761dc59b822e6aee76465ab387bf5895238d
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 11:42:34 2014 -0500
+
+    Added convenience dimension_rename function
+
+commit fb67793d0bd2bc80c992e224fc90f11b3fbf4401
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 11:25:52 2014 -0500
+
+    Fixed redimension to conform to its man page
+
+commit c97a97bc93255baf3801cb002dda021641ff0ea0
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 11:22:26 2014 -0500
+
+    Added 'schema' utility function
+
+commit 39cbdaaddf481a72a44da47ff844200d46741a48
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 10:55:43 2014 -0500
+
+    Removed unneccesary unpack=TRUE clause in aggregate when group by attribute selected
+
+commit d3024dcfd52de88edf6a2fa83436b640bcc17128
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 16 10:37:19 2014 -0500
+
+    Added convenence dimensions function
+
+commit e879200e1412fcf59157add33de008c753012d1b
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Feb 15 23:40:40 2014 -0500
+
+    Improved aggregate to remove aggregates from function list when grouping by them
+
+commit aedb0bbd85b57a66bdb1a96d384b72cb6f57302c
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Feb 15 23:38:22 2014 -0500
+
+    Improved aggregate to remove aggregates from function list when grouping by them
+
+commit b13bd6d75dea61bc144643c4b8772d6f1dedec42
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Feb 15 18:06:35 2014 -0500
+
+    Basic histogram and na.locf; not yet exported or documented.
+
+commit 6d2e451f0e1cf890143f1652b986a9b89a81cf7d
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Feb 14 13:50:12 2014 -0500
+
+    Reverted slice to use slice operator instead of redimension; There is some question about best performance practice
+
+commit e4a81064b9cf9c464486817e52133b79f7e487e7
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Feb 14 11:01:50 2014 -0500
+
+    Removed some old colClasses debugging code
+
+commit 76409d76d7a61b7eee92d462530a378322b5c382
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Feb 14 00:00:33 2014 -0500
+
+    Omit defunct colClasses slot in scidbdf class; replace with run-time mapping function scidbdfcc
+
+commit 90a2a5d443ab987bc34ac23f352fe816626627ab
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Feb 13 23:21:38 2014 -0500
+
+    Added copyright banner
+
+commit 184e1cbbff356742cc12309ee22055847df525ff
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Feb 11 17:17:05 2014 -0500
+
+    experimental outer join, better name uniquness enforcement
+
+commit de313fe301277fc0dae9d455c448b0f4d298cef1
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Feb 11 17:05:25 2014 -0500
+
+    auto-name in bind
+
+commit e3f2a828c771afb85d435264d0df9275539f1dd8
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Feb 11 09:20:21 2014 -0500
+
+    Updated requirements to R 3.0.0 (because of sparseVector); Fixed a tricky bug in glm.fit dispatch; added glm.fit test, updated doc
+
+commit c372fdb406e6d4e7dc9f3e5ed40af832c7964afa
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Feb 10 12:45:40 2014 -0500
+
+    Updated README
+
+commit db983a5e845b943c2c2e553d16efaae8a05e2764
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Feb 10 11:54:49 2014 -0500
+
+    Added unique test
+
+commit d2ae849ee3c361a1f7a221b1bf28966a8ff5dc8b
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Feb 10 11:51:50 2014 -0500
+
+    Fixed a bug in unique that affected single-attribute arrays
+
+commit fb7afb206c0d79bef0f0b44d30daacca2aee7ea3
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Feb 10 06:33:45 2014 -0500
+
+    Modified apply_scidb to retain dimension of original array
+
+commit 9eb05daac788eb931861f89f8966b1167256d3ba
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Feb 10 06:24:25 2014 -0500
+
+    Fixed bug in sweep
+
+commit b897390e721f2bcdc858d67b01e549b3b8aea79f
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 9 20:40:51 2014 -0500
+
+    Moved cumulate into aggregate file
+
+commit 8ca26882b9e9f8299966ffe3c06f889b841bd204
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 9 20:08:27 2014 -0500
+
+    manpage typo
+
+commit f864746d0772e5c068dee9685acb31cac60d8f69
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 9 18:49:02 2014 -0500
+
+    New comparison operators
+
+commit 9a9c448e61f265bb491676ceb40d3eba28890972
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 9 15:13:26 2014 -0500
+
+    man page typo
+
+commit 2685a1b2ed17b6730c64c16f44ce5c97a7b392a3
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 9 14:48:27 2014 -0500
+
+    Fixed man page and test typos
+
+commit a69fcaa95273ad612b6c18e8270c13c1fcd533c8
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 9 14:32:43 2014 -0500
+
+    Improved binary comparison operators to apply to all attributes in multi-attribute array
+
+commit fb88dc6d5e4ad1ceca94262a80f1d98ea1d4ca4b
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 9 14:27:59 2014 -0500
+
+    Improved binary comparison operators to apply to all attributes in multi-attribute array
+
+commit 8fb58306d4bd75e2ec59a59f73c5a101fdb346b5
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 9 14:26:20 2014 -0500
+
+    Improved binary comparison operators to apply to all attributes in multi-attribute array
+
+commit e577affdaa003cce20626c176c4a1edc9bbeea8c
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 9 12:54:56 2014 -0500
+
+    simple aggregate syntax now applies to all attributes
+
+commit 8a3caae23b8d8db17af1a7be6ccf3b0e84152bc7
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 9 04:00:00 2014 -0500
+
+    Improved aggregate to allow a mixture of other scidb array, dimension name, and/or attribute names to group along
+
+commit 8d6ee9ba4426bc60c8cdda15cdaec43e6ebb2f75
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 9 03:16:37 2014 -0500
+
+    Fixed several problems introduced by omission of '*' coordinate bound, in particular every place sort was used. Also fixed a bug in special_index with one-dimensional arrays.
+
+commit 2a9f6b0a3020a781d80230d58a15583608d14009
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 9 03:11:29 2014 -0500
+
+    Fixed several problems introduced by omission of '*' coordinate bound, in particular every place sort was used. Also fixed a bug in special_index with one-dimensional arrays.
+
+commit a886e4a1a1067ddf76cca70467d11c0f3361d952
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 9 02:01:04 2014 -0500
+
+    Improved aggregate by scidb array when attribute names conflict
+
+commit 84776e1a598509a1d4963b7a85b5176f20fe1d31
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Feb 9 01:16:55 2014 -0500
+
+    Got rid of use of '*' coordinate bounds in most places; causes endless headaches
+
+commit f9ef2b069a2a78a68c4bdbcd928deaeba56546b8
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Feb 8 23:07:58 2014 -0500
+
+    Fixed a bug in aggregate, added tests to cover case
+
+commit 8e783ea9a87f9d76d588144f22fb67376aa4b89b
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Feb 8 21:45:53 2014 -0500
+
+    Vignette update
+
+commit 275cc56de9398f7eec15c637c00285d00902a990
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Feb 8 21:26:51 2014 -0500
+
+    Fixed issues with mean aggregates; added Filter
+
+commit 1dacf92b127fe298adc078de39b58d17190074fc
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Feb 7 22:30:41 2014 -0500
+
+    Fixed man page type
+
+commit ddbc58d1840f1dd425e0a80e0a07c8ecc527f6b7
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Feb 7 22:22:06 2014 -0500
+
+    Added min,max,medain convenience functions to aggregate/apply
+
+commit a1611fced41f07068047c02b6319bc3429493dd5
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Feb 7 22:12:15 2014 -0500
+
+    Fixed up substitute command and added to list of exports
+
+commit 5b8621688e436e24019d14e1ea92ecb9e100cf0f
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Feb 7 19:56:21 2014 -0500
+
+    Updated readme
+
+commit 2ed0b9102f76cbc9699530955dd591de9cca556e
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Feb 7 19:55:24 2014 -0500
+
+    Updated readme
+
+commit ba31959e2201f1b4c182406f863dc984339f0ec5
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Feb 7 19:49:22 2014 -0500
+
+    More tests
+
+commit 9a4bc2a37a421f1014988fbe4f8931a4ec988560
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Feb 7 19:32:05 2014 -0500
+
+    Fixed ranged indexing bug
+
+commit 9b22cb9a6ef17f10d8555e90d362bf0a1ccc7897
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Feb 7 18:21:38 2014 -0500
+
+    Limited support for int64 and uint64 in scidb array objects by coercing them to double precision real values
+
+commit c5f80913afa9a0ca31931265b866746f995da631
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Feb 7 17:40:25 2014 -0500
+
+    Added nice syntax for basic R aggregation functions in apply and aggregate
+
+commit 83d20e47550d504aafcbb5dcb63e6e6ff1042c49
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Feb 7 14:58:48 2014 -0500
+
+    Fixed a bug in special_index case that failed with nonzero starting indices
+
+commit 4184c88f195404d6c9c9a665c17bd10acd33de41
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Feb 7 11:25:52 2014 -0500
+
+    Improved drop_dim function
+
+commit bbcf89249b5860bc9d9c92c5cdb938be67188665
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Feb 7 08:36:36 2014 -0500
+
+    Got rid of now unused low/high dimension hints
+
+commit 965a3a486e10a79b64124784844109f4f09232f8
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Feb 6 23:36:53 2014 -0500
+
+    Update NEWS
+
+commit 10a1d7e775bc078a5c5f2c6a4e9c14b2f5b1cbe4
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Feb 6 23:27:37 2014 -0500
+
+    Removed use of subarray in some indexing functions. Adjusted scidbdf tests to new drop=TRUE convention
+
+commit 5141a04109d3bdb6bc3ba7319c8589854bb9a58d
+Merge: 03ee90f 4dd258e
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Feb 6 17:42:38 2014 -0500
+
+    Merge branch 'master' into laboratory
+
+commit 4dd258e2ba78754c5da84cc36041c3a1ac04271a
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Feb 6 17:42:25 2014 -0500
+
+    README.md update
+
+commit 03ee90f0973718495943f76b013cb0254e680385
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Feb 6 16:23:02 2014 -0500
+
+    Fixed serious bug in scidb-indexing-functions dimfilter function that mis-used the garbage collection environment, causing hard to diagnose unintended data removal. This bug appeared after 7753f35ebbbadc830feeb0adeb4bb337581c682a and does not affect the tagged CRAN version 1.1-1.
+
+commit cfd84e756936bea41d0840b63594646f5009c560
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Feb 6 09:00:22 2014 -0500
+
+    Lexical scope not really appropriate in the garbage collection environment; re-introduced name field and cleaned it up a bit
+
+commit bea85fc2fd73f345cbd829bbb599f928dab63f0d
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Feb 5 09:36:46 2014 -0500
+
+    Added tests for coordinate labels on more than 2 dimensions
+
+commit 8808995840e3110d2e7f7b77d5ba956ddfdb8f7f
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Feb 4 09:11:41 2014 -0500
+
+    Promotion of non-SciDB arrays to label arrays
+
+commit e596971aa23e07155fa940b16365fc0c77fc8897
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Feb 3 13:35:43 2014 -0500
+
+    Improved scidb rename function
+
+commit ccdf5fdb6f6b1210bdde03527f6c45e7dde0af3a
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Feb 3 12:35:45 2014 -0500
+
+    Set iquery default return line limit to 10k (was Inf)
+
+commit 8222cf34d3f8cd38fc1ac57546ec83c318a6ef99
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 30 21:40:14 2014 -0500
+
+    indexing performance woes...working on it
+
+commit 200c11f39ee8ca51c978dd03adca42bebbdcfe4e
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 30 15:44:48 2014 -0500
+
+    Improved slice function
+
+commit 654417007d4f9e839395fec54171c9f74fbb8a03
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 30 11:51:31 2014 -0500
+
+    Added internal chunk_map utility function
+
+commit e66112a8010b99b1b6c6521021d04f36152a58f1
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 30 11:27:56 2014 -0500
+
+    Improved dimname handling
+
+commit eca2cb62c674d1916398270318179072e598ed44
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 30 06:55:12 2014 -0500
+
+    Added drop dim capability for dimname indexing
+
+commit d3c81c27700b8fc4acf056adc4fd0cb9b2170fd8
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 30 06:37:22 2014 -0500
+
+    Fixed bugs in support for labeled indices for arrays of dimension n>2
+
+commit 88789c82e8f80ab0ac1e4d74fe72a14ad0c5287a
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 30 06:33:50 2014 -0500
+
+    Fixed bugs in support for labeled indices for arrays of dimension n>2
+
+commit 8dbbb0e8f468946edbe6c684ce04d6707d237ec4
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 30 06:28:01 2014 -0500
+
+    Fixed bugs in support for labeled indices for arrays of dimension n>2
+
+commit 7753f35ebbbadc830feeb0adeb4bb337581c682a
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 30 06:24:04 2014 -0500
+
+    Fixed bugs in support for labeled indices for arrays of dimension n>2
+
+commit e63f7f714af7ad500b25d1486d5564a7512037f7
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 28 12:27:33 2014 -0500
+
+    Fix for more SciDB bugs involving gemm
+
+commit 879a2314512e24daabd46d1eb8f1eb958ebe6eb1
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 28 00:49:11 2014 -0500
+
+    Added drop option to data frames
+
+commit 39376111a1b0d1207ce3a5e22457cb16ebcc2759
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 28 00:23:39 2014 -0500
+
+    Re-ordered cross_join in special binary operation recycling case, fixing performance issues
+
+commit 2b89b27db2312ed9573026ea365f12d59e962370
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 27 21:43:05 2014 -0500
+
+    Added experimental column-scaling abuse of recycling (slightly different from normal R behavior, but useful)
+
+commit f77df5c1accaccee6c78c251c8824b67465a9560
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 27 21:06:29 2014 -0500
+
+    Fixed Matrix nnzero reference in tests
+
+commit c92ca8d7c6d3e4ce21bb97e1744df842e50d0ca2
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 27 21:03:18 2014 -0500
+
+    Improved internal make.unique_ function, fixing a bug in experimental recycling multiply
+
+commit 47e472a5cfc7d616507075de9efe6fb37a77bd4c
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 27 21:00:19 2014 -0500
+
+    Improved internal make.unique_ function, fixing a bug in experimental recycling multiply
+
+commit 1d5d8d790db0b81e2d3111db387a8a0c143953c9
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Jan 24 13:49:59 2014 -0500
+
+    More package namespace cleanup
+
+commit e23f01fc5a64fd5231178f6fcee74ecd24d54530
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 23 23:42:53 2014 -0500
+
+    Dependency changes afoot
+
+commit c4fe4006f920f416a877e28101b52a9457c951e8
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 23 23:35:03 2014 -0500
+
+    Package namespace cleanup, and some man page formatting changes
+
+commit 46d1378c9b7cde6a7330eee972a3e0d34a2a40c8
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 23 22:19:53 2014 -0500
+
+    Updated vignette to mention moving window aggregation
+
+commit 44dc75b43a78c2229066dccadc0d864617ea4121
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 23 22:09:44 2014 -0500
+
+    Improved diff method, added support for returning sparse vectors
+
+commit 9ed8fcdaadc24bd9edb66093d926395206362190
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 23 20:34:06 2014 -0500
+
+    Added moving window aggregates
+
+commit 9b5b41a1bd305e211308b17918360f26a286e45b
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 23 10:22:45 2014 -0500
+
+    Minor vignette update, man page update, fixed bug in experimental outer join merge
+
+commit dc4bd2969f108c753915b73e180737f104e5272e
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Jan 23 09:34:31 2014 -0500
+
+    Minor man page and vignette changes
+
+commit c36f33f9f377b1c94620b8363609beac29507e3b
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 22 22:32:10 2014 -0500
+
+    Added forgotten lag man page, updated vignette
+
+commit fc1e8d9198998c016d5c0e44d57a747fc14d5640
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 22 21:36:14 2014 -0500
+
+    Fixed a bug in internal build_attr_schema function;
+
+commit 2bd44e195c210368f3b89efaf61c65398527b79e
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 22 20:18:50 2014 -0500
+
+    fixed a bug in the internal dimfilter function
+
+commit cb461ab5f4a804c4cc0a273603e3548024552d06
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 22 18:49:44 2014 -0500
+
+    Fixed another bug in build
+
+commit 7561449eb3d1a536281f177812d9500798739887
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 22 17:46:40 2014 -0500
+
+    Added partial support for outer join case in the merge function
+
+commit 928afaac3ff0ba6e9c5a0f131be9918b4511f31c
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 22 17:15:23 2014 -0500
+
+    Fixed bug in attribute rename
+
+commit 5fd13e6585513bb5253659a9f42e9026776c62fa
+Merge: 5d29a7f 11c19ce
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 22 17:11:36 2014 -0500
+
+    Merge branch 'master' into laboratory
+
+commit 11c19ce9c23005af3bb0d0494a54a97590018491
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 22 16:51:28 2014 -0500
+
+    Added pdf copy of vignette to tree
+
+commit 5d29a7fecb889e7486a092519aaeb07c10de548e
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 22 16:50:20 2014 -0500
+
+    Working on partial outer join support
+
+commit 01c41302b4e376e25832a97e3f3a48722d9e2b30
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 22 16:04:28 2014 -0500
+
+    Fixed a big in internal build_attr_schema function
+
+commit 28d800e4a59fe9b76bbbf446fd763f0ffdc2afe5
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 22 13:04:19 2014 -0500
+
+    added lag macro, fixed a minor bug in build
+
+commit 88d167ae1b930fe36c1986aa220d6e4adc6502dc
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 22 10:29:42 2014 -0500
+
+    drop=FALSE now default to hew closer to standard R behavior; added recycle-like ability to multiply v * X, where v is a vector and X is a matrix such that length(v) = nrow(X)--this has the effect of row scaling the matrix by v. Note that general vector recycling is not supported.
+
+commit ba0d925095ef9f2568b550755257f213067d2c76
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 21 18:27:19 2014 -0500
+
+    Added subset (filter) test, sparse array addition test
+
+commit d123627b9f3f2f350d511384fca1f6722b08e29f
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 21 16:49:55 2014 -0500
+
+    Added P4 glm.fit wrapper
+
+commit 1b6c70132944ba43305e04fb5c74054c9a442529
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 21 15:03:45 2014 -0500
+
+    Minor typos fixed vignette
+
+commit b435d6def1a642ab53f28b01bb11129af2a07956
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 21 13:05:16 2014 -0500
+
+    More tests
+
+commit 82700f153aead1e1b5008e72331f023a14610241
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 21 11:02:45 2014 -0500
+
+    Expanded tests
+
+commit 94ac1f466ddf71ea12cc3308892d1defb2d550e5
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 21 09:15:19 2014 -0500
+
+    Fixed a serious bug in array retrieval from SciDB.
+
+commit b641ca0513b05bdb522190348d2f1f8b5932ad15
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 20 23:05:58 2014 -0500
+
+    Updated README.md
+
+commit 95231940870a430e7a92f81bec00934105284c38
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 20 23:05:09 2014 -0500
+
+    Updated README.md
+
+commit a65671ded3db4b58a09f83d7a869123000169a87
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 20 22:04:33 2014 -0500
+
+    Substantial doc cleanup; new vignette that does not require a live SciDB session; new regrid and xgrid wrapper methods
+
+commit 90ca42acd7775029c16fcbb709965b6e79540600
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Jan 18 23:41:30 2014 -0500
+
+    Fixed bug in indexing by SciDB arrays; result must always be zero-indexed
+
+commit 2209d2b844e295dc11c97095deb710503a84c4ba
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Jan 18 22:03:00 2014 -0500
+
+    scidb function can now convert between scidb and scidbdf
+
+commit 272169127c8fe9d57829aeb9b272adb7554a715a
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Jan 18 20:38:25 2014 -0500
+
+    Added dollar sign column indexing to scidbdf objects finally; added quick conversion via as.scidb from scidbdf into scidb object
+
+commit 17887bdf368626431c92c942a3c0970e85b2eb59
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Jan 18 19:56:42 2014 -0500
+
+    Fixed a newly introduced bug in merge on attributes, added internal origin function
+
+commit fc727cac9e7fdfdf341981088c6806b8c9fe04e5
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Jan 18 17:01:02 2014 -0500
+
+    Lots of doc cleanup
+
+commit 35fd718d935b0b63db85c2cfc5197bf0a6af8e94
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Jan 17 20:32:13 2014 -0500
+
+    Experimental async remove
+
+commit a47c8d175d64732493a5fdf627865958bac52b52
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Jan 17 20:29:56 2014 -0500
+
+    Experimental async remove
+
+commit abf5b5b739c490b431c7816b36237dd7d76e7e3c
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Jan 17 20:27:36 2014 -0500
+
+    All subarrays are now wrapped in sg to avoid SciDB bugs associate with nesting and subarray
+
+commit ea73487c9f5c6466ecc6bd7e93322f0c0c5d4872
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 15 23:14:13 2014 -0500
+
+    Finally fixed dimension name conflict issue in special_indexing by SciDB array case
+
+commit d4364eee3dc3c55e9f60284f29765a3ca093e7fb
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 15 22:52:50 2014 -0500
+
+    Removed async experiments. Can't seem to get libcurl to do async requests and not return data.
+
+commit e95b216f3d7f35c770e5766fec5ba9feb7319294
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 15 22:03:40 2014 -0500
+
+    Fixed iquery bug that failed to load strings with escaped quotes
+
+commit a4e558ec8d0850e45974002c8668dfb300f138ac
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Jan 15 12:35:12 2014 -0500
+
+    scidbremove no longer errors out on NULL
+
+commit e2633b289898483d75e52235950396823b0411bc
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 14 23:26:39 2014 -0500
+
+    Vastly improved merge function
+
+commit e2b08a9bb64795061fb2bc892ca3e7c36a7044d3
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 14 23:23:36 2014 -0500
+
+    Vastly improved merge function
+
+commit 83bd7a057e6cd6101ba12678fa8a0e5ed4a76bd1
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 14 04:34:19 2014 -0500
+
+    backed out  auto redimension to merge
+
+commit 758a8fcf4d1a08c445d61f7183f6c84159828f01
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 14 04:30:51 2014 -0500
+
+    Added auto redimension to merge
+
+commit b7d2e467dd826d39ebd6d810e09b3c8097f8dc37
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 14 03:50:51 2014 -0500
+
+    All multiplications now eval=TRUE
+
+commit 7b8b2156b21035ca082dc594b58f1a85b72bd826
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 14 03:26:17 2014 -0500
+
+    Fixed another bug in the build_dim_schema utility. Arghhh.
+
+commit 7a620dc0049dcf953285255040106099065aefb4
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 14 01:38:29 2014 -0500
+
+    Forcing gemm to store results to avoid bugs in SciDB associated with nesting GEMM
+
+commit f6ab1f598f869b0107bb008a2928b96a97147cd0
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 14 01:38:12 2014 -0500
+
+    Forcing gemm to store results to avoid bugs in SciDB associated with nesting GEMM
+
+commit b8f1b8a9ea8c8bc6c1c623512313fcb1806ce8af
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 14 01:11:20 2014 -0500
+
+    Fixed a dumb bug in make.names_ utility function
+
+commit 508993b6499980b8954264f532e8ae847f3f4f6f
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Jan 14 00:36:46 2014 -0500
+
+    Improved auto-representation of vectors as column or row vectors
+
+commit e4fcedffd8e3bfe46725385605e86f872c22c004
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 13 23:52:43 2014 -0500
+
+    Omitted called_from_scidb; eval=FALSE is now default for almost everything
+
+commit e01e776b018907e47ca8bd605e721724142b11c7
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 13 23:44:03 2014 -0500
+
+    Added scidb-specific reshape method
+
+commit 5b4498d91e876391adb6e37e8c8cbaef72bef4e9
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 13 23:38:45 2014 -0500
+
+    Added scidb-specific reshape method
+
+commit 7d41640e1fede94e762b65d2d878eaf83f7ecc8f
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 13 23:11:07 2014 -0500
+
+    Fixed a bug in build_dim_schema
+
+commit 6484945c2ec123c1217502c82e82a6cc598ca68f
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 13 14:13:40 2014 -0500
+
+    Added support for R-like vector handling in matrix/vector products
+
+commit 23b0738606698a7ad2461891553d96926925ba3c
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 13 13:58:24 2014 -0500
+
+    Added support for R-like vector handling in matrix/vector products
+
+commit fa8aaea291545bbe7b28fe7ea50afaf7d2890943
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 13 12:56:26 2014 -0500
+
+    removed automatic setting of sparse attribute after multiply
+
+commit ab66ae7197173221b7bc3208ad7757cb787ae135
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 13 12:45:39 2014 -0500
+
+    added auto repart to spgemm
+
+commit 1d666cbc5276652145d8344959ce707d5db15d13
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Jan 13 11:57:50 2014 -0500
+
+    Added sparse matrix multiplication using spgemm. Users can set a sparse attribute on SciDB arrays to speed things up by skipping check for sparse
+
+commit fa9fc78f65a4f5f878e2c778900ec4b3a09c6c31
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Jan 12 22:53:54 2014 -0500
+
+    drop=TRUE argument now returns a vector when possible; improved diag function, added unpack method
+
+commit bab8dcb40db448764e9a38adf7bb9e25bad934e9
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Jan 11 22:19:23 2014 -0500
+
+    Fixed bug in binary operations that could cause an error with conflicting SciDB attribute names
+
+commit bf6ebde301b8fa782a56ee582f1a0832ff1f63df
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Jan 11 21:09:28 2014 -0500
+
+    internal tsvd support
+
+commit 5c37e9d2553793369b98fb0062fb2c2b53da9a64
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Jan 11 19:31:21 2014 -0500
+
+    Added support for version discovery added in 13.12
+
+commit 76b28f7a1afdc5b1c80520514dfea433fa456bf0
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Jan 11 19:29:59 2014 -0500
+
+    Added support for version discovery added in 13.12
+
+commit 24d61de3b7a3d47dfd740d8d7ba33e10b4ea541f
+Merge: abdbb55 f5ca8cb
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Jan 11 19:17:38 2014 -0500
+
+    Merge branch 'master' into laboratory
+
+commit abdbb558bc0d8f6e2c81cbd524092a70df5ac152
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Jan 10 11:01:28 2014 -0500
+
+    Added infix comparison operations to dataframe to help support array subsetting
+
+commit 03efebb0b65da5bfaa24832c7e1c064d5605203a
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Jan 10 09:48:06 2014 -0500
+
+    New indexing features; changed behavior of infix comparison to better support indexing; dimnames
+
+commit f5ca8cbaa3e7dfadfd8cef1edde27e3bc6492f45
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Jan 4 14:17:30 2014 -0500
+
+    README.md installation instructions ammended
+
+commit 5a83747e75184d520f1e11a23126bcb003d6df64
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Jan 4 13:59:11 2014 -0500
+
+    Omit empty vignette examples section
+
+commit 15bd04b39a96ece50871b8d9a06c9f2221745bae
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Jan 4 13:52:21 2014 -0500
+
+    Removed use of unsupported NA in query
+
+commit d3aaf067a8c5906eeff829232e3baf1aa3426301
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Jan 4 13:43:11 2014 -0500
+
+    indexing changes
+
+commit 89d445804c2842929124c6a31fb78a7f164ae585
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Dec 13 08:48:06 2013 -0500
+
+    Image function fix (no longer relies on unavailable high/low values)
+
+commit 4e36022533afa0383143c3f3fd5831178e2fd33d
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Dec 12 14:40:46 2013 -0500
+
+    Improved bounding of dataframe selections; re-organized files a bit
+
+commit f1c5bd893a09a45682a67dd7994a823fa8da4fd2
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Dec 10 12:07:32 2013 -0500
+
+    Lookup-style indexing for arrays
+
+commit 092137151c61cc666420504661b2a34bf4ca2902
+Merge: 219ad43 5dfecd9
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Dec 8 13:09:30 2013 -0500
+
+    Merge branch 'master' into laboratory
+
+commit 5dfecd94fe211b7ec5adb07402bc9db0fa5f5357
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Dec 8 13:09:04 2013 -0500
+
+    Clean up of svd routines
+
+commit 8e102102b4dc5aab5b17b669abaece54cb2ae455
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Dec 8 12:32:36 2013 -0500
+
+    Merge lab
+
+commit 219ad43bde99920df6fddc1355135fd96b46ffb4
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Dec 1 13:15:28 2013 -0500
+
+    Modified tests
+
+commit d8575a00d238f8ed5916876bda3737712e78e34b
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Dec 1 13:14:53 2013 -0500
+
+    Modified tests
+
+commit f03c05c0cc4cc142e4a1fbdad96a96e9c895f41e
+Merge: a5fc628 a181ccd
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Dec 1 12:44:33 2013 -0500
+
+    Merge branch 'laboratory'
+
+commit a181ccd2706c0bbec15750709ccf1d0e9d11e1bd
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Dec 1 12:43:57 2013 -0500
+
+    Gave up on POSIX style datetime support. Using strings in UTC format now
+
+commit de0e76f6bc17c1e29c1c41f190fcafd6c19dbdfb
+Author: bwlewis <blewis@illposed.net>
+Date:   Sun Dec 1 12:09:47 2013 -0500
+
+    Working on datetime support, but stuck by a SciDB bug
+
+commit cb9136b4b9421c647a89f7095fa05c92b34f1118
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Nov 30 22:53:36 2013 -0500
+
+    Improved dependency management in scidbeval
+
+commit acadddcefcf861d61f1e2d3743d975cb091cdc73
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Nov 30 20:13:46 2013 -0500
+
+    Fixed a bug in unique--it now always returns a scidbdf object
+
+commit 6b5fee5d9fdb56b4ecf1b05db844fd37833a3cbc
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Nov 30 20:09:37 2013 -0500
+
+    Fixed a bug in promise/lazy evaluation affecting subarrays
+
+commit c6f29bff76ae0af864af5e9b45d1fc6845cbf742
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Nov 30 12:05:13 2013 -0500
+
+    Fixed a scidb class indexing bug that would return a data frame when array had more than one attribute; working on updating vignette
+
+commit a5fc628de0c33e7891a9457d6a73c607dca1ca86
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Nov 30 10:25:24 2013 -0500
+
+    merge lab branch
+
+commit fd6a0b1d4ac7c6025423581946c56783284db1ec
+Merge: 843d9b8 00bf881
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Nov 30 10:23:49 2013 -0500
+
+    merge lab branch
+
+commit 00bf88135d2be9c396c38b769c4c60872a2f9083
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Nov 30 10:21:10 2013 -0500
+
+    Man page cleanup
+
+commit 3acde1c922692c2da89b287593e0c4b6aa80f60e
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Nov 30 00:52:06 2013 -0500
+
+    Removed unused source code
+
+commit ecd79e3400ca7ac3a04642992adb05e0a361cc58
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Nov 30 00:34:45 2013 -0500
+
+    Added trig functions and diff
+
+commit 45469a4690585f8fc9a36cd758e7d86acdb48a45
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Nov 30 00:34:39 2013 -0500
+
+    Added trig functions and diff
+
+commit 64cc0dc00319b6dbde9f20ae360f6dfaa1f6d06d
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Nov 30 00:06:54 2013 -0500
+
+    Added trig functions and diff
+
+commit 843d9b8cdbe439807e8f30e5da5832e1215fc001
+Merge: 5c0722c ae9962b
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Nov 29 10:01:43 2013 -0500
+
+    Merge branch 'laboratory'
+
+commit ae9962b04f61463370c289226b6705cd4031f48c
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Nov 28 18:54:45 2013 -0500
+
+    Fixed transpose array promise issue (wasn't setting dependency)
+
+commit 5c0722c64c680e091701d78897b9d82041c48617
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Nov 28 18:14:57 2013 -0500
+
+    Merging lab branch into master
+
+commit 1aeabbe67624a784a232d57ed79949c16900b9fa
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Nov 28 18:08:57 2013 -0500
+
+    Merging lab branch into master
+
+commit 7ed3b8b9eee7b88eba888be77665e4e941f844b6
+Merge: e6131b2 7927b44
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Nov 28 18:06:35 2013 -0500
+
+    Merging lab branch into master
+
+commit 7927b44ff2177ff1924d87d28ed762a46166c1a8
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Nov 28 18:01:40 2013 -0500
+
+    Man page cleanup
+
+commit 650e6a7f42bbf33ac0d5a4c2998ca21fafd1c9ec
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Nov 28 14:26:35 2013 -0500
+
+    Man page cleanup
+
+commit 22883bd378f0da01e6ec6ff5db9816488abacc69
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Nov 28 13:00:13 2013 -0500
+
+    Man page cleanup
+
+commit 34687293e694e90b8c915e76293fbe9335095e68
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Nov 27 20:53:20 2013 -0500
+
+    Added commentary on gc environment
+
+commit 91e1cec11e9f3519ce87767377b8d6aacb95ec1f
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Nov 27 18:45:32 2013 -0500
+
+    Added indexing error for unsupported indexing styles
+
+commit 3128f0c803230f1cc03828c51265f23b27d8db10
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Nov 27 12:47:30 2013 -0500
+
+    Fixed multiplication with matrices and vectors
+
+commit 4c2e0d3d63cb159980d8790f44123d0a65992228
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Nov 27 10:38:46 2013 -0500
+
+    Updated README.md; updated depenedency storage scheme
+
+commit 1508cf3a50927504250597f2727e9a496ba26d5d
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Nov 27 10:34:15 2013 -0500
+
+    Updated README.md; updated depenedency storage scheme
+
+commit fb0c4f51a876d9c5e9593d0458e757f3aacb5748
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Nov 26 23:02:51 2013 -0500
+
+    Force evaluation of array promises in binary arithmetic operations, improving efficiency most of the time...
+
+commit c67cf9044cb97de83592a22e0b9c477d9d5b1dc9
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Nov 26 11:46:03 2013 -0500
+
+    Weird namespace problem with scidb
+
+commit e6131b23113d93195038c85e40f1e6c3c5c870c7
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Nov 26 11:40:25 2013 -0500
+
+    scidb export issue
+
+commit 9672d5a140add0757c3d88a38301af7f0ae26962
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Nov 26 11:40:03 2013 -0500
+
+    scidb export issue
+
+commit fd2d2545f5371681d51e72a026e3d3bd8bd87601
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Nov 26 11:10:12 2013 -0500
+
+    Added repart wrapper function
+
+commit 6534c2f1326794fb2b483ac8f0b1ddebc2ea34c2
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Nov 25 21:42:06 2013 -0500
+
+    Expunged scidbexpr fron man pages
+
+commit 52cb0a99d79541576bfa648388a08c2c2ab11663
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Nov 25 21:25:56 2013 -0500
+
+    Added scidbeval (renaming internal function), slightly changed as.scidb function arguments in anticipation of n-d arrays
+
+commit 1daa179b27dd064d1c45d15ac87839a344d1c22a
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Nov 25 12:12:41 2013 -0500
+
+    namespace problem
+
+commit 7b58fffe941b57361232f1ae9e124a5873d88d7f
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Nov 25 12:12:11 2013 -0500
+
+    scidb export problem
+
+commit 0da337da75df63ab1785acca3a79bad24a794087
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Nov 23 12:15:39 2013 -0500
+
+    Modified print methods
+
+commit cbae0f89c079455629fe92f4ae0e07993addb20d
+Author: bwlewis <blewis@illposed.net>
+Date:   Sat Nov 23 10:22:56 2013 -0500
+
+    dbeval man page
+
+commit c3199e368235d6fa86c1e4b28b0752e64db23f2a
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Nov 22 20:17:23 2013 -0500
+
+    Added dbeval function
+
+commit 19496e52420c7cc25827691c30410eacc3017e2d
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Nov 22 13:11:50 2013 -0500
+
+    Added dependency maintenance for promises to scidbeval and all the dbops (not yet to arithmetic)
+
+commit 190b416441da5cb871bae304722d915d17eb0296
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Nov 21 22:43:46 2013 -0500
+
+    Fixed aggregation issue with *-bounded arrays
+
+commit f7f54de9c95517e80b1b917e61862e47480db4e5
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Nov 21 19:35:34 2013 -0500
+
+    Fixed null substitute issue in aggregate
+
+commit 473a8f2d3af09f668a88c59e536edf47e93aa71b
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Nov 21 11:17:18 2013 -0500
+
+    Fixed major bug in as.scidb data upload from R to SciDB. This bug could result in array data order scrambling for large matrices
+
+commit 60e1b87e77a419890b21d3c2eadb301e4a7f0053
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Nov 21 11:03:46 2013 -0500
+
+    Fixed major bug in as.scidb data upload from R to SciDB. This bug could result in array data order scrambling for large matrices
+
+commit a2c90c44f51385734e71aa5cfb21188496f9d580
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Nov 12 11:15:12 2013 -0500
+
+    Improved crossprod,tcrossprod
+
+commit d12412e1693f6d28f94395c981a8d598a645080a
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Nov 12 01:49:42 2013 -0500
+
+    Added substitute
+
+commit 97234d65257c241ca4cf18c7647c3713f6e6a0e5
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Nov 12 00:18:50 2013 -0500
+
+    Switched matrix multiply and binary arithmetic to return promises
+
+commit 4b5d557ff505119b9a588abcca5e2358c02929ac
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Nov 12 00:08:18 2013 -0500
+
+    Sweep and apply silly bugs fixed
+
+commit 5a61f568cbe997d7c7d1a7168bb1905fdbc0937b
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Nov 11 23:33:58 2013 -0500
+
+    Added R-style apply. Cazart
+
+commit bc38b08ac4df615e8eb07b945cd3e39a890f9fd6
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Nov 11 23:01:59 2013 -0500
+
+    Added cast
+
+commit e820bfc654caf3eaaebe47b7778614dc25298cf2
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Nov 11 22:53:36 2013 -0500
+
+    Improved sweep
+
+commit a173c86f6ea95aa818ab1900573ad69c47b149b6
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Nov 11 22:41:19 2013 -0500
+
+    Added sweep function. Cool\!
+
+commit f3d32597efb88163ef07771725bd936a50a8f230
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Nov 11 21:46:53 2013 -0500
+
+    Fixed multi-attribute array materialization
+
+commit fa5a118bf52a2c92e920c598dd74f9772b054be8
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Nov 11 20:54:40 2013 -0500
+
+    Aggregate movde to its own file since its so complicated
+
+commit 28e1cce5c17b4764b8bf8c1c106ace9aa08d973d
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Nov 11 20:39:26 2013 -0500
+
+    Removed scidbexpr class
+
+commit 680379f520ce6859dc8d282efbe8be8918a1cc86
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Nov 11 19:05:04 2013 -0500
+
+    Welcome to the laboratory. We're trying to consolidate the various classes into just one scidb class.
+
+commit 4645a5e965fc4d96a16cee456a66709b0fa1b651
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Nov 11 12:43:56 2013 -0500
+
+    Comment change
+
+commit d3254e79eef845f7878cae9b8ed6441ad02a0e4f
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Oct 29 16:58:27 2013 -0400
+
+    Vignette
+
+commit 7a93ab8df1c9e5874a911e975484340562372ef9
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Oct 29 11:19:42 2013 -0400
+
+    Fixed bug in merge
+
+commit 1b4b1157ce8f47ae41b4def60985a66463969c55
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Oct 29 00:33:31 2013 -0400
+
+    Added basic redimension wrapper function
+
+commit 866ffd8ce96dffe63b0b45d62836ef128bf49096
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Oct 28 10:45:39 2013 -0400
+
+    Man page edits
+
+commit 1044be1b0f93a60983fda7005a89c877404ba808
+Author: bwlewis <blewis@illposed.net>
+Date:   Mon Oct 28 10:12:02 2013 -0400
+
+    Added build function
+
+commit 677b9463d45f56d583d1e2c5fc2150cfd365806a
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Oct 24 22:15:40 2013 -0400
+
+    A little more scidb.c cleanup
+
+commit f6917a28ca69efbbe5572d27ceb7dc4a350d61d6
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Oct 24 22:03:19 2013 -0400
+
+    Fixed bad bug in gemm-based dense matrix multiply interface
+
+commit 7b7d4a1119b157c9f10f9f8e513813fc4f82b9fe
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Oct 10 08:07:38 2013 -0400
+
+    Cleanup of scidb.c
+
+commit 4d30b894520fc3e54f8fc67866f568ccc9b5e24e
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Oct 9 21:27:17 2013 -0400
+
+    Vignette files
+
+commit 54a9a5d38bd9aa445469325178a757f3d55d9179
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Oct 9 16:50:19 2013 -0400
+
+    Vignette typo
+
+commit 57f5700faf0cc752d1ca878d7ed4d59b89452aeb
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Oct 9 16:21:17 2013 -0400
+
+    Updated download links in the vignette
+
+commit 05ea67f24b3db0e3cc44a3cad1f68281e70d8ab7
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Oct 9 13:57:35 2013 -0400
+
+    improved merge, vignette
+
+commit 5e73959bb240dc824526863d1b22d97468396f29
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Oct 9 12:03:21 2013 -0400
+
+    NEWS
+
+commit 46c3b5eaddecc88b8aa7f6f680d171e5ee8e50aa
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Oct 9 11:55:41 2013 -0400
+
+    Added cumulate, svd, vignette update
+
+commit 19f7439084d8c9551cfb8c2d7a213c510a88d2ad
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Oct 9 11:55:29 2013 -0400
+
+    Added cumulate, svd, vignette update
+
+commit c5729992a969cd537029c085999a45a8a7d7af26
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Oct 9 09:51:25 2013 -0400
+
+    Vignette updates, improved unique function
+
+commit 4df45bada0d124c7433d541d173e4204b14a0569
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Oct 9 00:03:37 2013 -0400
+
+    Improved merge
+
+commit d8f0283f26ad8564fe69f88aa696844cfb47b270
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Tue Oct 8 13:56:44 2013 -0400
+
+    Improved merge
+
+commit 5b278f5f4ae8e5d2043ef1894d56638024bb3f53
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Tue Oct 8 12:13:39 2013 -0400
+
+    Improved string NA/null mapping in df2scidb/iquery
+
+commit 12d0df556b2658afb5a14daf0a31cd8b39341015
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Tue Oct 8 12:03:14 2013 -0400
+
+    Improved nullable detection in df2scidb
+
+commit 792b10d7b8dbe0d4ad104da16b6ad20b183deb05
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Tue Oct 8 12:01:50 2013 -0400
+
+    Improved nullable detection in df2scidb
+
+commit e82814520ed78cdf0b47e7fe3cfb24f3f5c3cb3f
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Tue Oct 8 11:59:48 2013 -0400
+
+    Improved nullable detection in df2scidb
+
+commit 7565af55f5b8456be50163ca06b164b7831de50a
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Tue Oct 8 11:49:29 2013 -0400
+
+    Fixed bug in df2scidb NA handling
+
+commit 1ddf21340cb1f26910fd26980bbc301c1ef51a1d
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Tue Oct 8 10:11:32 2013 -0400
+
+    Namespace and doc fixes
+
+commit c6dfd2baf2710b75b89b7216dd7c0649545e2570
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Mon Oct 7 18:51:09 2013 -0400
+
+    Fixed bug introduced with new RCurl dependency that transposed cell order
+
+commit aaf6fb7e4ffffab01e5229d14a5cfa2c09514c54
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Mon Oct 7 13:57:15 2013 -0400
+
+    Fixed names in return of high-dimensional sparse arrays
+
+commit bc3569a65fabf8b5b72fe6e75a291d4c4a281952
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Mon Oct 7 13:37:38 2013 -0400
+
+    Improved aggregate for SciDB 13.9
+
+commit 09eef1da5113133cd37ae254b285609f852319ee
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Mon Oct 7 12:32:57 2013 -0400
+
+    Introduced scidb version checking (it's manual for now)
+
+commit a466ab920aea5e53e91b394274b002433b0a284d
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Mon Sep 30 14:14:52 2013 -0400
+
+    Added comparison binary operators for scidb class
+
+commit 0dd1f6749a1412288a9a366f3102d165174c71b5
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Mon Sep 30 13:15:10 2013 -0400
+
+    Added rename function; fixed element-wise arithmetic operations to work with sparse arrays
+
+commit 043840465c3a0c188798abdad5d263de3b969725
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Sep 29 18:00:34 2013 -0400
+
+    New vignettes directory to conform to newer CRAN guidelines. Authentication is also fully in place now.
+
+commit 259f390a2826f012660686c113581a3e28faaa2d
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Sep 29 18:00:25 2013 -0400
+
+    New vignettes directory to conform to newer CRAN guidelines. Authentication is also fully in place now.
+
+commit bd55e350ebb2dd3e6343f6f22b19295cb7143060
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Sep 29 17:41:53 2013 -0400
+
+    Fix upload bug
+
+commit fd9f338d5ff38b0af7df335139137421d9c26ad2
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Sep 29 17:27:24 2013 -0400
+
+    Fix upload bug
+
+commit 12e0e38d19bf9bab98c69d9a3e5fc8879ddda938
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Sep 29 17:25:47 2013 -0400
+
+    Fixed bug in data upload.
+
+commit b914faba99fcf81cae0ba5689eac5b1883d45465
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Sep 29 16:30:56 2013 -0400
+
+    authentication prototype
+
+commit f1e147f7db2bd8c9e783565377f5f829a5177b7e
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Sep 29 15:30:55 2013 -0400
+
+    authentication prototype
+
+commit e0ae5b68acfcc5ca0c8f60871c50a2975482498e
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Sep 29 13:24:42 2013 -0400
+
+    Fixed iterative iquery
+
+commit 42d35c567946861aaa6b01bbbc6aeed56d687ae0
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sat Sep 28 08:52:56 2013 -0400
+
+    Centralized URI generation in anticipation of https and authentication support
+
+commit 9fbdb6da4e6147025c51b5669454c1d639032686
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sat Sep 28 08:34:58 2013 -0400
+
+    Centralized URI generation in anticipation of https and authentication support
+
+commit eb3050711d4d2cd26e73f06cc246cbc21971452b
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sat Sep 28 08:32:59 2013 -0400
+
+    Centralized URI generation in anticipation of https and authentication support
+
+commit 05a8f7f2e387e698e281681f5184310a67a0818d
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 27 16:19:44 2013 -0400
+
+    Replaced use of direct read.table from url with indirect read.table through RCurl in preparation for SSL support
+
+commit ccc82d6b84d663df8aaa71fcac530c6517614500
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 27 16:18:41 2013 -0400
+
+    Replaced use of direct read.table from url with indirect read.table through RCurl in preparation for SSL support
+
+commit 16ece601a9b916022dd6fca0d1ec92d37be60812
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Sep 25 23:26:50 2013 -0400
+
+    getSession
+
+commit 5cda443d70a52aceacc7ec2db92609d1129c7dbf
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Sep 25 08:44:00 2013 -0400
+
+    Removed old custom HTTP code
+
+commit f95b335af0c3eaa481d7d49df79b3a0c8bdd8a2e
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Sep 25 08:41:50 2013 -0400
+
+    Factored out new_session code
+
+commit a414e51ba87a4be263f3a99091bc84d6b140e2e1
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Sep 25 08:29:27 2013 -0400
+
+    Replaced custom GET with RCurl getURI
+
+commit aedfbe2d27c9f55a3efd641921960543bf46a38a
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Tue Sep 24 20:01:26 2013 -0400
+
+    New multiplication routines to support 13.9
+
+commit f6d232cb91a3a697229859ee6a34726e32b7d2be
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Tue Sep 24 12:10:33 2013 -0400
+
+    Got rid of the now unused default fill-in value
+
+commit f52ca8f026aa005e4137ab878fb479dfb974ec77
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Tue Sep 24 10:56:40 2013 -0400
+
+    Updated README
+
+commit 66bfb0e31d05bec36ca631543f6a54cab45c9efa
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Tue Sep 24 10:55:04 2013 -0400
+
+    Improved dense matrix upload
+
+commit cda422584cdda75f9375aa45c6f022d3cd004ebb
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Tue Sep 24 09:32:19 2013 -0400
+
+    Sparse matrix support in place
+
+commit 082f887b04b803adba51f83a2c052dc417c10103
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Mon Sep 23 16:36:05 2013 -0400
+
+    Support for sparse matrix return; started moving over to RCurl (introduced dependency); Ending support for SciDB NID
+
+commit 589321831aaf83997462ff062def6e028b3ea7a4
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 6 12:45:25 2013 -0400
+
+    README.md update
+
+commit ca1db52e21cc2723cddd3742e02a788fb58917c6
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 6 12:44:58 2013 -0400
+
+    README.md update
+
+commit 3a8cbb5b7b1120edf77d4c10ac781410de5e2bed
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 6 11:04:05 2013 -0400
+
+    README.md editing
+
+commit 84ed4f8e644e3df2913e1aedc2b7d19f24fac71c
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 6 10:14:52 2013 -0400
+
+    Updated README.md examples
+
+commit ef3e9cd28ba83044608b1f7f85e6aff6d5c03bd6
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 6 10:10:59 2013 -0400
+
+    Updated README.md examples
+
+commit 7c1814a86168c01cf85df0c786ebacb41f8b26d0
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 6 10:05:37 2013 -0400
+
+    Updated README.md examples
+
+commit 3a00dacd00b4840f4b712349b14ae9d179c4c1dd
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 6 10:02:57 2013 -0400
+
+    Updated README.md examples
+
+commit 2e009773c2204824cf97d47e66b9c0a1dd788e88
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 6 10:02:33 2013 -0400
+
+    Updated README.md examples
+
+commit e08b6cd07f50e186e5d3a54f1b17e421f9472ffb
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 6 09:59:06 2013 -0400
+
+    Updated README.md examples
+
+commit 14ab1db982a56b7e3941d12efe42bbaf679339ab
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 6 09:54:04 2013 -0400
+
+    Updated README.md examples
+
+commit 376e4e86cf9342ba2d791ba7c4ed8f369fc6bc7b
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 6 09:48:41 2013 -0400
+
+    Updated README.md examples
+
+commit e10c92d1ebee0e5d05745487db5398745d4c3b77
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 6 09:35:16 2013 -0400
+
+    New README.md to announce new features on github
+
+commit af3f0cdfd9f77f9f35acb0c261190c74804f492d
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 6 09:33:42 2013 -0400
+
+    New README.md to announce new features on github
+
+commit eeefa0418cb72432f7168a7cb38a499c1067ceb4
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Sep 6 09:28:45 2013 -0400
+
+    New README.md to announce new features on github
+
+commit a57e5372b50740d246267b36413a62a356b79f6f
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Mon Aug 26 16:24:42 2013 -0400
+
+    Added several grand aggregates
+
+commit 346f1cb329c5c7698bba18110a0cfe7dd931156f
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Mon Aug 26 02:14:48 2013 -0400
+
+    Sort, index_lookup doc and a few new tests
+
+commit 457b8a3edebb142cbc61ad1b23b7033e0b167f42
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Aug 25 20:11:38 2013 -0400
+
+    More doc fixes
+
+commit 990d19346121eeefd6856b53c8b9a31818dcda05
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Aug 25 19:50:53 2013 -0400
+
+    Documentation edits
+
+commit 0a8029a2deafef836c4392ef72457c3e9d2f744e
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Aug 25 19:30:03 2013 -0400
+
+    Edited aggregation doc
+
+commit 8383d989c2bb60ee72a594cc647e0c5664b219d4
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Aug 25 19:13:41 2013 -0400
+
+    aggregate now supports aggregation by non-integer attributes with index_lookup
+
+commit 18c6fa0732f6ea8a1485246e74bc88896e28be92
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Aug 25 00:24:48 2013 -0400
+
+    Changed scidbexpr class for compatability with R-2.x
+
+commit 80e1b0d61e507b90155ccdc1d93d2ffb5dee589f
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Aug 25 00:22:23 2013 -0400
+
+    Added missing doc files
+
+commit 08f91dd22c910a862f97f059698e7e79788c0ea3
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Aug 25 00:08:28 2013 -0400
+
+    Forgot to remove a browser line
+
+commit 0c30d4cf8ca5f1d772198d5de71996246fdb314b
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Aug 25 00:07:39 2013 -0400
+
+    Improved aggregate functionality; can now group by another array again
+
+commit 10dc8550202f180e9f464fd0f28849e1a2b6f263
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sat Aug 24 23:32:47 2013 -0400
+
+    More doc edits (subset)
+
+commit b98e099119899a3489b8083b72fc0ad14ec98941
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sat Aug 24 23:24:58 2013 -0400
+
+    Edited aggregate and merge documentation
+
+commit 48309f6e3c2dbac9a6d71ddd94652835461b75ec
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sat Aug 24 23:12:43 2013 -0400
+
+    Initial documentation for aggregate methods
+
+commit c02370a29b239eccc46d70e818470944624572d2
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sat Aug 24 20:22:00 2013 -0400
+
+    dbops with automatic deferred evaluation in reasonable shape finally. Documentation not yet ready...
+
+commit 7ad064bc67bfd791f1fe446f5290b4c73770fd39
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sat Aug 24 19:28:06 2013 -0400
+
+    SciDB's 'filter' operator is now implemented as the R 'subset' function. This is a much better choice than the very different R 'filter' function for timeseries.
+
+commit 0573a184af60622d1600c4e0254447de1e747e8a
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sat Aug 24 18:50:02 2013 -0400
+
+    Further improved introspection for automated expression deferral
+
+commit 2264536a0c4bd3ab253184fc7b9c61cbbace0199
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sat Aug 24 17:23:16 2013 -0400
+
+    Optional automatic deferred computation of dbops functios added. This was a bit tricky.
+
+commit 5bf7f7221792aa440919d85054278982211d022b
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Aug 23 14:37:02 2013 -0400
+
+    Improved aggregate; fixed big in scidbdf class that resulted in short returns
+
+commit ea50e02b6f8a7a757c5dd0b130a46e4ee6aa4fb1
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Aug 22 21:12:27 2013 -0400
+
+    Added a few man pages; added an option to scidbeval to pass along to the scidb function. This is used by the aggregate functions to return a data frame (scidbdf object)
+
+commit e0e89a4cb12adb17464b1b8999dedd9e023831e6
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Aug 22 19:34:26 2013 -0400
+
+    Reverted scidbdim adjustment for '*' bounded arrays
+
+commit 3e1b042ce92a5310cad4002aae5a6666345a54bf
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Aug 22 19:32:21 2013 -0400
+
+    Moved build_attr_schema, build_dim_schema from dbops to utility; improved new aggregate function
+
+commit 7e25d827ba64a8850c150a4b2670faa21e5907a6
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Aug 22 02:15:48 2013 -0400
+
+    Fixed bug in scidb_from_schemastring
+
+commit cd607dc4002672838caa04b3bbf245d6330c5446
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Aug 22 02:04:28 2013 -0400
+
+    fixed typo in index_lookup
+
+commit 28dbae027f74646a786ed8144e0bf53d471960cb
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Aug 22 01:54:50 2013 -0400
+
+    Added index_lookup and uniq wrappers
+
+commit 40a531c9ebe85d564b57282636564fb28018c0c3
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Aug 22 00:35:16 2013 -0400
+
+    Fixed name collision issue introduced by new GEMM multiply; the tests are now running correctly
+
+commit cb3d4823caf13ca46f950a450f54953ce9fd3164
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Aug 22 00:16:30 2013 -0400
+
+    Improved project syntax; it now takes a character vector of attribute names to project onto
+
+commit fd7700021e590439e0fdb4a7ef051fb68cccd8fa
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Thu Aug 22 00:14:27 2013 -0400
+
+    Improved length calculation for arrays with int64 dimensions; improved sort
+
+commit 5463911873f6a1022267a7e1b0014254419422ea
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Aug 21 23:01:24 2013 -0400
+
+    More fixes in scidb sort; changed .scidb_MAX_DIM to 4611686018427387902 since 4611686018427387903 is reserved to be '*'
+
+commit 87f1e3ae9d171146945e5a42f5331bc6aa63a779
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Aug 21 21:52:53 2013 -0400
+
+    Added sort prototype; fixed bug in scidbeval
+
+commit 2157593b0e37238d21edcb6ba9341d742bd91d10
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Aug 21 20:48:01 2013 -0400
+
+    Improved S3 and S4 method definitions
+
+commit 7269d375d6e3ec620ccd8ea625714e67ecfe5355
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Aug 21 19:24:31 2013 -0400
+
+    Some doc fixes, consolidated some dbops.R code
+
+commit d6fcc3f5f37be734af075c9a3bbed3e80c71828d
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Aug 21 14:41:18 2013 -0400
+
+    Modified merge to better conform to existing S3 generic
+
+commit 59d89f23a3111a4332c7e5d5b2cb8243c4657089
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Tue Aug 13 01:28:11 2013 -0400
+
+    Added scidbexpr class (forgot this earlier)
+
+commit cc763ad4bc4c739b53ada2632cb9d3e7db4dfb9a
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Mon Aug 12 16:09:49 2013 -0400
+
+    Aggregate now accepts scidbexpr objects too
+
+commit 3233d0d17cffda3da5408a420a0b6d7984dc960a
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Mon Aug 12 15:51:49 2013 -0400
+
+    Fixed problems with project function...it is now just a function
+
+commit 7993cad00748f46e66de029d25ac7eb45e692fcf
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Mon Aug 12 11:43:31 2013 -0400
+
+    Added project and filter function wrappers
+
+commit 5759a4c2c8d93767931a1bbe4f723673ad947100
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Mon Aug 12 11:20:48 2013 -0400
+
+    Added scidb_from_scidbexpr function that returns a virtual SciDB array from a scidb expression
+
+commit ed1740641177d6c3e79b724282689815a5a26009
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Aug 11 23:11:36 2013 -0400
+
+    Added limited ability to aggregate by a SciDB array and also along a list of existing array dimensions
+
+commit 819abdfe26b76eedcbb830b6d0640cd62c4517e3
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Aug 11 22:41:52 2013 -0400
+
+    Aggregate now has limited support for by=SciDB array
+
+commit 7ca1255cf05cfa3b35760722b18010656a733501
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Aug 11 18:39:05 2013 -0400
+
+    New functions: bind, aggregate, merge. They work with scidb- and scidbdf-class objects
+
+commit 299b9f7a441344055738d9bbfdf0dfb6ac2a0917
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Sun Aug 4 09:53:08 2013 -0400
+
+    Fixed up bind.scidb function (SciDB apply) to handle multiple functions
+
+commit 7e3d06363ffb7c815a4a5868fb45592d89d18e36
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Sun Aug 4 09:44:47 2013 -0400
+
+    Added bind (SciDB apply) function
+
+commit 6e0af345798d9a95744cd047d8e654de061996be
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Aug 4 09:34:15 2013 -0400
+
+    Changes to aggregate.by
+
+commit e1c52a31556f5ea770d98bab1874bb3cbea9db2a
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Aug 4 07:29:42 2013 -0400
+
+    Optional eval argument for cross_join...this is a nice way to roll. Add it to more functions.
+
+commit d3a8cb4d8f23496cd58a317de18d3c9177ebc6be
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sun Aug 4 07:29:03 2013 -0400
+
+    Optional eval argument for cross_join...this is a nice way to roll. Add it to more functions.
+
+commit da3c84f4f22cbd18d3afa1094274b82a829e319f
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Sun Aug 4 01:26:20 2013 -0400
+
+    Prototype aggregate by function
+
+commit 3bef6376683afe59d0b14e80f6321efed3fa0a64
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Sat Aug 3 23:50:12 2013 -0400
+
+    Experimental cross_join implementation
+
+commit 5f386d4478c834527057dabe1b84f64b9dc4c47b
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sat Aug 3 23:24:23 2013 -0400
+
+    Experimental cross_join function
+
+commit ee047d6ba5c368641f7624305bb3188740d2c9f7
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Sat Aug 3 08:55:53 2013 -0400
+
+    Experiment: switched from subarray to between in scidbdf_subset  to try to preserve indices
+
+commit 2c7c9a54429bf34ce9ed661ee852c3af5172a892
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Aug 2 10:56:26 2013 -0400
+
+    Manually copied Mikes commits that change remove default error behavior to warning
+
+commit 7213b64789ac2e3dfb0644a2479261a84379cff1
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Aug 2 10:51:04 2013 -0400
+
+    Switched multiply to use GEMM
+
+commit 3c6d7cff823f8ead611880cdf068d7496a96bdf7
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Jul 31 14:48:14 2013 -0400
+
+    Fixed precision issue in ASCII-interface functions (like iquery)
+
+commit a00545006ee18310a749764668375cf099aaf537
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Jul 31 14:35:06 2013 -0400
+
+    Updated README
+
+commit 3745d520a5386a97b6e35b5c62c6ca58505b3131
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Jul 31 14:28:22 2013 -0400
+
+    Fixed indexing issue with large indices that were issued to SciDB in scientific notation; set deault value in sparse returns to zero.
+
+commit 6617c0eb29d7760a6275387a37f456fb4350b90d
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Tue Jul 30 09:02:23 2013 -0400
+
+    Moved experimental aggregates/merge out for now
+
+commit 06053100f50d81eebb1ccfd796cae5eab4d0d7a0
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Mon Jul 29 09:07:14 2013 -0400
+
+    Use an automatically-generated name by default now for assignment
+
+commit 6cfc69a795fc7d485116af90196338567a527b77
+Author: blewis <blewis@localhost.localdomain>
+Date:   Wed Jul 24 17:33:12 2013 -0400
+
+    Fixed regression introduced by armel gsub fix
+
+commit bd1d944767fd1b7b2eef5d1ecab4467fba529ca8
+Author: blewis <blewis@localhost.localdomain>
+Date:   Wed Jul 24 17:22:26 2013 -0400
+
+    Adjusted use of gsub to work better with R on armel architectures
+
+commit 61cb69a29c5770797de20df2eea0c6bcbc7b4404
+Author: blewis <blewis@localhost.localdomain>
+Date:   Wed Jul 24 16:54:45 2013 -0400
+
+    Normalized temporary array names
+
+commit ef5a1e21748be321a9240dc84da499f4fdb9a326
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Wed Jul 24 08:16:17 2013 -0400
+
+    Parsing changes
+
+commit ce553ce8326e63645ac2169573315d4cdfb8c280
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Jul 12 13:23:29 2013 -0400
+
+    Added schema_only option to df2scidb
+
+commit e2f83f5f52acb4afae147614d4279bb73197a0cd
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Fri Jun 21 23:08:11 2013 -0400
+
+    Fixed obscure memory alignment bug on ARM platforms
+
+commit 86647e757b835ddb6d62b2c2231b0f7e5b537fd3
+Author: Bryan Wayne Lewis <blewis@illposed.net>
+Date:   Mon Jun 10 22:01:45 2013 -0400
+
+    Start of a prototype by aggregate, switched from R to C-code version of df2scidb for speed
+
+commit 59fa20af381b9df8973f45663730724571914b5d
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue May 7 10:58:02 2013 -0400
+
+    Fixed head/tail
+
+commit 78daabc6a0707e3d3640bb569077a6573eec9c8d
+Author: blewis <blewis@newton.(none)>
+Date:   Fri May 3 11:59:51 2013 -0400
+
+    working on fix for head/tail
+
+commit c70cb42598b0e880646d5125b5fd3f7bf14c295d
+Author: blewis <blewis@newton.(none)>
+Date:   Tue Apr 30 09:17:05 2013 -0400
+
+    Fixed a very subtle problem with indexing manifest when subsetting scidb objects from within packages and other functions. Changed package version number
+
+commit fead3d23705cae01b12e462741403e00a1918f25
+Merge: d1e8776 1738d8e
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Apr 30 07:26:27 2013 -0400
+
+    Merge branch 'master' of https://github.com/Paradigm4/SciDBR
+
+commit d1e8776464ce459aa40466d3522e1f03025fcc42
+Author: bwlewis <blewis@illposed.net>
+Date:   Tue Apr 30 07:15:29 2013 -0400
+
+    Removed tikz dependency in vingette--some folks reported problems with tikz
+
+commit 1738d8eb7aec34318df8034dbab5f625cd71240f
+Author: Ubuntu <ubuntu@ip-10-140-131-67.ec2.internal>
+Date:   Mon Apr 15 15:52:42 2013 +0000
+
+    Fix for aggregation numeric formatting bug
+
+commit dbbaa5af73e27d1afc801b8fa245c6a8d3d0cf33
+Author: scidb <scidb@p4xen7.(none)>
+Date:   Fri Apr 12 12:57:42 2013 -0400
+
+    Updated prototype tests
+
+commit b0dc1079fa9c32c816d0109c13159cde69fa7110
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Apr 12 12:50:17 2013 -0400
+
+    Added new basic test script
+
+commit 8fb505560628aef0f13fc4247863d958d6548633
+Merge: 282fb49 2660e45
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Apr 12 10:57:57 2013 -0400
+
+    Merge branch 'master' of https://github.com/Paradigm4/SciDBR
+
+commit 2660e45c20d2ef73353ec3e382b4ccbf960fb694
+Author: blewis <blewis@newton.(none)>
+Date:   Fri Apr 12 10:33:37 2013 -0400
+
+    Slightly improved matrix multiply interface functions
+
+commit f3cf8f28d369087a53c7d59373d35ebf4c66dedf
+Author: blewis <blewis@newton.(none)>
+Date:   Fri Apr 12 09:22:58 2013 -0400
+
+    NEWS file, doc additions for next CRAN version 1.1-0
+
+commit 282fb49f3d4aaa7e8869f3638f49be18808f4425
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Apr 12 02:51:12 2013 -0400
+
+    syntax in print summary
+
+commit 2e3371a4950d00a59bebc5974373fa35cdca9472
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Apr 12 02:45:15 2013 -0400
+
+    Fixed serious bug in return of scidb matrix objects that span chunk boundaries
+
+commit fbb5930196d44a8d1071ecab287fb3059a7e5809
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Apr 12 01:54:46 2013 -0400
+
+    Fixed a major bug by reverting to the older, slower but correct materialize routine. Array data was returned inconsistently. This requires a change to the CRAN package.
+
+commit 5fb6591468972300bf225ea9f37a0f4c20dca030
+Author: bwlewis <blewis@illposed.net>
+Date:   Fri Apr 12 00:24:03 2013 -0400
+
+    Added diag function for matrices.
+
+commit fb085a25289bdfe8b004562f9e7b829596f998d2
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Apr 11 23:29:28 2013 -0400
+
+    Fixed bug in start index option in as.scidb
+
+commit 521eb5caaefbc29a46d9bb5c65c59a96e954a785
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Apr 11 22:56:36 2013 -0400
+
+    Slight improvement in as.scidb data load
+
+commit fee08b46b8ac4e738de2ef82a0886a8b10518348
+Author: bwlewis <blewis@illposed.net>
+Date:   Thu Apr 11 22:38:58 2013 -0400
+
+    Added element-wise exponentiation
+
+commit 8bf33f1c97df3c66406e2bcf288d8b1fb16d45a6
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 10 22:56:24 2013 -0400
+
+    Fixed bug in image (truncated data)
+
+commit 5fbd59dfea44ee4f8b3d878d16cf87dcd8169f42
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 10 22:37:13 2013 -0400
+
+    Version change
+
+commit 7ff28e91fcc5b6181d16fe34e0571c861edf4964
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 10 22:36:52 2013 -0400
+
+    Iquery now accepts n=Inf to efficiently pull entire output from newer versions of shim
+
+commit daccafffe6bff2b8af74e214d04772581f190af5
+Merge: 588ed9c c0469d3
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 10 16:14:08 2013 -0400
+
+    Merge branch 'master' of https://github.com/Paradigm4/SciDBR
+
+commit 588ed9ce0b6f658974253f03fe929b5c5345ddb0
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Apr 10 15:50:47 2013 -0400
+
+    typo in 'image' function resulted in short data read. Fixed.
+
+commit c0469d3bcdbf583d5d3a42839156e278805dee80
+Author: blewis@illposed.net <blewis@homer.(none)>
+Date:   Wed Apr 10 15:50:14 2013 -0400
+
+    typo in 'image' function resulted in short data read. Fixed.
+
+commit 6d2c1703be7643123a51ecc8a44f0f95e39d4157
+Author: blewis@illposed.net <blewis@homer.(none)>
+Date:   Wed Apr 10 13:30:10 2013 -0400
+
+    Updated scidb-indexing-functions to use new df2scidb
+
+commit 7348fec33be7396486b0feb6f0db21f09555321b
+Author: blewis@illposed.net <blewis@homer.(none)>
+Date:   Wed Apr 10 11:38:18 2013 -0400
+
+    New df2scidb part 2, now a single query. Much improved.
+
+commit 118bb52cfb46875165a77dfd486af1fdc1096633
+Author: blewis@illposed.net <blewis@homer.(none)>
+Date:   Wed Apr 10 11:32:57 2013 -0400
+
+    New df2scidb part 1
+
+commit 1f751660267f582974f69c71f0f30b9a60d00b18
+Author: Ubuntu <ubuntu@ip-10-66-173-103.ec2.internal>
+Date:   Wed Apr 3 15:20:57 2013 +0000
+
+    Fix part 2 of scidbdf-class aggregation with implicit output types
+
+commit 62106e0b8f512bc28fae84e872b09bd91e9ff135
+Author: blewis <blewis@homer.(none)>
+Date:   Wed Apr 3 11:04:09 2013 -0400
+
+    Fix for scidbdf aggregation error for implicitly typed output
+
+commit 0b765ba804f1f957ba280bd6195b729bbf2caf6e
+Author: blewis <blewis@homer.(none)>
+Date:   Wed Apr 3 10:56:50 2013 -0400
+
+    Added numeric column indexing to scidbdf class
+
+commit 3ca0cec75877b92b92a4359a730470905e8f7f62
+Author: blewis <blewis@homer.(none)>
+Date:   Wed Apr 3 09:40:05 2013 -0400
+
+    Marked place of bug in aggregate function
+
+commit 141609d21095df8086af7a549cf4752569187ddd
+Author: blewis <blewis@homer.(none)>
+Date:   Tue Apr 2 23:32:54 2013 -0400
+
+    Possible problem with R internal C routine mkString, that can sometimes affect df2scidb and related functions. Work-around in place.
+
+commit 9f336979760761ce02df0e78257dd0e6853808a2
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Tue Apr 2 23:32:07 2013 -0400
+
+    Version 1.0-1 on CRAN (modified DESCRIPTION and removed empty Makevars file
+
+commit 5c152601473c13020160c1ebc8aebc2d3a195a2f
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Wed Mar 27 11:36:00 2013 -0400
+
+    Modified DESCRIPTION date, etc. THIS IS VERSION 1.0-0 submitted to CRAN
+
+commit e0eec9fc8513e6cf74d8c96c37fa80c587d871f5
+Author: blewis <blewis@homer.(none)>
+Date:   Wed Mar 27 10:40:06 2013 -0400
+
+    Added check on materialized data size
+
+commit 0b425257969d8bf543eefa91a7868ff7db14a55d
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Wed Mar 27 10:10:45 2013 -0400
+
+    More POST madness
+
+commit bf518c8dd9e61c097df8d77e81616b8217715204
+Author: blewis <blewis@homer.(none)>
+Date:   Wed Mar 27 10:08:50 2013 -0400
+
+    Doc update
+
+commit 3283eca5dd06010aca1a32ea89981e5a3ddbf736
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Wed Mar 27 09:53:23 2013 -0400
+
+    Added affero license notice in vignette
+
+commit 97a3c3102f1cd2ab764d3f4639ed2d51e8428cec
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Wed Mar 27 09:22:41 2013 -0400
+
+    Fixed bug in POST boundary
+
+commit ed9422ad64f2fc3f84c6a41a1ff422e67bc485b0
+Author: blewis <blewis@homer.(none)>
+Date:   Mon Mar 25 23:51:46 2013 -0400
+
+    Vignette cleanup
+
+commit 0c710fe52046fbffb672212b4d06c19ebb97ab9b
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Mon Mar 25 23:46:13 2013 -0400
+
+    vignette
+
+commit 6dd78abd1366908c24f4ff7aa265743e996f8b1f
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Mon Mar 25 23:44:26 2013 -0400
+
+    Joe's vignette edits
+
+commit 424f965ba9042d200b1c2045b567bc649df445ad
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Mon Mar 25 23:23:27 2013 -0400
+
+    Fixed bugs in Windows version of df2scidb
+
+commit fbf1555fc3798ed606c3d680e7f0f6001fcf5730
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Mon Mar 25 22:11:37 2013 -0400
+
+    Replaced fmemopen (not supported by mingw :/) with pointer arithmetic
+
+commit cb658a6a12cbae03367ae4100b52d14c2ef30f49
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Mon Mar 25 21:46:09 2013 -0400
+
+    fixed typo in materialize_new function
+
+commit 9a5507a0bbd77f232391b9a8f65c349730274c85
+Author: blewis <blewis@homer.(none)>
+Date:   Mon Mar 25 21:31:57 2013 -0400
+
+    version bump
+
+commit 440581ed3b16e79637b1bafdb87654a688698445
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Mon Mar 25 21:15:11 2013 -0400
+
+    Better performing matrix materialize
+
+commit bdb1e2ab9d6926f519eeabf2bd2acb939ced36ca
+Author: Bryan Lewis <blewis@arbitrage.(none)>
+Date:   Mon Mar 25 19:50:08 2013 -0400
+
+    Added blob2R function
+
+commit 02eb1d5652d68bd9fe1641661a9938bec368f038
+Author: blewis <blewis@homer.(none)>
+Date:   Fri Mar 22 11:07:04 2013 -0400
+
+    New README
+
+commit 3c3d57590f8e638980d78c0bac8b164284c8df42
+Author: blewis <blewis@homer.(none)>
+Date:   Fri Mar 22 11:04:16 2013 -0400
+
+    Switched to Affero GPL
+
+commit 86ef1008dcaee3373345adafd5d3317ac255f3dd
+Author: blewis <blewis@homer.(none)>
+Date:   Thu Mar 21 00:53:49 2013 -0400
+
+    Added man/is.scidbdf.Rd
+
+commit 90f56d609c96f3df814386052148707b8915d9a8
+Author: blewis <blewis@newton.(none)>
+Date:   Wed Mar 20 09:48:10 2013 -0400
+
+    Vignette update
+
+commit 48c8f0c58b147b4e0cf1e2465b8a93c9280d4ea7
+Author: blewis <blewis@homer.(none)>
+Date:   Wed Mar 20 00:36:37 2013 -0400
+
+    Increased default binary transfer size to 1M, added is.scidbdf.Rd to repo
+
+commit 86b9ac8e738a08da03227a2404c664e43e97f42b
+Author: blewis <blewis@homer.(none)>
+Date:   Tue Mar 19 15:58:20 2013 -0400
+
+    Significant vignette update
+
+commit a17d9d8aab1dd067f1cea3abf4dab48b9f34a32a
+Author: blewis <blewis@homer.(none)>
+Date:   Mon Mar 18 01:17:09 2013 -0400
+
+    fixed a few man page typos, removed unit tests for now, still working on vignette
+
+commit ff7ee3044da3bb596ff8e5eb51ef14f65a9bd3de
+Author: blewis <blewis@homer.(none)>
+Date:   Mon Mar 11 22:24:14 2013 -0400
+
+    Improved iquery iterator to return column headers, data.frame object with NIDs partially working (with between)
+
+commit 43c3090b7f9b1d285d4470a084358c009ab7154c
+Author: blewis <blewis@homer.(none)>
+Date:   Mon Mar 11 11:07:31 2013 -0400
+
+    Added colClasses slot to scidbdf object-enables user-controlled column coversion, and also basic default column class conversions
+
+commit 3006f8256871538bec275ef62e45c86d8f640296
+Author: blewis <blewis@homer.(none)>
+Date:   Fri Mar 8 17:49:59 2013 -0500
+
+    Man fixes
+
+commit e7496ee25b8702fd92b5b4e8a5dea6816c3c4264
+Author: blewis <blewis@homer.(none)>
+Date:   Fri Mar 8 16:18:51 2013 -0500
+
+    Doc fix up part 1
+
+commit 56d95ca37e7126279a49f0e8a436b7eefded473a
+Author: blewis <blewis@homer.(none)>
+Date:   Fri Mar 8 15:49:39 2013 -0500
+
+    First working version of aggregate with the scidbdf class (but the syntax is slightly different than standard aggregate)
+
+commit 4342d8aaa1856dfdf503817359af7cdc50ac636b
+Author: blewis <blewis@homer.(none)>
+Date:   Fri Mar 8 07:43:53 2013 -0500
+
+    Aggregate placeholder
+
+commit 37aadfc842655f5c33e5c9276f46c16baab2df12
+Author: blewis <blewis@homer.(none)>
+Date:   Thu Mar 7 21:35:00 2013 -0500
+
+    New scidbdf class, mimics data.frames
+
+commit 1bc234ba7445c49e32164c545b13cf497e4d14fd
+Author: blewis <blewis@homer.(none)>
+Date:   Wed Mar 6 22:44:32 2013 -0500
+
+    Lost scidbdataframe class is back, but just a prototype
+
+commit 53e483bb601ffe4e426b75a1b14b8568b525ccff
+Author: bwlewis <blewis@illposed.net>
+Date:   Wed Mar 6 00:51:08 2013 -0500
+
+    SciDB package for R, (backed up from subversion repository revision 38)

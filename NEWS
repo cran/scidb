@@ -1,4 +1,37 @@
+CHANGES IN scidb 1.1-2:
+
+  SCIDB SUPPORT
+
+    o Support for SciDB 14.3, untested support for older SciDB releases
+
+    o Dropping arrays from other R sessions requires a non-default option
+      facilitating multiple-user settings.
+
+    o Queries can be canceled with R user interrupts now (for example with
+      CTRL + C or ESC).
+
+  IMPROVEMENTS
+
+    o Many improvements to merge and aggregate functions
+
+    o N-d arrays with multiple attributes can now index with `$`
+
+    o Improved R save/load of R data files containing SciDB objects
+
+  NEW FEATURES
+
+    o Support for Paradigm4 glm and a simple glm model matrix builder
+
+    o Support for Paradigm4 truncated SVD routine
+
+    o Added hist, quantile, all.equal, antijoin, a `c` (SciDB concat-like)
+      function and many others
+
 CHANGES IN scidb 1.1-1:
+
+  WINDOWED AGGREGATES
+
+    o The aggregate function now supports moving and fixed window aggregates.
 
   TLS/SSL ENCRYPTION AND AUTHENTICATION
 
@@ -7,12 +40,11 @@ CHANGES IN scidb 1.1-1:
       by this is `scidbconnect` -- simply supply an SSL port number and
       username and password arguments.
 
-  NEW `scidbexpr` CLASS:
+  LAZY EVALUATION
 
-    o The `scidbexpr` class represents a potential SciDB array not yet
-      evaluated or stored in SciDB. The array is defined by a query and has a
-      basic schema.  Many operators now accept `scidbexpr` objects as input.
-      This class may replace the `scidbdf` and `scidb` objects in the future.
+    o Most scidb and scidbdf object can now represent array promises,
+      un-evaluated SciDB queries equipped with a result schema and a
+      context environment.
 
   NEW COMPOSABLE OPERATORS
 

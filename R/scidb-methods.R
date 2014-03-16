@@ -1,24 +1,135 @@
-#/*
-#**
-#* BEGIN_COPYRIGHT
-#*
-#* This file is part of SciDB.
-#* Copyright (C) 2008-2013 SciDB, Inc.
-#*
-#* SciDB is free software: you can redistribute it and/or modify
-#* it under the terms of the AFFERO GNU General Public License as published by
-#* the Free Software Foundation.
-#*
-#* SciDB is distributed "AS-IS" AND WITHOUT ANY WARRANTY OF ANY KIND,
-#* INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY,
-#* NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR PURPOSE. See
-#* the AFFERO GNU General Public License for the complete license terms.
-#*
-#* You should have received a copy of the AFFERO GNU General Public License
-#* along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
-#*
-#* END_COPYRIGHT
-#*/
+#
+#    _____      _ ____  ____
+#   / ___/_____(_) __ \/ __ )
+#   \__ \/ ___/ / / / / __  |
+#  ___/ / /__/ / /_/ / /_/ / 
+# /____/\___/_/_____/_____/  
+#
+#
+#
+# BEGIN_COPYRIGHT
+#
+# This file is part of SciDB.
+# Copyright (C) 2008-2014 SciDB, Inc.
+#
+# SciDB is free software: you can redistribute it and/or modify
+# it under the terms of the AFFERO GNU General Public License as published by
+# the Free Software Foundation.
+#
+# SciDB is distributed "AS-IS" AND WITHOUT ANY WARRANTY OF ANY KIND,
+# INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY,
+# NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR PURPOSE. See
+# the AFFERO GNU General Public License for the complete license terms.
+#
+# You should have received a copy of the AFFERO GNU General Public License
+# along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
+#
+# END_COPYRIGHT
+#
+
+# Generic function declarations
+setGeneric("%<%", def=function(x,y){NULL})
+setGeneric("%>%", def=function(x,y){NULL})
+setGeneric("%<=%", def=function(x,y){NULL})
+setGeneric("%>=%", def=function(x,y){NULL})
+setGeneric("%==%", def=function(x,y){NULL})
+
+setOldClass("crossprod")
+setGeneric("crossprod")
+
+setOldClass("crossprod")
+setGeneric("crossprod")
+
+setOldClass("na.locf")
+setGeneric("na.locf")
+
+setOldClass("hist")
+setGeneric("hist")
+
+setGeneric("sum")
+setGeneric("mean")
+setGeneric("median")
+setGeneric("min")
+setGeneric("max")
+setGeneric("sd")
+setGeneric("var")
+setGeneric("diag")
+setGeneric("head")
+setGeneric("tail")
+setGeneric("is.scidb", function(x) standardGeneric("is.scidb"))
+setGeneric("print")#, function(x) standardGeneric("print"))
+setGeneric("image")
+
+setOldClass("aggregate")
+setGeneric("aggregate")
+
+setOldClass("sweep")
+setGeneric("sweep")
+
+setOldClass("apply")
+setGeneric("apply")
+
+setMethod("unpack",signature(x="scidb"),unpack_scidb)
+
+setOldClass("reshape")
+setGeneric("reshape", function(data,...) stats::reshape(data,...))
+
+setOldClass("dist")
+setGeneric("dist")
+
+setOldClass("svd")
+setGeneric("svd")
+
+setOldClass("glm.fit")
+setGeneric("glm.fit")
+
+setOldClass("t")
+setGeneric("t")
+
+setOldClass("lag")
+setGeneric("lag")
+setGeneric("regrid", def=function(x,grid,expr){NULL})
+setGeneric("xgrid", def=function(x,grid){NULL})
+setGeneric("Filter")
+
+# Non-traditional masking binary comparison operators
+setMethod("%<%",signature(x="scidb", y="ANY"),
+  function(x,y)
+  {
+    .compare(x,y,"<",traditional=FALSE)
+  },
+  valueClass="scidb"
+)
+setMethod("%>%",signature(x="scidb", y="ANY"),
+  function(x,y)
+  {
+    .compare(x,y,">",traditional=FALSE)
+  },
+  valueClass="scidb"
+)
+setMethod("%<=%",signature(x="scidb", y="ANY"),
+  function(x,y)
+  {
+    .compare(x,y,"<=",traditional=FALSE)
+  },
+  valueClass="scidb"
+)
+setMethod("%>=%",signature(x="scidb", y="ANY"),
+  function(x,y)
+  {
+    .compare(x,y,">=",traditional=FALSE)
+  },
+  valueClass="scidb"
+)
+setMethod("%==%",signature(x="scidb", y="ANY"),
+  function(x,y)
+  {
+    .compare(x,y,"==",traditional=FALSE)
+  },
+  valueClass="scidb"
+)
+
+
 
 setMethod("%*%",signature(x="scidb", y="scidbdf"),
   function(x,y)
@@ -68,8 +179,6 @@ setMethod("%*%",signature(x="numeric", y="scidb"),
   valueClass="character"
 )
 
-setOldClass("crossprod")
-setGeneric("crossprod")
 setMethod("crossprod",signature(x="scidb", y="missing"),
   function(x)
   {
@@ -78,8 +187,6 @@ setMethod("crossprod",signature(x="scidb", y="missing"),
   valueClass="scidb"
 )
 
-setOldClass("crossprod")
-setGeneric("crossprod")
 setMethod("crossprod",signature(x="scidb", y="scidb"),
   function(x,y)
   {
@@ -88,6 +195,9 @@ setMethod("crossprod",signature(x="scidb", y="scidb"),
   valueClass="scidb"
 )
 
+setMethod("na.locf",signature(object="scidb"), na.locf_scidb)
+
+setMethod("hist",signature(x="scidb"), hist_scidb)
 
 setMethod("tcrossprod",signature(x="scidb", y="scidb"),
   function(x,y)
@@ -106,160 +216,184 @@ setMethod("tcrossprod",signature(x="scidb", y="missing"),
 )
 
 
+scidb_grand = function(x, op)
+{
+  ag = paste(sprintf("%s(%s) as %s", op, x@attributes, x@attributes),collapse=",")
+  query = sprintf("aggregate(%s, %s)", x@name, ag)
+  if(length(x@attributes)==1) return(iquery(query, `return`=TRUE)[,2])
+  iquery(query,`return`=TRUE)
+}
 
 # The remaining functions return data to R:
-setGeneric("sum")
 setMethod("sum", signature(x="scidb"),
 function(x)
 {
-  iquery(sprintf("sum(%s)",x@name),return=TRUE)[,2]
+  scidb_grand(x, "sum")
 })
 
-setGeneric("mean")
 setMethod("mean", signature(x="scidb"),
 function(x)
 {
-  iquery(sprintf("avg(%s)",x@name),return=TRUE)[,2]
+  scidb_grand(x, "avg")
 })
 
-setGeneric("min")
+setMethod("median", signature(x="scidb"),
+function(x)
+{
+  scidb_grand(x, "median")
+})
+
 setMethod("min", signature(x="scidb"),
 function(x)
 {
-  iquery(sprintf("min(%s)",x@name),return=TRUE)[,2]
+  scidb_grand(x, "min")
 })
 
-setGeneric("max")
 setMethod("max", signature(x="scidb"),
 function(x)
 {
-  iquery(sprintf("max(%s)",x@name),return=TRUE)[,2]
+  scidb_grand(x, "max")
 })
 
-setGeneric("sd")
 setMethod("sd", signature(x="scidb"),
 function(x)
 {
-  iquery(sprintf("stdev(%s)",x@name),return=TRUE)[,2]
+  scidb_grand(x, "stdev")
 })
 
-setGeneric("var")
 setMethod("var", signature(x="scidb"),
 function(x)
 {
-  iquery(sprintf("var(%s)",x@name),return=TRUE)[,2]
+  scidb_grand(x, "var")
 })
 
-setGeneric("diag")
 setMethod("diag", signature(x="scidb"),
 function(x)
 {
   D = dim(x)
+  atr = .get_attribute(x)
+  dims = dimensions(x)
+  bounds = scidb_coordinate_bounds(x)
+  len = as.numeric(bounds$length)
+  chunk = scidb_coordinate_chunksize(x)
+  overlap = scidb_coordinate_overlap(x)
+  xtypes = scidb_types(x)
   if(length(D)>2) stop("diag requires a matrix or vector")
 # Two cases
 # Case 1: Given a matrix, return its diagonal as a vector.
   if(length(D)==2)
   {
-    bschema = sprintf("<%s:double>",x@attribute)
+    bschema = sprintf("<%s:double>",atr)
     bschema = sprintf("%s%s",bschema,build_dim_schema(x,newstart=c(0,0)))
-    mask = sprintf("build(<%s:double>[%s=%.0f:%.0f,1000000,0],1)",x@attribute,x@D$name[1],0,min(x@D$length)-1)
-    mask = sprintf("apply(%s,%s,%s)",mask,x@D$name[2],x@D$name[1])
+    mask = sprintf("build(<%s:double>[%s=0:%s,1000000,0],1)",atr,dims[1],noE(min(len)-1))
+    mask = sprintf("apply(%s,%s,%s)",mask,dims[2],dims[1])
     mask = sprintf("redimension(%s,%s)",mask, bschema)
-    mask = sprintf("attribute_rename(%s,%s,%s)",mask,x@attribute,make.unique_(x@attribute,"v"))
-    query = sprintf("project(join(sg(subarray(%s,null,null,null,null),1,-1),%s),%s)",x@name,mask,x@attribute)
-    query = sprintf("unpack(%s,%s)",query, make.unique_(x@D$name, "i"))
-    query = sprintf("project(%s,%s)",query,x@attribute)
-    query = sprintf("sg(subarray(%s,0,%.0f),1,-1)",query,min(x@D$length)-1)
+    mask = sprintf("attribute_rename(%s,%s,%s)",mask,atr,make.unique_(atr,"v"))
+    GEMM.BUG = ifelse(is.logical(options("scidb.gemm_bug")[[1]]),options("scidb.gemm_bug")[[1]],FALSE)
+    if(GEMM.BUG) query = sprintf("project(join(sg(subarray(%s,null,null,null,null),1,-1),%s),%s)",x@name,mask,atr)
+    else query = sprintf("project(join(subarray(%s,null,null,null,null),%s),%s)",x@name,mask,atr)
+    query = sprintf("unpack(%s,%s)",query, make.unique_(dims, "i"))
+    query = sprintf("project(%s,%s)",query,atr)
+    if(GEMM.BUG) query = sprintf("sg(subarray(%s,0,%s),1,-1)",query,noE(min(len)-1))
+    else query = sprintf("subarray(%s,0,%s)",query,noE(min(len)-1))
     return(.scidbeval(query, eval=FALSE, gc=TRUE, depend=list(x)))
   }
 # Case 2: Given a vector return  diagonal matrix.
-  dim2 = make.unique_(x@D$name, "j")
-  query = sprintf("build(<%s:%s>[%s=0:%.0f,%.0f,%.0f],nan)",
-           make.unique_(x@attributes,"v"), x@type,
-           x@D$name[1], x@D$length[1] - 1 , x@D$chunk_interval[1], x@D$chunk_overlap[1])
-  query = sprintf("apply(%s,%s,%s)",query,dim2,x@D$name[1])
-  query = sprintf("redimension(%s,<%s:%s>[%s=0:%.0f,%.0f,%.0f,%s=0:%.0f,%.0f,%.0f])",
-           query, make.unique_(x@attributes,"v"), x@type,
-           x@D$name[1], x@D$length[1] - 1 , x@D$chunk_interval[1], x@D$chunk_overlap[1],
-           dim2, x@D$length[1] - 1 , x@D$chunk_interval[1], x@D$chunk_overlap[1])
-  query = sprintf("cross_join(%s as __X,%s as __Y,__X.%s,__Y.%s)",query,x@name,x@D$name[1],x@D$name[1])
-  query = sprintf("project(%s,%s)",query,x@attribute)
+  dim2 = make.unique_(dims, "j")
+  query = sprintf("build(<%s:%s>[%s=0:%s,%s,%s],nan)",
+           make.unique_(x@attributes,"v"), xtypes,
+           dims[1], noE(len[1] - 1), chunk[1], overlap[1])
+  query = sprintf("apply(%s,%s,%s)",query,dim2,dims[1])
+  query = sprintf("redimension(%s,<%s:%s>[%s=0:%s,%s,%s,%s=0:%s,%s,%s])",
+           query, make.unique_(x@attributes,"v"), scidb_types(x),
+           dims[1], noE(len[1] - 1) , chunk[1], overlap[1],
+           dim2, noE(len[1] - 1), chunk[1], overlap[1])
+  query = sprintf("cross_join(%s as __X,%s as __Y,__X.%s,__Y.%s)",query,x@name,dims[1],dims[1])
+  query = sprintf("project(%s,%s)",query,atr)
   ans = .scidbeval(query, eval=FALSE, gc=TRUE, depend=list(x))
   attr(ans, "sparse") = TRUE
   return(ans)
 })
 
-setGeneric("head")
 setMethod("head", signature(x="scidb"),
 function(x, n=6L, ...)
 {
-  m = x@D$start
+  bounds = scidb_coordinate_bounds(x)
+  xstart = as.numeric(bounds$start)
+  xlen   = as.numeric(bounds$end)
+  m = xstart
   p = m + n - 1
+  p = apply(cbind(p, xlen),1,min)
+  if(length(p)>2) p[3:length(p)] = m[3:length(p)]
   limits = lapply(1:length(m), function(j) seq(m[j],p[j]))
   tryCatch(
-    do.call(dimfilter,args=list(x=x,i=limits,eval=FALSE))[],
+    do.call(dimfilter,args=list(x=x,i=limits,eval=FALSE,drop=TRUE))[],
     error = function(e)
     {
-      warning("Unsupported data type. Using iquery to display array data.")
-      iquery(x@name, return=TRUE, n=n)
+      query = betweenbound(x,m,p)
+      iquery(query, return=TRUE, n=n)
     })
 })
 
-setGeneric("tail")
 setMethod("tail", signature(x="scidb"),
 function(x, n=6L, ...)
 {
-  p = x@D$start + x@D$length - 1
-  m = x@D$start + x@D$length - n
-  m = unlist(lapply(1:length(m),function(j) max(m[j],x@D$start[j])))
+  bounds = scidb_coordinate_bounds(x)
+  xstart = as.numeric(bounds$start)
+  xlen   = as.numeric(bounds$length)
+  p = xstart + xlen - 1
+  m = xstart + xlen - n
+  m = unlist(lapply(1:length(m),function(j) max(m[j],xstart[j])))
   limits = lapply(1:length(m), function(j) seq(m[j],p[j]))
-  do.call(dimfilter,args=list(x=x,i=limits,eval=FALSE))[]
+  do.call(dimfilter,args=list(x=x,i=limits,eval=FALSE,drop=TRUE))[]
 })
 
-
-setGeneric('is.scidb', function(x) standardGeneric('is.scidb'))
-setMethod('is.scidb', signature(x='ANY'),
+setMethod("is.scidb", signature(x="ANY"),
   function(x) 
   {
     if(inherits(x, "scidb")) return(TRUE)
     FALSE
   }
 )
-#setMethod('is.scidb', definition=function(x) return(FALSE))
 
-setGeneric('print', function(x) standardGeneric('print'))
-setMethod('print', signature(x='scidb'),
+setMethod("print", signature(x="scidb"),
   function(x) {
     show(x)
   })
 
-setMethod('show', 'scidb',
+setMethod("show", "scidb",
   function(object) {
-    atr=object@attribute
     if(is.null(dim(object)) || length(dim(object))==1)
-      cat("Reference to a SciDB vector of length",object@length,"\n")
+      cat("Reference to a SciDB vector of length",
+           scidb_coordinate_bounds(object)$length,"\n")
     else
       cat("A reference to a ",
-          paste(object@dim,collapse="x"),
+          paste(dim(object),collapse="x"),
           "SciDB array\n")
   })
 
-setGeneric("image", function(x,...) x)
 setMethod("image", signature(x="scidb"),
-function(x, grid=c(500,500), op=sprintf("sum(%s)", x@attribute), na=0, ...)
+function(x, grid=c(500,500), op=sprintf("sum(%s)", .get_attribute(x)), na=0, ...)
 {
   if(length(dim(x))!=2) stop("Sorry, array must be two-dimensional")
   if(length(grid)!=2) stop("The grid parameter must contain two values")
-  blocks = x@D$length
+  el = list(...)
+  if("plot" %in% names(el))
+  {
+    plot = as.logical(el$plot)
+  }
+  else plot=TRUE
+  blocks = as.numeric(scidb_coordinate_bounds(x)$length)
   blocks = blocks/grid
   if(any(blocks<1)) blocks[which(blocks<1)] = 1
-  query = sprintf("regrid(project(%s,%s),%.0f,%.0f,%s)",x@name,x@attribute,blocks[1],blocks[2],op)
+  query = sprintf("regrid(project(%s,%s),%.0f,%.0f,%s)",x@name,.get_attribute(x),blocks[1],blocks[2],op)
   A = iquery(query,return=TRUE,n=Inf)
   A[is.na(A[,3]),3] = na
   m = max(A[,1]) + 1
   n = max(A[,2]) + 1
   B = matrix(0,m,n)
   B[A[,1] + A[,2]*m + 1] = A[,3]
+  if(!plot) return (B)
   xlbl=(1:ncol(B))*blocks[2]
   xat=seq(from=0,to=1,length.out=ncol(B))
   ylbl=(nrow(B):1)*blocks[1]
@@ -270,35 +404,16 @@ function(x, grid=c(500,500), op=sprintf("sum(%s)", x@attribute), na=0, ...)
   B
 })
 
-setOldClass("aggregate")
-setGeneric("aggregate")
 setMethod("aggregate", signature(x="scidb"), aggregate_scidb)
-
-setOldClass("sweep")
-setGeneric("sweep")
 setMethod("sweep", signature(x="scidb"), sweep_scidb)
-
-setOldClass("apply")
-setGeneric("apply")
 setMethod("apply", signature(X = "scidb"), apply_scidb)
-
 setMethod("unpack",signature(x="scidb"),unpack_scidb)
-
-setOldClass("reshape")
-setGeneric("reshape", function(data,...) data)
 setMethod("reshape", signature(data="scidb"), reshape_scidb)
-
-setOldClass("svd")
-setGeneric("svd")
+setMethod("dist", signature(x="scidb"), dist_scidb)
 setMethod("svd", signature(x="scidb"), svd_scidb)
-
-setOldClass("glm.fit")
-setGeneric("glm.fit")
-setMethod("glm.fit", signature(x="scidb"), glm_scidb)
+setMethod("glm.fit", signature(x="scidb",y="ANY",weights="MNSN"), glm.fit_scidb)
 
 # Transpose a matrix or vector
-setOldClass("t")
-setGeneric("t")
 setMethod("t", signature(x="scidb"), 
   function(x)
   {
@@ -308,47 +423,48 @@ setMethod("t", signature(x="scidb"),
 )
 
 # Lead or lag a time series
-setOldClass("lag")
-setGeneric("lag")
 setMethod("lag",signature(x="scidb"),
   function(x,k=1,dim=1,eval=FALSE)
   {
-    n = make.unique_(c(x@attributes, x@D$name), "n")
-    expr = sprintf("%s - %s", x@D$name[dim], k)
+    names = dimensions(x)
+    start = scidb_coordinate_start(x)
+    xstart = start
+    n = make.unique_(c(scidb_attributes(x), names), "n")
+    expr = sprintf("%s - %s", names[dim], k)
     y = bind(x,n,expr)
-    start = x@D$start
-    start[dim] = start[dim] - k
-    names = x@D$name
+    start[dim] = noE(as.numeric(start[dim]) - k)
     names[dim] = n
     schema = sprintf("%s%s", build_attr_schema(x),
       build_dim_schema(x,newstart=start,newnames=names))
     y = redimension(y,schema)
     cschema = sprintf("%s%s",build_attr_schema(x),
-                build_dim_schema(y,newnames=x@D$name))
+                build_dim_schema(y,newnames=dimensions(x)))
     y = cast(y,cschema)
-    b = paste(paste(noE(x@D$start),collapse=","),
-        paste(noE(x@D$length-1),collapse=","),sep=",")
-    query = sprintf("between(%s,%s)",y@name,b)
+    query = sprintf("between(%s,%s)",y@name,between_coordinate_bounds(x))
     query = sprintf("redimension(%s,%s%s)",query, build_attr_schema(x),build_dim_schema(x))
-    .scidbeval(query,eval=FALSE,gc=TRUE,depend=list(x))
+    .scidbeval(query,eval=FALSE,gc=TRUE,depend=list(x,y))
   })
 
 # SciDB's regrid and xgrid operators (simple wrappers)
-setGeneric("regrid", def=function(x,grid,expr){NULL})
 setMethod("regrid", signature(x="scidb"),
   function(x, grid, expr)
   {
-    if(missing(expr)) expr = sprintf("avg(%s)",x@attribute)
+    if(missing(expr)) expr = paste(sprintf("avg(%s)",x@attributes),collapse=",")
     query = sprintf("regrid(%s, %s, %s)",
                x@name, paste(noE(grid),collapse=","), expr)
     .scidbeval(query, eval=FALSE, gc=TRUE, depend=list(x))
   })
-setGeneric("xgrid", def=function(x,grid){NULL})
 setMethod("xgrid", signature(x="scidb"),
   function(x, grid)
   {
     query = sprintf("xgrid(%s, %s)", x@name, paste(noE(grid),collapse=","))
     .scidbeval(query, eval=FALSE, gc=TRUE, depend=list(x))
+  })
+
+setMethod("Filter",signature(f="character",x="scidb"),
+  function(f, x)
+  {
+    filter_scidb(x,f)
   })
 
 setMethod("sin",signature(x="scidb"),
@@ -385,4 +501,9 @@ setMethod("abs",signature(x="scidb"),
   function(x)
   {
     fn_scidb(x, "abs")
+  })
+setMethod("sqrt",signature(x="scidb"),
+  function(x)
+  {
+    fn_scidb(x, "sqrt")
   })

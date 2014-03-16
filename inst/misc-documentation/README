@@ -1,0 +1,19 @@
+Run:
+
+./SciDBR.list.functions
+
+to produce a nicely formatted list of functions defined in the package. Use
+this list in the Sweave vignette or wiki or wherever.
+
+
+Run:
+
+R CMD Sweave scidb.Rnw
+
+to generate the master SciDB vignette file scidb.tex. This requires a
+connection to SciDB to run the examples.
+
+We don't want to bother CRAN with connection to SciDB, so we then take
+the scidb.tex file and copy it into the package vignette folder:
+
+cp scidb.tex ../SciDBR/vignettes/scidb.Rnw

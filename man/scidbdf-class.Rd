@@ -10,11 +10,13 @@
 \alias{show,scidbdf-method}
 \alias{sin,scidbdf-method}
 \alias{abs,scidbdf-method}
+\alias{sqrt,scidbdf-method}
 \alias{cos,scidbdf-method}
 \alias{tan,scidbdf-method}
 \alias{asin,scidbdf-method}
 \alias{acos,scidbdf-method}
 \alias{atan,scidbdf-method}
+\alias{Filter,character,scidbdf-method}
 
 \title{Class \code{"scidbdf"}}
 \description{A class that represents 1D SciDB arrays similarly to R data.frames.}
@@ -25,14 +27,9 @@ Objects can be created by calls of the form \code{new("scidbdf", ...)},
 \section{Slots}{
   \describe{
     \item{\code{name}:}{Object of class \code{"character"} scidb array name. }
-    \item{\code{D}:}{Object of class \code{"list"} List of scidb dimension information. }
-    \item{\code{dim}:}{Object of class \code{"numericOrNULL"} Vector of dimension lengths.}
-    \item{\code{length}:}{Object of class \code{"numeric"} Length of array object. }
-    \item{\code{attributes}:}{Object of class \code{"character"} Vector of all available attributes for the SciDB array. }
-    \item{\code{nullable}:}{Object of class \code{"logical"} Is the attribute nullable (TRUE/FALSE)? }
+    \item{\code{attributes}:}{Object of class \code{"character"} Vector of SciDB attribute names. }
+    \item{\code{dimensions}:}{Object of class \code{"character"} Vector of SciDB dimension names. }
     \item{\code{schema}:}{Object of class \code{"character"} SciDB array schema.} 
-    \item{\code{types}:}{Object of class \code{"character"} Vector of SciDB types for all the array attributes. }
-    \item{\code{colClasses}:}{Object of class \code{"character"} Optional vector of read.table-style column classes used to parse messages from SciDB. }
     \item{\code{gc}:}{Object of class \code{"environment"} An environment used to link the SciDB array to the R garbage collector. }
     \item{\code{.S3Class}:}{Object of class \code{"character"} ~~ }
   }
@@ -45,10 +42,14 @@ Objects can be created by calls of the form \code{new("scidbdf", ...)},
     \item{head}{\code{signature(x = "scidbdf")}: ... }
     \item{tail}{\code{signature(x = "scidbdf")}: ... }
     \item{show}{\code{signature(object = "scidbdf")}: ... }
+    \item{Filter}{\code{signature(f="character", x = "scidbdf")}: \code{Filter(f,x)}
+      'Filter' masks elements of a vector for which a predicate (logical) SciDB expression 'f' returns false by making them empty, returning a sparse version of the array.
+    }
     \item{sin}{\code{signature(x = "scidbdf")}: \code{sin(x)}
       Return an array with the sine of each element of the array \code{x}. The first listed attribute is used and should be numeric. The returned array contains a new attibute with "_sin" appended containing the result. Additional trig functions (\code{cos, tan, asin, acos, atan}) act similarly.
     }
     \item{abs}{\code{signature(x = "scidbdf")}: \code{cos(x)} See doc. for \code{sin}.}
+    \item{sqrt}{\code{signature(x = "scidbdf")}: \code{cos(x)} See doc. for \code{sin}.}
     \item{cos}{\code{signature(x = "scidbdf")}: \code{cos(x)} See doc. for \code{sin}.}
     \item{tan}{\code{signature(x = "scidbdf")}: \code{tan(x)} See doc. for \code{sin}.}
     \item{asin}{\code{signature(x = "scidbdf")}: \code{asin(x)} See doc. for \code{sin}.}

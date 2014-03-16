@@ -11,9 +11,11 @@ slice(x, d, n, `eval`=FALSE)
 }
 \arguments{
   \item{x}{A \code{scidb}  object.}
-  \item{d}{A character string representation of the coordinate axis to slice along.}
+  \item{d}{A character string representation of the coordinate axis to slice along, or
+           logical or numeric index of the axis.}
   \item{n}{The value to slice on.}
-  \item{eval}{(Optional) If true, execute the query and store the reult array. Otherwise defer evaluation.}
+  \item{eval}{(Optional) If true, execute the query and store the reult array.
+               Otherwise defer evaluation.}
 }
 \value{
 A new \code{scidb} object of lower dimension.

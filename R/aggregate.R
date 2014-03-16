@@ -1,3 +1,32 @@
+#
+#    _____      _ ____  ____
+#   / ___/_____(_) __ \/ __ )
+#   \__ \/ ___/ / / / / __  |
+#  ___/ / /__/ / /_/ / /_/ / 
+# /____/\___/_/_____/_____/  
+#
+#
+#
+# BEGIN_COPYRIGHT
+#
+# This file is part of SciDB.
+# Copyright (C) 2008-2014 SciDB, Inc.
+#
+# SciDB is free software: you can redistribute it and/or modify
+# it under the terms of the AFFERO GNU General Public License as published by
+# the Free Software Foundation.
+#
+# SciDB is distributed "AS-IS" AND WITHOUT ANY WARRANTY OF ANY KIND,
+# INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY,
+# NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR PURPOSE. See
+# the AFFERO GNU General Public License for the complete license terms.
+#
+# You should have received a copy of the AFFERO GNU General Public License
+# along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
+#
+# END_COPYRIGHT
+#
+
 # Nifty aggregation-related functions
 
 `sweep_scidb` = function(x, MARGIN, STATS, FUN="-", `eval`=FALSE, `name`)
@@ -5,26 +34,29 @@
   if(!is.scidb(x)) stop("x must be a scidb object")
   if(!is.scidb(STATS) && !is.scidbdf(STATS)) stop("STATS must be a scidb or scidbdf object")
   if(length(MARGIN)!=1) stop("MARGIN must indicate a single dimension")
-  if(length(STATS@D$name)>1) stop("STATS must be a one-dimensional SciDB array")
-  if(is.numeric(MARGIN)) MARGIN = x@D$name[MARGIN]
-  if(missing(`name`)) `name` = x@attribute
-  if(!(MARGIN %in% STATS@D$name))
+  if(length(dimensions(STATS))>1) stop("STATS must be a one-dimensional SciDB array")
+  if(is.numeric(MARGIN)) MARGIN = dimensions(x)[MARGIN]
+  xattr = .get_attribute(x)
+  sattr = .get_attribute(STATS)
+  if(missing(`name`)) `name` = xattr
+  if(!(MARGIN %in% dimensions(STATS)))
   {
 # Make sure coordinate axis along MARGIN are named the same in each array
-    old = sprintf("%s=",STATS@D$name[1])
+    old = sprintf("%s=",dimensions(STATS)[1])
     new = sprintf("%s=",MARGIN)
-    schema = gsub(old,new,STATS@schema)
-    query = sprintf("cast(%s,%s)",STATS,schema)
+    schema = gsub(old,new,schema(STATS))
+    query = sprintf("cast(%s,%s)",STATS@name,schema)
     STATS = .scidbeval(query,eval=FALSE, depend=list(x))
   }
 # Check for potential attribute name conflicts and adjust.
-  if(length(intersect(x@attributes, STATS@attributes))>0)
+  if(length(intersect(scidb_attributes(x), scidb_attributes(STATS)))>0)
   {
     STATS = cast(STATS,paste(build_attr_schema(STATS,"V_"),build_dim_schema(STATS)),`eval`=FALSE)
   }
+# Handle infix notation
   if(nchar(FUN)==1)
   {
-    FUN = sprintf("%s %s %s",x@attribute, FUN, STATS@attribute)
+    FUN = sprintf("%s %s %s",scidb_attributes(x), FUN, scidb_attributes(STATS))
   }
   substitute(
   attribute_rename(
@@ -36,48 +68,70 @@
 }
 
 # A very limited version of R's apply.
-`apply_scidb` = function(X,MARGIN,FUN,`eval`=FALSE,`name`,...)
+`apply_scidb` = function(X,MARGIN,FUN,`eval`=FALSE,...)
 {
   if(!is.scidb(X)) stop("X must be a scidb object")
   if(length(MARGIN)!=1) stop("MARGIN must indicate a single dimension")
-  if(is.numeric(MARGIN)) MARGIN = X@D$name[MARGIN]
-  if(missing(`name`)) `name` = X@attribute
-  Y = aggregate(X,MARGIN,FUN,eval=FALSE)
-  a = Y@attributes[length(Y@attributes)]
-  attribute_rename(project(Y,a,eval=FALSE),a, `name`, eval=`eval`)
+  if(is.numeric(MARGIN)) MARGIN = dimensions(X)[MARGIN]
+# Check for common function names and map to SciDB expressions
+  if(is.function(FUN))
+  {
+    M = match.call()
+    fn = .scidbfun(FUN)
+    if(is.null(fn))
+      stop("Apply requires a valid SciDB aggregate function")
+    FUN = paste(sprintf("%s(%s) as %s",fn,X@attributes,X@attributes),collapse=",")
+  }
+  aggregate(X,MARGIN,FUN,eval=FALSE,unpack=FALSE)
 }
 
 # x:   A scidb, scidbdf object
-# by:  A character vector of dimension and or attribute names of x, or,
+# by:  A list of character vector of dimension and or attribute names of x, or,
 #      a scidb or scidbdf object that will be cross_joined to x and then
 #      grouped by attribues of by.
 # FUN: A SciDB aggregation expresion
-`aggregate_scidb` = function(x,by,FUN,`eval`=FALSE,window,variable_window)
+`aggregate_scidb` = function(x,by,FUN,`eval`=FALSE,window,variable_window,unpack)
 {
-  unpack = FALSE
+  if(missing(unpack)) unpack=FALSE
   if(missing(`by`))
   {
-    `by` = x@D$name[1]
+    `by`=""
   }
-  b = `by`
-  if(is.list(b)) b = b[[1]]
-  if(class(b) %in% c("scidb","scidbdf"))
+  if(!is.list(`by`)) `by`=list(`by`)
+# Check for common function names and map to SciDB expressions
+  if(is.function(FUN))
+  {
+    M = match.call()
+    fn = .scidbfun(FUN)
+    cb = unlist(by[unlist(lapply(by,is.character))]) # may be empty
+    if(is.null(fn))
+      stop("Aggregate requires a valid SciDB aggregate function")
+    FUN = paste(paste(fn,"(",setdiff(x@attributes,cb),")",sep=""),collapse=",")
+  }
+
+# XXX Why limit this to the first `by` element?
+  if(class(`by`[[1]]) %in% c("scidb","scidbdf"))
   {
 # We are grouping by attributes in another SciDB array `by`. We assume that
 # x and by have conformable dimensions to join along!
-    j = intersect(x@D$name, b@D$name)
-    x = merge(x,b,by=list(j,j),eval=FALSE,depend=list(x,b))
-    n = by@attributes
-    by = list(n)
+    j = intersect(dimensions(x), dimensions(by[[1]]))
+# Check for and resolve attribute name conflicts:
+    nn = make.unique_(x@attributes, by[[1]]@attributes)
+    if(!isTRUE(all.equal(by[[1]]@attributes,nn)))
+    {
+      `by`[[1]]=attribute_rename(`by`[[1]],old=by[[1]]@attributes,new=nn)
+    }
+    x = merge(x,`by`[[1]],by=j,eval=FALSE,depend=list(x,`by`[[1]]))
+    n = by[[1]]@attributes
+    `by`[[1]] = n
   }
 # A bug up to SciDB 13.6 unpack prevents us from using eval=FALSE
   if(!eval && !compare_versions(options("scidb.version")[[1]],13.9)) stop("eval=FALSE not supported by aggregate due to a bug in SciDB <= 13.6")
 
   b = `by`
-  if(length(b)>1) unpack = TRUE
   new_dim_name = make.names_(c(unlist(b),"row"))
   new_dim_name = new_dim_name[length(new_dim_name)]
-  if(!all(b %in% c(x@attributes, x@D$name)))
+  if(!all(b %in% c(x@attributes, dimensions(x), "")))
   {
 # Check for numerically-specified coordinate axes and replace with dimension
 # labels.
@@ -85,11 +139,11 @@
     {
       if(is.numeric(b[[k]]))
       {
-        b[[k]] = x@D$name[b[[k]]]
+        b[[k]] = dimensions(x)[b[[k]]]
       }
     }
-  } 
-  if(!all(b %in% c(x@attributes, x@D$name))) stop("Invalid attribute or dimension name in by")
+  }
+  if(!all(b %in% c(x@attributes, dimensions(x), ""))) stop("Invalid attribute or dimension name in by")
   a = x@attributes %in% b
   query = x@name
 # Handle group by attributes with redimension. We don't use a redimension
@@ -102,12 +156,11 @@
 # by in place of the original specified attribute. This creates a new virtual
 # array x with additional attributes.
     types = x@attributes[a]
-    nonint = x@types != "int64" & a
+    nonint = scidb_types(x) != "int64" & a
     if(any(nonint))
     {
 # Use index_lookup to factorize non-integer indices, creating new enumerated
 # attributes to sort by. It's probably not a great idea to have too many.
-      unpack = TRUE
       idx = which(nonint)
       oldatr = x@attributes
       for(j in idx)
@@ -127,18 +180,17 @@
 # Reset in case things changed above
     a = x@attributes %in% b
     n = x@attributes[a]
-# XXX XXX XXX
-# XXX What about chunk sizes? Also insert reasonable upper bound instead of *? XXX Take care of all these issues...
-# XXX XXX XXX
-    redim = paste(paste(n,"=0:*,1000,0",sep=""), collapse=",")
-    D = paste(build_dim_schema(x,FALSE),redim,sep=",")
-    A = x
-    A@attributes = x@attributes[!a]
-    A@nullable   = x@nullable[!a]
-    A@types      = x@types[!a]
-    S = build_attr_schema(A)
+# XXX EXPERIMENTAL
+# We estimate rational chunk sizes here.
+    app = paste(paste("ApproxDC(",n,")",sep=""),collapse=",")
+    aq = sprintf("aggregate(project(%s,%s),%s)",x@name,paste(n,collapse=","),app)
+    acounts = iquery(aq,return=TRUE,n=Inf)  # acounts[2],acounts[3],...
+    chunka = acounts[-1]
+    dima = paste(paste(n,"=0:",.scidb_DIM_MAX,",",noE(chunka),",0",sep=""), collapse=",")
+    D = paste(build_dim_schema(x,bracket=FALSE),dima,sep=",")
+    S = build_attr_schema(x, I=!a)
     D = sprintf("[%s]",D)
-    query = sprintf("redimension(substitute(%s,build(<v:int64>[_i=0:0,1,0],-1),%s),%s%s)",x@name,paste(n,collapse=","),S,D)
+    query = sprintf("redimension(%s,%s%s)",x@name,S,D)
   }
   along = paste(b,collapse=",")
 
@@ -154,7 +206,18 @@
     unpack = FALSE
     query = sprintf("variable_window(%s, %s, %s, %s)",query,along,paste(variable_window,collapse=","),FUN)
   } else
-  query = sprintf("aggregate(%s, %s, %s)",query, FUN, along)
+  if(nchar(along)<1)
+    query = sprintf("aggregate(%s, %s)", query, FUN)
+  else
+    query = sprintf("aggregate(%s, %s, %s)",query, FUN, along)
   if(unpack) query = sprintf("unpack(%s,%s)",query,new_dim_name)
   .scidbeval(query,eval,gc=TRUE,depend=list(x))
+}
+
+# The new (SciDB 13.9) cumulate
+`cumulate` = function(x, expression, dimension, `eval`=FALSE)
+{
+  if(missing(dimension)) dimension = dimensions(x)[[1]]
+  query = sprintf("cumulate(%s, %s, %s)",x@name,expression,dimension)
+  .scidbeval(query,eval,depend=list(x))
 }

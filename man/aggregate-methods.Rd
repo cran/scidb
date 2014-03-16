@@ -9,16 +9,21 @@ Aggregate a SciDB array object grouped by a subset of its dimensions and/or attr
 }
 
 \usage{
-\S4method{aggregate}{scidb}(x, by, FUN, eval, window, variable_window)
-\S4method{aggregate}{scidbdf}(x, by, FUN, eval, window, variable_window)
+\S4method{aggregate}{scidb}(x, by, FUN, eval, window, variable_window, unpack)
+\S4method{aggregate}{scidbdf}(x, by, FUN, eval, window, variable_window, unpack)
 }
 \arguments{
   \item{x}{A \code{scidb} or \code{scidbdf} object.}
-  \item{by}{Either a single character string or a list of array dimension and/or attribute names to group by; or a SciDB array reference object to group by. Not required for \code{windowed} aggregates--see details.}
-  \item{FUN}{A character string representing a SciDB aggregation expression.}
+  \item{by}{(Optional) Either a single character string or a list of array dimension and/or attribute names to group by; or a SciDB array reference object to group by. Not required for \code{windowed} and grand aggregates--see details.}
+  \item{FUN}{A character string representing a SciDB aggregation expression
+             or a reduction function.}
   \item{eval}{(Optional) If true, execute the query and store the reult array. Otherwise defer evaluation.}
   \item{window}{(Optional) If specified, perform a moving window aggregate along the specified coordinate windows--see details below.}
   \item{variable_window}{(Optional) If specified, perform a moving window aggregate over successive data values along the coordinate dimension axis specified by \code{by}--see details below.}
+  \item{unpack}{(Optional) If TRUE, return an unpacked SciDB result as a
+                 scidbdf dataframe-like object. It's sometimes useful to
+                 set this to FALSE if the aggregated result needs to be
+                 joined with another array. Default=FALSE.}
 }
 \details{
 Group the \code{scidb}, or \code{scidbdf} array object \code{x} by dimensions
@@ -28,8 +33,13 @@ execute the aggregation and return a scidb object; set eval to FALSE to return
 an unevaluated SciDB array promise, which is essentially a character string
 describing the query that can be composed with other SciDB package functions.
 
+If an R reduction function is speciied for \code{FUN}, it will be
+transliterated to a SciDB aggregate.
+
 The \code{by} argument must be a list of dimension names and/or attribute names
-in the array \code{x} to group by, or a SciDB array reference object.
+in the array \code{x} to group by, or a SciDB array reference object.  If
+\code{by} is not specified and one of the \code{window} options is not
+specified, then a grand aggregate is performed over all values in the array.
 
 The argument \code{by} may be a list of dimension names and/or attributes of the
 array \code{x}. Attributes that are not of type int64 will be `factorized` first
@@ -60,16 +70,13 @@ B. W. Lewis <blewis@paradigm4.com>
 }
 \examples{
 \dontrun{
-library("scidb")
-scidbconnect()
-
 # Create a copy of the iris data frame in a 1-d SciDB array named "iris."
 # Note that SciDB attribute names will be changed to conform to SciDB
 # naming convention.
 x <- as.scidb(iris,name="iris")
 
-# Compute average Petal_Length by Species:
-a <- aggregate(x, by="Species", FUN="avg(Petal_Length)")
+# Compute averages of each variable grouped by Species
+a <- aggregate(x, by="Species", FUN=mean)
 
 # Aggregation by an auxillary vector (which in this example comes from
 # an R data frame)--also note any valid SciDB aggregation expression may

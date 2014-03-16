@@ -28,16 +28,32 @@
 #include <sys/stat.h>
 #include <math.h>
 #include <signal.h>
-#ifndef WIN32
+#include <string.h>
+#ifdef WIN32
+#include <windows.h>
+#else
 #include <sys/mman.h>
 #endif
-#include <string.h>
 
 #include <R.h>
 #define USE_RINTERNALS
 #include <Rinternals.h>
 
 #define LINESIZE 4096
+
+#define NOT_MISSING 255
+#define IS_MISSING 0
+
+/* sig_int is used to detect user SIGINT signals */
+static volatile int sig_int = 0;
+
+#ifndef WIN32
+static void
+handler (int s, siginfo_t *i, void *x)
+{
+  sig_int = 1;
+}
+#endif
 
 typedef struct
 {
@@ -195,6 +211,7 @@ df2scidb (SEXP A, SEXP chunk, SEXP start, SEXP REALFORMAT)
  * LEN: The number of cells (INTEGER)
  * TYPE: The data type
  * NULLABLE: Is the data SciDB-NULLABLE (INTEGER)?
+ * INT64: 1 if SciDB data are int64 (INTEGER).
  *
  * Returns a two-element list:
  * 1. A length-LEN vector of cell values (TYPE)
@@ -202,7 +219,7 @@ df2scidb (SEXP A, SEXP chunk, SEXP start, SEXP REALFORMAT)
  *
  */
 SEXP
-scidbparse (SEXP DATA, SEXP NDIM, SEXP LEN, SEXP TYPE, SEXP NULLABLE)
+scidbparse (SEXP DATA, SEXP NDIM, SEXP LEN, SEXP TYPE, SEXP NULLABLE, SEXP INT64)
 {
   int j, k, l, ndim;
   long long i;
@@ -211,9 +228,13 @@ scidbparse (SEXP DATA, SEXP NDIM, SEXP LEN, SEXP TYPE, SEXP NULLABLE)
   char xc[2];
   int xi;
   char a;
-  char nx;
+  unsigned char nx;
   int nullable = INTEGER(NULLABLE)[0];
+  int i64  = INTEGER(INT64)[0];
   char *raw = (char *)RAW(DATA);
+
+  long long *xi64 = (long long *)&x;
+  unsigned long long *xui64 = (unsigned long long *)&x;
 
   l = (long long)INTEGER(LEN)[0];
   ndim = INTEGER(NDIM)[0];
@@ -236,7 +257,17 @@ scidbparse (SEXP DATA, SEXP NDIM, SEXP LEN, SEXP TYPE, SEXP NULLABLE)
             memcpy(&nx, raw, sizeof(char));  raw++;
           }
           memcpy(&x, raw, sizeof(double)); raw+=sizeof(double);
-          if((int)nx != 0) REAL (A)[j] = x;
+          if(nx == NOT_MISSING)
+          {
+            if(i64==1)
+            {
+              REAL (A)[j] = (double)(*xi64);
+            } else if(i64==2)
+            {
+              REAL (A)[j] = (double)(*xui64);
+            }
+            else REAL (A)[j] = x;
+          }
         }
       break;
     case STRSXP:
@@ -252,7 +283,7 @@ scidbparse (SEXP DATA, SEXP NDIM, SEXP LEN, SEXP TYPE, SEXP NULLABLE)
           }
           memset(xc,0,2);
           memcpy(&xc, raw, sizeof(char)); raw+=sizeof(char);
-          if((int)nx != 0) SET_STRING_ELT (A, j, mkChar (xc));
+          if(nx == NOT_MISSING) SET_STRING_ELT (A, j, mkChar (xc));
         }
       break;
     case LGLSXP:
@@ -267,7 +298,7 @@ scidbparse (SEXP DATA, SEXP NDIM, SEXP LEN, SEXP TYPE, SEXP NULLABLE)
             memcpy(&nx, raw, sizeof(char));  raw++;
           }
           memcpy(&a, raw, sizeof(char)); raw+=sizeof(char);
-          if((int)nx != 0) LOGICAL (A)[j] = (int)a;
+          if(nx == NOT_MISSING) LOGICAL (A)[j] = (int)a;
         }
       break;
     case INTSXP:
@@ -282,7 +313,7 @@ scidbparse (SEXP DATA, SEXP NDIM, SEXP LEN, SEXP TYPE, SEXP NULLABLE)
             memcpy(&nx, raw, sizeof(char));  raw++;
           }
           memcpy(&xi, raw, sizeof(int)); raw+=sizeof(int);
-          if((int) nx != 0) INTEGER (A)[j] = xi;
+          if( nx == NOT_MISSING) INTEGER (A)[j] = xi;
         }
       break;
     default:
@@ -293,4 +324,154 @@ scidbparse (SEXP DATA, SEXP NDIM, SEXP LEN, SEXP TYPE, SEXP NULLABLE)
   SET_VECTOR_ELT(ans, 1, I);
   UNPROTECT (3);
   return ans;
+}
+
+/* Convert basic R vectors into SciDB nullable types, translating R
+ * missing values into SciDB missing values.
+ */
+SEXP
+scidb_raw (SEXP A)
+{
+  SEXP ans = R_NilValue;
+  char *buf;
+  R_xlen_t j, len = XLENGTH(A);
+  const unsigned char not_missing = NOT_MISSING;
+  const char missing = IS_MISSING;
+  switch (TYPEOF (A))
+    {
+    case REALSXP:
+      PROTECT(ans = allocVector(RAWSXP, len*(sizeof(double) + 1)));
+      buf = (char *)RAW(ans);
+      if(!buf) error ("Not enough memory.");
+      for(j=0;j<len;++j)
+      {
+        if(!ISNA(REAL(A)[j]))
+        {
+          memcpy(buf, &not_missing, 1); buf++;
+          memcpy(buf, &REAL(A)[j], sizeof(double)); buf+=sizeof(double);
+        } else
+        {
+          memcpy(buf, &missing, 1); buf++;
+          buf+=sizeof(double);
+        }
+      }
+      break;
+    case INTSXP:
+      PROTECT(ans = allocVector(RAWSXP, len*(sizeof(int) + 1)));
+      buf = (char *)RAW(ans);
+      if(!buf) error ("Not enough memory.");
+      for(j=0;j<len;++j)
+      {
+        if(INTEGER(A)[j] != R_NaInt)
+        {
+          memcpy(buf, &not_missing, 1); buf++;
+          memcpy(buf, &INTEGER(A)[j], sizeof(int)); buf+=sizeof(int);
+        } else
+        {
+          memcpy(buf, &missing, 1); buf++;
+          buf+=sizeof(int);
+        }
+      }
+      break;
+    case LGLSXP:
+      PROTECT(ans = allocVector(RAWSXP, len*(sizeof(char) + 1)));
+      buf = (char *)RAW(ans);
+      if(!buf) error ("Not enough memory.");
+      for(j=0;j<len;++j)
+      {
+        if(LOGICAL(A)[j] != NA_LOGICAL)
+        {
+          memcpy(buf, &not_missing, 1); buf++;
+          memcpy(buf, &LOGICAL(A)[j], sizeof(char)); buf++;
+        } else
+        {
+          memcpy(buf, &missing, 1); buf+=2;
+        }
+      }
+      break;
+    case STRSXP:
+      PROTECT(ans = allocVector(RAWSXP, len*(sizeof(char) + 1)));
+      buf = (char *)RAW(ans);
+      if(!buf) error ("Not enough memory.");
+      for(j=0;j<len;++j)
+      {
+        if(STRING_ELT(A,j) != NA_STRING)
+        {
+          memcpy(buf, &not_missing, 1); buf++;
+          memcpy(buf, CHAR(STRING_ELT(A,j)), sizeof(char)); buf++;
+        } else
+        {
+          memcpy(buf, &missing, 1); buf+=2;
+        }
+      }
+      break;
+    default:
+      break;
+    }
+  UNPROTECT(1);
+  return ans;
+}
+
+void
+reset_sig ()
+{
+  sig_int = 0;
+}
+
+SEXP
+state ()
+{
+  return ScalarInteger(sig_int);
+}
+
+SEXP
+reset ()
+{
+  reset_sig();
+  return R_NilValue;
+}
+
+/* Enable or disable SIGINT
+   I = 1: Ignore SIGINT
+   I = 2: Use custom handler
+   ELSE : Use default handler
+ */
+SEXP
+sig (SEXP I)
+{
+  int i = INTEGER (I)[0];
+#ifdef WIN32
+  switch (i)
+  {
+    case 1:
+      signal(SIGINT, SIG_IGN);
+      break;
+    case 2:
+      signal(SIGINT, SIG_IGN);
+      break;
+    default:
+      signal(SIGINT, SIG_DFL);
+  }
+#else
+  int j;
+  struct sigaction action;
+  memset (&action, 0, sizeof(action));
+  action.sa_sigaction = handler;
+  action.sa_flags = SA_SIGINFO;
+ 
+  switch (i)
+    {
+    case 1:
+      signal (SIGINT, SIG_IGN);
+      break;
+    case 2:
+      j = sigaction(SIGINT, &action, NULL);
+      if(j<0) error("Error setting signal handler");
+      break;
+    default:
+      reset_sig();
+      signal (SIGINT, SIG_DFL);
+    }
+#endif
+  return R_NilValue;
 }

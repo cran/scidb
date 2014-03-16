@@ -9,7 +9,7 @@ Operation is similar to the R \code{matrix} and \code{array} functions.
 It creates a new single-attribute SciDB array based on the specified parameters.
 }
 \usage{
-build(data, dim, names, type="double", start, name, chunksize, overlap, gc=TRUE, `eval`)
+build(data, dim, names, type, start, name, chunksize, overlap, gc=TRUE, `eval`)
 }
 \arguments{
   \item{data}{A valid SciDB expression (expressed as a character string) or constant to fill the array.}
