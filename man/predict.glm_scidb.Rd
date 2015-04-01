@@ -1,4 +1,5 @@
-\name{predict.glm_scidb}
+\name{predict}
+\alias{predict}
 \alias{predict.glm_scidb}
 \title{
 Prediction for SciDB GLM fits
@@ -41,7 +42,7 @@ If \code{se.fit = TRUE}, a list with components
 }
 \seealso{
   \code{\link{scidb}}
-  \code{\link{glm_scidb}}
+  \code{\link{glm}}
 }
 \author{
 B. W. Lewis <blewis@paradigm4.com>, adapted from the R \code{predict.glm} documentation.
@@ -66,7 +67,7 @@ r_model <- glm( alive ~ sex + ldose - 1, family=binomial(), data=data)
 # Now in SciDB:
 data_scidb <- as.scidb(data)
 str(data_scidb)
-scidb_model <- glm_scidb( alive ~ sex + ldose - 1, family=binomial(), data=data_scidb)
+scidb_model <- glm( alive ~ sex + ldose - 1, family=binomial(), data=data_scidb)
 
 # New data for prediction:
 ld <- seq(0,5,0.1)

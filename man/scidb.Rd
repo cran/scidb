@@ -81,7 +81,6 @@ represent huge indexing ranges. For example, use \code{[between(1,1e9)]}
 instead of \code{[1:1e9]}.
 \item The \code{diag} function is supported for matrices and vectors.
 }
-Indexing by array to select a vector of cell entries is not yet supported.
 }
 \value{
 A \code{scidb} object that references the indicated

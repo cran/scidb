@@ -82,7 +82,14 @@ scidb_nullable = function(x)
 dimensions = function(x)
 {
   d = .dimsplitter(x)
-  unlist(lapply(d[-length(d)],function(x)x[[length(x)]]))
+#  gsub("^ *","",unlist(lapply(d[-length(d)],function(x) x[[length(x)]])))
+  h = paste(gsub("^ *","",d[[1]]), collapse="|")
+  d = d[-1]
+  if(length(d)>1)
+  {
+    h = c(h,gsub("^ *","",unlist(lapply(d[-length(d)],function(x) paste(x[4:length(x)],collapse="|")))))
+  }
+  h
 }
 
 # Returns a list of character-valued vectors of starting and
@@ -95,7 +102,13 @@ scidb_coordinate_bounds = function(x)
   s1 = gsub("\\*",.scidb_DIM_MAX,start)
   s2 = gsub("\\*",.scidb_DIM_MAX,end)
   len = as.numeric(s2) - as.numeric(s1) + 1
-  list(start=noE(start), end=noE(end), length=noE(len))
+  i = len >= as.double(.scidb_DIM_MAX)
+  len = noE(len) # in particular, len is now character
+  if(any(i))
+  {
+    len[i] = "Inf"
+  }
+  list(start=noE(start), end=noE(end), length=len)
 }
 
 # A between-style string of coordinate bounds
@@ -173,10 +186,13 @@ scidb_from_schemastring = function(s, expr=character(), `data.frame`)
 #    as I.
 # nullable: optional vector of new nullability expressed as FALSE or TRUE,
 #    must be the same length as I.
-build_attr_schema = function(A, prefix="", I, newnames, nullable)
+# newtypes: optional vector of new types, must be the same length as I.
+build_attr_schema = function(A, prefix="", I, newnames, nullable, newtypes)
 {
   if(missing(I) || length(I)==0) I = rep(TRUE,length(scidb_attributes(A)))
+  if(is.character(A)) A = scidb_from_schemastring(A)
   if(!(class(A) %in% c("scidb","scidbdf"))) stop("Invalid SciDB object")
+  if(is.character(I)) I = which(scidb_attributes(A) %in% I)
   if(is.logical(I)) I = which(I)
   N = rep("", length(scidb_nullable(A)[I]))
   N[scidb_nullable(A)[I]] = " NULL"
@@ -185,7 +201,8 @@ build_attr_schema = function(A, prefix="", I, newnames, nullable)
     N = rep("", length(I))
     N[nullable] = " NULL"
   }
-  N = paste(scidb_types(A)[I],N,sep="")
+  if(!missing(newtypes)) N = paste(newtypes,N,sep="")
+  else N = paste(scidb_types(A)[I],N,sep="")
   attributes = paste(prefix,scidb_attributes(A)[I],sep="")
   if(!missing(newnames)) attributes = newnames
   S = paste(paste(attributes,N,sep=":"),collapse=",")
@@ -204,8 +221,8 @@ build_dim_schema = function(A, bracket=TRUE, I,
                             newnames, newlen, newstart,
                             newend, newchunk, newoverlap)
 {
+  if(is.character(A)) A = scidb_from_schemastring(A)
   if(!(class(A) %in% c("scidb","scidbdf"))) stop("Invalid SciDB object")
-
   dims = dimensions(A)
   bounds = scidb_coordinate_bounds(A)
   start =  bounds$start
@@ -246,7 +263,13 @@ build_dim_schema = function(A, bracket=TRUE, I,
   {
     star = grep("\\*",newlen)
     len = gsub("\\*",.scidb_DIM_MAX, newlen)
-    end = noE(as.numeric(start) + as.numeric(len) - 1)
+    end = as.numeric(start) + as.numeric(len) - 1
+    i = end >= as.double(.scidb_DIM_MAX)
+    end = noE(end)
+    if(any(i))
+    {
+      end[i] = "*"
+    }
     if(length(star)>0)
     {
       end[star] = "*"
@@ -268,4 +291,96 @@ build_dim_schema = function(A, bracket=TRUE, I,
   a = scidb_attributes(x)
   if(length(a) > 1) stop("This function requires a single-attribute array. Consider using project.")
   a
+}
+
+
+# An internal function that compares schema of two scidb objects
+# or schema strings.
+compare_schema = function(s1, s2,
+  s1_attribute_index,
+  s1_dimension_index,
+  s2_attribute_index,
+  s2_dimension_index,
+  ignore_dimnames=FALSE,
+  ignore_start=FALSE,
+  ignore_end=FALSE,
+  ignore_chunksize=FALSE,
+  ignore_overlap=FALSE,
+  ignore_attributes=FALSE,
+  ignore_types=FALSE,
+  ignore_nullable=FALSE)
+{
+  if(is.character(s1)) s1 = scidb_from_schemastring(s1)
+  if(is.character(s2)) s2 = scidb_from_schemastring(s2)
+  if(!(class(s1) %in% c("scidb","scidbdf"))) stop("Invalid SciDB object")
+  if(!(class(s2) %in% c("scidb","scidbdf"))) stop("Invalid SciDB object")
+  if(missing(s1_attribute_index)) s1_attribute_index=1:length(scidb_attributes(s1))
+  if(missing(s2_attribute_index)) s2_attribute_index=1:length(scidb_attributes(s2))
+  if(missing(s1_dimension_index)) s1_dimension_index=1:length(dimensions(s1))
+  if(missing(s2_dimension_index)) s2_dimension_index=1:length(dimensions(s2))
+
+  dimnames = ignore_dimnames || isTRUE(all.equal(dimensions(s1)[s1_dimension_index],dimensions(s2)[s2_dimension_index]))
+  bound_start = ignore_start || isTRUE(all.equal(scidb_coordinate_start(s1)[s1_dimension_index],scidb_coordinate_start(s2)[s2_dimension_index]))
+  bound_end = ignore_end || isTRUE(all.equal(scidb_coordinate_end(s1)[s1_dimension_index],scidb_coordinate_end(s2)[s2_dimension_index]))
+  chunks = ignore_chunksize || isTRUE(all.equal(scidb_coordinate_chunksize(s1)[s1_dimension_index],scidb_coordinate_chunksize(s2)[s2_dimension_index]))
+  overlap = ignore_overlap || isTRUE(all.equal(scidb_coordinate_overlap(s1)[s1_dimension_index],scidb_coordinate_overlap(s2)[s2_dimension_index]))
+  attributes = ignore_attributes || isTRUE(all.equal(scidb_attributes(s1)[s1_attribute_index],scidb_attributes(s2)[s1_attribute_index]))
+  types = ignore_types || isTRUE(all.equal(scidb_types(s1)[s1_attribute_index],scidb_types(s2)[s2_attribute_index]))
+  nullable = ignore_nullable || isTRUE(all.equal(scidb_nullable(s1)[s1_attribute_index],scidb_nullable(s2)[s2_attribute_index]))
+
+  ans = dimnames && bound_start && bound_end && chunks && overlap && attributes && types && nullable
+
+# add a report if FALSE
+  if(!ans)
+  {
+    attr(ans,"equal") = list(dimnames=dimnames,
+                   bound_start=bound_start,
+                   bound_end=bound_end,
+                   chunks=chunks,
+                   overlap=overlap,
+                   attributes=attributes,
+                   types=types,
+                   nullable=nullable)
+  }
+  ans
+}
+
+# Internal function compute the difference of two strings, vectorized
+strdiff = function(x,y)
+{
+  if(length(x)==1 && length(y)>1) x = rep(x,length(y))
+  if(length(x)!=length(y)) stop("mismatched vector lengths")
+  unlist(lapply(seq(1,length(x)), function(i)
+         {
+           gsub(sprintf("^%s",x[[i]]), "", y[[i]])
+         }))
+}
+# Internal function used to infer aliases in use by comparing the output of
+# show and explain_logical. Returns NULL if no aliasing can be determined.
+aliases = function(x)
+{
+  ans = c()
+  if(!(inherits(x,"scidb") || inherits(x,"scidbdf"))) return(ans)
+  logical_schema = grep("^>>schema",strsplit(x@logical_plan,"\n")[[1]], value=TRUE)
+  if(length(logical_schema) < 1) return(NULL)
+  logical_schema = gsub(".*<","<",logical_schema)
+  dl = dimensions(logical_schema)
+  ds = dimensions(x@schema)
+  if(length(dl) != length(ds)) return(NULL)
+  for(j in 1:length(ds))
+  {
+    d = strsplit(dl[j],"\\|")[[1]]
+    p = strdiff(d[j],ds[j])
+    d = c(d[1],unlist(lapply(d[-1],function(z)sprintf("%s%s",p,z))))
+    ans = c(ans, gsub(" ","",strdiff(ds[j], d)))
+  } 
+  unique(ans)
+}
+
+# An internal function used to create new alias names that don't conflict
+# with existing aliases for scidb objects x and y. Returns a two element
+# character vector with the new aliases.
+scidb_alias = function(x,y)
+{
+  make.unique_(c(aliases(x),aliases(y)), c("x","y"))
 }

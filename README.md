@@ -1,8 +1,13 @@
 Thanks for trying out the SciDB package for R. I hope you enjoy using it.
 
-The current development version of this R package can always be installed
-directly from GitHub using the devtools package as follows:
+Install the package from CRAN with
+```
+install.packages("scidb")
+```
 
+The current development version of the package can be installed directly from
+sources on  GitHub using the devtools package as follows (requires an R
+development environment  and the R tools package):
 ```
 library('devtools')
 install_github("SciDBR","paradigm4",quick=TRUE)

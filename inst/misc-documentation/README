@@ -1,12 +1,13 @@
 Run:
 
-./SciDBR.list.functions
+./list.functions
 
 to produce a nicely formatted list of functions defined in the package. Use
 this list in the Sweave vignette or wiki or wherever.
 
 
-Run:
+Set the SCIDB_TEST_HOST environment variable to a SciDB coordinator address.
+Then run Run:
 
 R CMD Sweave scidb.Rnw
 

@@ -10,11 +10,13 @@ non-missing value prior to it.
 }
 
 \usage{
-\S4method{na.locf}{scidb}(object, along=dimensions(object)[1],`eval`=FALSE)
+\S4method{na.locf}{scidb}(object, along=dimensions(object)[1],fill_sparse=FALSE,`eval`=FALSE)
 }
 \arguments{
   \item{object}{A \code{scidb} or \code{scidbdf} object.}
   \item{along}{A single SciDB array dimension name to replace missing values along.}
+  \item{fill_sparse}{Specify TRUE to impute sparse values, leave as the default FALSE
+    to only impute missing (SciDB NULL) values.}
   \item{eval}{(Optional) If true, execute the query and store the reult array. Otherwise defer evaluation.}
 }
 \details{
@@ -27,7 +29,8 @@ Time series represented in SciDB are often sparse arrays. The \code{na.locf}
 function defines a conveniet way to  fill in all missing values along the time
 coordinate axis down to the time resolution.
 
-Caution! The output array is a mostly dense, filled-in version of the input
+Caution! If fill_sparse=TRUE then
+the output array is a mostly dense, filled-in version of the input
 array. If the time resolution is very fine and the input array very sparse,
 then the output array can be huge. Consider using \code{regrid} first on
 very fine time scales to reduce their resolution.

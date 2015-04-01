@@ -35,9 +35,7 @@ contain integer values.
 
 Optional arguments left unspecified remain unchanged in the output array.
 
-Use \code{eval=FALSE} to defer expression evaluation for efficiency. Results
-can be composed to form complex query expressions that can be evaluated in one
-transaction.
+The option \code{eval} is deprecated and will be removed in the future. Use \code{scidbeval} instead.
 }
 \author{
 B. W. Lewis<blewis@paradigm4.com>

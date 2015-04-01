@@ -58,7 +58,7 @@
   {
     FUN = sprintf("%s %s %s",scidb_attributes(x), FUN, scidb_attributes(STATS))
   }
-  substitute(
+  replaceNA(
   attribute_rename(
     project(
       bind(
@@ -114,15 +114,8 @@
   {
 # We are grouping by attributes in another SciDB array `by`. We assume that
 # x and by have conformable dimensions to join along!
-    j = intersect(dimensions(x), dimensions(by[[1]]))
-# Check for and resolve attribute name conflicts:
-    nn = make.unique_(x@attributes, by[[1]]@attributes)
-    if(!isTRUE(all.equal(by[[1]]@attributes,nn)))
-    {
-      `by`[[1]]=attribute_rename(`by`[[1]],old=by[[1]]@attributes,new=nn)
-    }
-    x = merge(x,`by`[[1]],by=j,eval=FALSE,depend=list(x,`by`[[1]]))
-    n = by[[1]]@attributes
+    x = merge(x,`by`[[1]])
+    n = x@attributes[length(x@attributes)]
     `by`[[1]] = n
   }
 # A bug up to SciDB 13.6 unpack prevents us from using eval=FALSE
@@ -167,7 +160,8 @@
       {
         atr     = oldatr[j]
 # Adjust the FUN expression to include the original attribute
-        FUN = sprintf("%s, min(%s) as %s", FUN, atr, atr)
+# The gsub is a fix for github issue #61.
+        FUN = sprintf("%s, min(%s) as %s", gsub("\\(\\)","(*)",FUN), atr, atr)
 # Factorize atr
         x       = index_lookup(x,unique(sort(project(x,atr)),sort=FALSE),atr)
 # Name the new attribute and sort by it instead of originally specified one.
@@ -200,11 +194,11 @@
   if(!missing(window))
   {
     unpack = FALSE
-    query = sprintf("window(%s, %s, %s)",query,paste(window,collapse=","),FUN)
+    query = sprintf("window(%s, %s, %s)",query,paste(noE(window),collapse=","),FUN)
   } else if(!missing(variable_window))
   {
     unpack = FALSE
-    query = sprintf("variable_window(%s, %s, %s, %s)",query,along,paste(variable_window,collapse=","),FUN)
+    query = sprintf("variable_window(%s, %s, %s, %s)",query,along,paste(noE(variable_window),collapse=","),FUN)
   } else
   if(nchar(along)<1)
     query = sprintf("aggregate(%s, %s)", query, FUN)

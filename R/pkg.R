@@ -32,7 +32,7 @@ SIG_DFL = 0L # Default SIGINT signal handler
 SIG_IGN = 1L # Ignore SIGINT
 SIG_TRP = 2L # A custom signal handler (see scidb.c)
 
-.onLoad = function(libname,pkgname)
+TRAP = function()
 {
 # RStudio does not let us set up a custom signal handler, and this has also
 # been problematic to set up on non-Console Windows R processes.  We check for
@@ -40,9 +40,15 @@ SIG_TRP = 2L # A custom signal handler (see scidb.c)
 # SIGINT and bail out of RCurl sessions.
   if(Sys.getenv("RSTUDIO")=="1" || "windows" %in% tolower(Sys.info()["sysname"]))
   {
-    env = asNamespace(pkgname)
-    assign("SIG_TRP",1L,envir=env)  # SIG_TRP = SIG_IGN
+    return(SIG_IGN)
   }
+  SIG_TRP
+}
+
+.onAttach = function(libname,pkgname)
+{
+  packageStartupMessage("   ____    _ ___  ___\n  / __/___(_) _ \\/ _ )\n _\\ \\/ __/ / // / _  |\n/___/\\__/_/____/____/     Copyright 2015, Paradigm4, Inc.\n\n* The 'substitute' function has been removed. Use 'replaceNA' instead.\n* Use of the eval parameter in scidb functions is deprecated, use the\n  'scidbeval' function instead."    , domain = NULL, appendLF = TRUE)
+
 # Maximum allowed sequential index limit (for larger, use between)
   options(scidb.index.sequence.limit=1000000)
 # Maximum allowed elements in an array return result
@@ -53,7 +59,7 @@ SIG_TRP = 2L # A custom signal handler (see scidb.c)
   options(scidb.version=13.9)
 # Set this to 32 for SciDB version 13.6
   options(scidb.gemm_chunk_size=1000)
-# Default shim port
+# Default shim port and host.
   options(scidb.default_shim_port=8080L)
   options(scidb.default_shim_host="localhost")
 # There was a bad gemm/gesvd/subarray bug until 14.3. When TRUE, this option
@@ -69,6 +75,11 @@ SIG_TRP = 2L # A custom signal handler (see scidb.c)
 # encrypted session to work. Set this TRUE for stronger security (help avoid MTM)
 # in SSL connections.
   options(scidb.verifyhost=FALSE)
+# Set to FALSE to disable user-interruptable HTTP transactions.
+  options(scidb.interrupt=TRUE)
+# Set to TRUE to enable experimental shim stream protocol, avoids copying query
+# output to data file on server # (see https://github.com/Paradigm4/shim).
+  options(scidb.stream=FALSE)
 }
 
 .onUnload = function(libpath)
@@ -80,21 +91,25 @@ SIG_TRP = 2L # A custom signal handler (see scidb.c)
   options(scidb.safe_remove=c())
   options(scidb.default_shim_port=c())
   options(scidb.default_shim_host=c())
+  options(scidb.gemm_bug=c())
+  options(scidb.verifyhost=c())
+  options(scidb.interrupt=c())
+  options(scidb.stream=c())
 }
 
-# scidb array object type map. We don't yet support strings in scidb array
-# objects. Use df2scidb and iquery for strings.
-# R type = SciDB type
+# scidb array object type map.
+# R type -> SciDB type
 .scidbtypes = list(
   double="double",
   double="int64",
   double="uint64",
   integer="int32",
   logical="bool",
-  character="char"
+  character="string"
 )
 
 # These types are used to infer dataframe column classes.
+# SciDB type -> R type
 .scidbdftypes = list(
   double="double",
   int64="double",
@@ -109,6 +124,23 @@ SIG_TRP = 2L # A custom signal handler (see scidb.c)
   string="character",
   char="character",
   datetime="Date"
+)
+
+# Default substitution values to remove null in replaceNA
+.scidb_default_subst = list(
+  double="double(nan)",
+  int64="int64(0)",
+  uint64="uint64(0)",
+  uint32="uint32(0)",
+  int32="int32(0)",
+  int16="int16(0)",
+  unit16="uint16(0)",
+  int8="int8(0)",
+  uint8="uint8(0)",
+  bool="false",
+  string="string('')",
+  char="char('')",
+  datetime="datetime(0)"
 )
 
 .typelen = list(
@@ -141,7 +173,7 @@ SIG_TRP = 2L # A custom signal handler (see scidb.c)
 
 # SciDB Integer dimension minimum, maximum
 .scidb_DIM_MIN = "-4611686018427387902"
-.scidb_DIM_MAX = "4611686018427387902"
+.scidb_DIM_MAX = "4611686018427387903"
 
 # To quiet a check NOTE:
 if(getRversion() >= "2.15.1")  utils::globalVariables(c("n", "p"))

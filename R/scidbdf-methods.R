@@ -53,20 +53,20 @@ function(x,y,`eval`=FALSE)
   .scidbeval(s, `data.frame`=TRUE, gc=TRUE, `eval`=eval, depend=list(x,y))
 })
 
+# Head and tail are not very efficient, but they're nifty!  XXX
 setMethod("head", signature(x="scidbdf"),
 function(x, n=6L, ...)
 {
-  xstart = as.numeric(scidb_coordinate_start(x))
-  iquery(sprintf("between(%s,%.0f,%.0f)",x@name,xstart,xstart + n - 1),`return`=TRUE,colClasses=scidbdfcc(x))[,-1]
+  iqdf(x, n)[,-c(1,2)]
 })
 
 setMethod("tail", signature(x="scidbdf"),
 function(x, n=6L, ...)
 {
-  bounds = scidb_coordinate_bounds(x)
-  xstart = as.numeric(bounds$start)
-  xlen   = as.numeric(bounds$len)
-  iquery(sprintf("between(%s,%.0f,%.0f)",x@name,xstart + xlen - n - 1,xstart + xlen-1),`return`=TRUE, colClasses=scidbdfcc(x))[,-1]
+  ans = x[x[,1],]
+  end = as.numeric(scidb_coordinate_bounds(ans)$end)
+  start = max(0, end-n+1)
+  ans[start:end,][]
 })
 
 setMethod("Filter",signature(f="character",x="scidbdf"),
@@ -95,6 +95,22 @@ setMethod('show', 'scidbdf',
     cat(sprintf("SciDB 1-D array: %s obs. of %d %s.\n", l,
         length(object@attributes),v))
   })
+
+setMethod("regrid", signature(x="scidbdf"),
+  function(x, grid, expr)
+  {
+    if(missing(expr)) expr = paste(sprintf("max(%s)",x@attributes),collapse=",")
+    query = sprintf("regrid(%s, %s, %s)",
+               x@name, paste(noE(grid),collapse=","), expr)
+    .scidbeval(query, eval=FALSE, gc=TRUE, depend=list(x))
+  })
+setMethod("xgrid", signature(x="scidbdf"),
+  function(x, grid)
+  {
+    query = sprintf("xgrid(%s, %s)", x@name, paste(noE(grid),collapse=","))
+    .scidbeval(query, eval=FALSE, gc=TRUE, depend=list(x))
+  })
+setMethod("unpack",signature(x="scidbdf"),unpack_scidb)
 
 setMethod("aggregate", signature(x="scidbdf"), aggregate_scidb)
 setMethod("reshape", signature(data="scidbdf"), reshape_scidb)
@@ -193,6 +209,11 @@ setMethod("sqrt", signature(x="scidbdf"),
   {
     fn_scidb(x, "sqrt")
   })
+setMethod("exp", signature(x="scidbdf"),
+  function(x)
+  {
+    fn_scidb(x, "exp")
+  })
 # Non-traditional masking binary comparison operators
 setMethod("%<%",signature(x="scidbdf", y="ANY"),
   function(x,y)
@@ -226,6 +247,13 @@ setMethod("%==%",signature(x="scidbdf", y="ANY"),
   function(x,y)
   {
     .compare(x,y,"==",traditional=FALSE)
+  },
+  valueClass="scidbdf"
+)
+setMethod("%!=%",signature(x="scidbdf", y="ANY"),
+  function(x,y)
+  {
+    .compare(x,y,"!=",traditional=FALSE)
   },
   valueClass="scidbdf"
 )

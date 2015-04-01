@@ -66,7 +66,35 @@ colnames.scidbdf = function(x)
 
 rownames.scidbdf = function(x)
 {
-  stop("Sorry, not implemented yet")
+  if(is.null(x@gc$dimnames)) return(NULL)
+  x@gc$dimnames[[1]]
+}
+
+`rownames<-.scidbdf` = function(x, value)
+{
+  x
+}
+
+`dimnames<-.scidbdf` = function(x, value)
+{
+  y = do.call("names<-.scidbdf",args=list(x=x,value=value[[2]]))
+  do.call("row.names<-.scidbdf",args=list(x=y,value=value[[1]])) # order matters here
+}
+
+row.names.scidbdf = function(x)
+{
+  if(is.null(x@gc$dimnames)) return(NULL)
+  x@gc$dimnames[[1]]
+}
+
+`row.names<-.scidbdf` = function(x, value)
+{
+  y = x
+  class(y) = "scidb"
+  z = do.call("dimnames<-.scidb", args=list(x=y, value=list(value)))
+  z@gc$depend=c(z@gc$depend, x)
+  class(z) = "scidbdf"
+  z
 }
 
 names.scidbdf = function(x)
@@ -77,10 +105,14 @@ names.scidbdf = function(x)
 `names<-.scidbdf` = function(x,value)
 {
   old = x@attributes
+  if(is.null(value)) return(x)
+  if(all(old==value)) return(x)
   if(length(value)!=length(old)) stop(paste("Incorrect number of names (should be",length(old),")"))
   arg = paste(paste(old,value,sep=","),collapse=",")
   query = sprintf("attribute_rename(%s,%s)",x@name,arg)
-  iquery(query)
+  ans = .scidbeval(query, eval=FALSE, gc=TRUE, depend=list(x))
+  row.names(ans) = rownames(x)  # Preserve row names
+  ans
 }
 
 dimnames.scidbdf = function(x)
@@ -92,23 +124,28 @@ dimnames.scidbdf = function(x)
 {
   M = match.call()
   M[1] = call("[.scidbdf")
+  M[2] = x
   M[4] = as.character(M[3])
   M[3] = expression(NULL)
   eval(M)
 }
 
-# Flexible array subsetting wrapper.
+# data.frame subsetting wrapper.
 # x: A Scidbdf array object
 # ...: list of dimensions
 # iterative: return a data.frame iterator
 # n: if iterative, how many rows to return
 # 
-`[.scidbdf` = function(x, ..., iterative=FALSE, n=1000)
+`[.scidbdf` = function(x, ..., iterative=FALSE, n=Inf, row.names)
 {
   M = match.call()
+  if(missing(row.names)) row.names=1
+  else row.names = M[["row.names"]]
   drop = ifelse(is.null(M$drop),TRUE,M$drop)
+  redim = ifelse(is.null(M$redim),TRUE,M$redim)
+# Passing along a NULL argument is harder than it should be...
   M = M[3:length(M)]
-  if(!is.null(names(M))) M = M[!(names(M) %in% c("drop","iterative","n"))]
+  if(!is.null(names(M))) M = M[!(names(M) %in% c("drop","iterative","n","row.names","redim"))]
 # i shall contain a list of requested index values
   E = parent.frame()
   i = lapply(1:length(M), function(j) tryCatch(eval(M[j][[1]],E),error=function(e)c()))
@@ -117,18 +154,24 @@ dimnames.scidbdf = function(x)
     if(iterative)
     {
       ans = iquery(sprintf("%s",x@name),`return`=TRUE,iterative=TRUE,n=n,excludecol=1,colClasses=scidbdfcc(x))
+      if(!is.null(dimnames(x)[[1]])) warning("row labels will not be displayed")
       return(ans)
     }
     else
     {
-      ans = iquery(sprintf("%s",x@name),`return`=TRUE,n=Inf, colClasses=scidbdfcc(x))
-      rownames(ans)= ans[,1]
-      ans = ans[,-1,drop=FALSE]
+      if(!is.null(dimnames(x)[[1]]))
+      {
+        row.names = iquery(dimnames(x)[[1]]@name, `return`=TRUE,binary=TRUE)[,2]
+        ans = iquery(sprintf("%s",x@name),`return`=TRUE,binary=TRUE,buffer=nrow(x),row.names=row.names)[,-1]
+      } else
+      {
+        ans = iquery(sprintf("%s",x@name),`return`=TRUE,binary=TRUE,buffer=nrow(x),row.names=row.names)
+      }
       return(ans)
     }
 # Not materializing, return a SciDB array
   if(length(i)!=length(dim(x))) stop("Dimension mismatch")
-  scidbdf_subset(x,i,drop)
+  scidbdf_subset(x,i,drop,redim)
 }
 
 `dim.scidbdf` = function(x)
@@ -138,7 +181,7 @@ dimnames.scidbdf = function(x)
 
 `dim<-.scidbdf` = function(x, value)
 {
-  stop("unsupported")
+  reshape(x,shape=value)
 }
 
 
@@ -163,7 +206,7 @@ length.scidbdf = function(x) ncol(x)
 # 'ui' not specified range (everything, by R convention)
 # 'ci' lookup-style range, a non-sequential numeric or labeled set, for example
 #      c(3,3,1,5,3)   or  c('a1','a3')
-scidbdf_subset = function(x, i, drop=FALSE)
+scidbdf_subset = function(x, i, drop=FALSE, redim=TRUE)
 {
   attribute_range = i[[2]]
   if(is.logical(attribute_range)) attribute_range = which(attribute_range)
@@ -173,44 +216,25 @@ scidbdf_subset = function(x, i, drop=FALSE)
     attribute_range = x@attributes[attribute_range]
   }
 
-  i = i[[1]]
-
-# How is the row index range specified?
-  if(is.null(i))
-  {
-# Unspecified, return all rows:
-    query = x@name
-  }
-  else if(checkseq(i))
-  {
-# Sequential numeric index
-    query = betweenbound(x,min(i),max(i))
-  }
-  else if(inherits(i,"function"))
-  {
-# Bounding box
-    r = i()
-    query = betweenbound(x, r[1], r[2])
-  }
-  else
-  {
-# Complicated indexing. Use scidb class. (XXX In future, do this for any index)
-    y = scidb(x, `data.frame`=FALSE)
-    return(dimfilter(y, list(i), `eval`=FALSE, drop=drop))
-  }
-  query = sprintf("project(%s, %s)",query, paste(attribute_range,collapse=","))
-  if(drop && length(attribute_range)==1)
-  {
-    return(.scidbeval(query, `data.frame`=FALSE, gc=TRUE, `eval`=FALSE, depend=x))
-  }
-  .scidbeval(query, `data.frame`=TRUE, gc=TRUE, `eval`=FALSE, depend=x)
+  y = project(x, attribute_range)
+  row.names(y) = rownames(x)  # Preserve row names
+  class(y) = "scidb"
+  ans = dimfilter(y, list(i[[1]]), `eval`=FALSE, drop=drop, redim=redim)
+  if(!(length(dim(ans)==1) && drop)) class(ans) = "scidbdf"
+  ans@gc$depend = c(ans@gc$depend, x)
+  ans
 }
 
 betweenbound = function(x, m, n)
 {
-  ans = sprintf("between(%s, %.0f, %.0f)", x@name, m, n)
+  ans = sprintf("between(%s, %s, %s)", x@name, noE(m), noE(n))
 # Reset just the upper dimension index, use of redimension here is overkill
-# XXX FIX ME
+# but WE NEED IT HERE in case users over or undershoot dimension bounds.
   schema = sprintf("%s%s",build_attr_schema(x), build_dim_schema(x,newstart=m,newend=n))
   ans = sprintf("redimension(%s,%s)", ans, schema)
+# seemingly more efficient but not general, sadly:
+# XXX FIX ME...put an if/then clause here to detect efficient cases... Argggh.
+#  s = subarray(x, c(m,n))
+#  ans = sprintf("repart(subarray(%s, %s, %s),%s)", x@name, noE(m), noE(n),schema)
+  ans
 }

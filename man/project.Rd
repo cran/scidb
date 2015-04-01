@@ -20,7 +20,7 @@ project(X, attributes, eval)
 A \code{scidb} object.
 }
 \note{
-Use \code{eval=FALSE} to defer expression evaluation for efficiency.
+The option \code{eval} is deprecated and will be removed in the future. Use \code{scidbeval} instead.
 }
 \author{
 B. W. Lewis<blewis@paradigm4.com>

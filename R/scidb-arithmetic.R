@@ -62,17 +62,15 @@ scidbmultiply = function(e1,e2)
   SPARSE = e1.sparse || e2.sparse
 
 # Up to at least SciDB 13.12, gemm does not accept nullable attributes.
-# XXX This restriction needs to be changed in a future SciDB release.
-  miswarn = "This array might contain missing values (R NA/SciDB 'null').\n Missing values are not yet understood by SciDB multiplication operators.\n Missing values, if any, have been replaced with zero."
   if(any(scidb_nullable(e1)))
   {
-    warning(miswarn)
-    e1 = substitute(e1)
+    warnonce("missing")
+    e1 = replaceNA(e1)
   }
   if(any(scidb_nullable(e2)))
   {
-    warning(miswarn)
-    e2 = substitute(e2)
+    warnonce("missing")
+    e2 = replaceNA(e2)
   }
 
 # Promote vectors to row- or column-vectors as required.
@@ -126,23 +124,23 @@ scidbmultiply = function(e1,e2)
     dnames = make.names_(c(dimensions(e1)[[1]],dimensions(e2)[[2]]))
     CHUNK_SIZE = options("scidb.gemm_chunk_size")[[1]]
     op1 = sprintf("repart(%s,<%s:%s>[%s=0:%s,%s,0,%s=0:%s,%s,0])",op1,a1,scidb_types(e1)[1],
-            dimensions(e1)[1],noE(as.numeric(scidb_coordinate_end(e1)[1])),noE(CHUNK_SIZE),
-            dimensions(e1)[2],noE(as.numeric(scidb_coordinate_end(e1)[2])),noE(CHUNK_SIZE))
+            dimensions(e1)[1],noE(as.numeric(scidb_coordinate_bounds(e1)$length[1])-1),noE(CHUNK_SIZE),
+            dimensions(e1)[2],noE(as.numeric(scidb_coordinate_bounds(e1)$length[2])-1),noE(CHUNK_SIZE))
     op2 = sprintf("repart(%s,<%s:%s>[%s=0:%s,%s,0,%s=0:%s,%s,0])",op2,a2,scidb_types(e2)[1],
-            dimensions(e2)[1],noE(as.numeric(scidb_coordinate_end(e2)[1])),noE(CHUNK_SIZE),
-            dimensions(e2)[2],noE(as.numeric(scidb_coordinate_end(e2)[2])),noE(CHUNK_SIZE))
+            dimensions(e2)[1],noE(as.numeric(scidb_coordinate_bounds(e2)$length[1])-1),noE(CHUNK_SIZE),
+            dimensions(e2)[2],noE(as.numeric(scidb_coordinate_bounds(e2)$length[2])-1),noE(CHUNK_SIZE))
     osc = sprintf("<%s:%s>[%s=0:%s,%s,0,%s=0:%s,%s,0]",a1,scidb_types(e1)[1],
-              dnames[[1]],noE(as.numeric(scidb_coordinate_end(e1)[1])),noE(CHUNK_SIZE),
-              dnames[[2]],noE(as.numeric(scidb_coordinate_end(e2)[2])),noE(CHUNK_SIZE))
+              dnames[[1]],noE(as.numeric(scidb_coordinate_bounds(e1)$length[1])-1),noE(CHUNK_SIZE),
+              dnames[[2]],noE(as.numeric(scidb_coordinate_bounds(e2)$length[2])-1),noE(CHUNK_SIZE))
     op3 = sprintf("build(%s,0)",osc)
   } else
   {
 # Adjust array partitions as required by spgemm
     op2 = sprintf("repart(%s, <%s:%s>[%s=0:%s,%s,0,%s=0:%s,%s,0])",
             op2, a2, scidb_types(e2)[1],
-            dimensions(e2)[1],noE(as.numeric(scidb_coordinate_end(e2)[1])),
+            dimensions(e2)[1],noE(as.numeric(scidb_coordinate_bounds(e2)$length[1])-1),
                               noE(scidb_coordinate_chunksize(e1)[2]),
-            dimensions(e2)[2], noE(as.numeric(scidb_coordinate_end(e2)[2])),
+            dimensions(e2)[2], noE(as.numeric(scidb_coordinate_bounds(e2)$length[2])-1),
                               noE(scidb_coordinate_chunksize(e2)[2]))
   }
 
@@ -265,14 +263,34 @@ scidbmultiply = function(e1,e2)
     e1 = merge(e1,build(0,e1),merge=TRUE)
     e2 = merge(e2,build(0,e2),merge=TRUE)
   }
+# Check special case row/column vector and orinary vector dim mismatch
+  if(l1>l2 && dim(e1)[1] == dim(e2)[1] && dim(e1)[2] == 1)
+  {
+    e1 = reshape(e1,e2)
+    l1 = length(dim(e1))
+  }
+  if(l2>l1 && dim(e2)[1] == dim(e1)[1] && dim(e2)[2] == 1)
+  {
+    e2 = reshape(e2,e1)
+    l2 = length(dim(e2))
+  }
 # Handle conformable-dimension case
   if(l1 == l2)
   {
+# Handle mis-matched coordinates :/ arrggh
+    if(!compare_schema(e1,e2, ignore_dimnames=TRUE,
+                              ignore_attributes=TRUE,
+                              ignore_nullable=TRUE,
+                              ignore_types=TRUE))
+    {
+      schema = sprintf("%s%s",build_attr_schema(e2),build_dim_schema(e1))
+      e2 = reshape(e2,schema)
+    }
 # Note that we use outer join here with the special fillin option.
     M = merge(e1,e2,by.x=dimensions(e1),by.y=dimensions(e2),all=fill,fillin=0)
     v = make.unique_(c(M@attributes),"v")
     op = rewrite_op(M, op)
-    return(project(bind(M,v,op), v, eval=TRUE)) # see note at end
+    return(project(bind(M,v,op), v)) # see note at end
   }
 
 # Left now with very special vector-recycling cases.
@@ -323,6 +341,7 @@ scidbmultiply = function(e1,e2)
   if(!(inherits(e1,"scidb") || inherits(e1,"scidbdf"))) stop("Sorry, not yet implemented.")
   if(inherits(e2,"scidb")) return(.joincompare(e1,e2,op))
   op = gsub("==","=",op,perl=TRUE)
+  op = gsub("!=","<>",op,perl=TRUE)
 # Automatically quote characters
   if(is.character(e2)) e2 = sprintf("'%s'",e2)
   q1 = paste(paste(e1@attributes,op,e2),collapse=" and ")
@@ -344,13 +363,22 @@ scidbmultiply = function(e1,e2)
   stop("Yikes! Not implemented yet...")
 }
 
-tsvd = function(x,nu,tol=0.0001,maxit=20,tx)
+tsvd = function(x,nu,tol=0.1,maxit=20,tx,v,pca=FALSE)
 {
   m = ceiling(1e6/nrow(x))
   n = ceiling(1e6/ncol(x))
+  if(missing(v))
+  {
+    v = build(1,ncol(x),type="double",chunksize=ncol(x))@name
+  } else v=v@name
+  if(pca)
+  {
+    w = build(1,nrow(x),type="double",chunksize=m)@name
+    v = paste(c(v,sprintf("%s, substitute(project(apply(aggregate(%s,sum(%s) as colsum,count(%s) as colcount,%s),colmean,colsum/colcount),colmean),build(<v:double>[i=0:0,1,0],0))",w,x@name, x@attributes[1], x@attributes[1], dimensions(x)[2])),collapse=",")
+  }
   if(!missing(tx))
   {
-    query  = sprintf("tsvd(%s, %s, %.0f, %f, %.0f)", x@name, tx@name, nu,tol,maxit)
+    query  = sprintf("tsvd(%s, %s, %.0f, %f, %.0f, %s)", x@name, tx@name, nu,tol,maxit, v)
   } else
   {
     schema = sprintf("[%s=0:%s,%s,0,%s=0:%s,%s,0]",
@@ -361,7 +389,7 @@ tsvd = function(x,nu,tol=0.0001,maxit=20,tx)
                        dimensions(x)[1], noE(nrow(x)-1), noE(nrow(x)))
     schema = sprintf("%s%s",build_attr_schema(x), schema)
     tschema = sprintf("%s%s",build_attr_schema(x), tschema)
-    query  = sprintf("tsvd(redimension(unpack(%s,row),%s), redimension(unpack(transpose(%s),row),%s), %.0f, %f, %.0f)", x@name, schema, x@name, tschema, nu,tol,maxit)
+    query  = sprintf("tsvd(redimension(unpack(%s,row),%s), redimension(unpack(transpose(%s),row),%s), %.0f, %f, %.0f, %s)", x@name, schema, x@name, tschema, nu,tol,maxit, v)
   }
   narray = .scidbeval(query, eval=TRUE, gc=TRUE)
   ans = list(u=slice(narray, "matrix", 0,eval=FALSE)[,between(0,nu-1)],
@@ -384,14 +412,14 @@ svd_scidb = function(x, nu=min(dim(x)), nv=nu)
     u = tmpnam()
     d = tmpnam()
     v = tmpnam()
-    xend = scidb_coordinate_end(x)
+    xend = as.numeric(scidb_coordinate_bounds(x)$length) - 1
     schema = sprintf("[%s=0:%s,1000,0,%s=0:%s,1000,0]",
                      dimensions(x)[1],noE(xend[1]),
                      dimensions(x)[2],noE(xend[2]))
     schema = sprintf("%s%s",build_attr_schema(x),schema)
-    iquery(sprintf("store(gesvd(repart(%s,%s),'left'),%s)",x@name,schema,u))
-    iquery(sprintf("store(gesvd(repart(%s,%s),'values'),%s)",x@name,schema,d))
-    iquery(sprintf("store(transpose(gesvd(repart(%s,%s),'right')),%s)",x@name,schema,v))
+    iquery(sprintf("store(gesvd(reshape(%s,%s),'left'),%s)",x@name,schema,u))
+    iquery(sprintf("store(gesvd(reshape(%s,%s),'values'),%s)",x@name,schema,d))
+    iquery(sprintf("store(transpose(gesvd(reshape(%s,%s),'right')),%s)",x@name,schema,v))
     ans = list(u=scidb(u,gc=TRUE),d=scidb(d,gc=TRUE),v=scidb(v,gc=TRUE))
     attr(ans$u,"sparse") = FALSE
     attr(ans$d,"sparse") = FALSE

@@ -1,24 +1,27 @@
-\name{substitute}
-\alias{substitute}
+\name{replaceNA}
+\alias{replaceNA}
 \title{
 Replace SciDB NULL values with another value.
 }
 \description{
-Replace SciDB NULL values with another value.
+Replace SciDB NULL (aka missing) values with another value.
 }
 \usage{
-substitute(x, value, `attribute`, `eval`=FALSE)
+replaceNA (x, value, `attribute`, `eval`=FALSE, ...)
 }
 \arguments{
   \item{x}{A \code{scidb}  or \code{scidbdf} object.}
   \item{value}{An optional scidb array containing the replacement value.}
   \item{attribute}{An optional attribute to restrict NULL replacement to.}
   \item{eval}{(Optional) If true, execute the query and store the reult array. Otherwise defer evaluation.}
+  \item{...}{Optional arguments.}
 }
 \value{
 A new \code{scidb} or \code{scidbdf} object.
 }
 \details{
+This R function corresponds to SciDB's \code{substitute} operator.
+
 If \code{value} is missing, a value of numeric zero, false, or the string "0" will be used
 to replace NULL values depending on the replacement attribute type.
 
@@ -34,6 +37,6 @@ B. W. Lewis <blewis@paradigm4.com>
 \examples{
 \dontrun{
 x <- scidb("build(<v:double null>[i=1:3,3,0],'{1}[(null),(null),(null)]',true)")
-y <- substitute(x)
+y <- replaceNA(x)
 }}
 

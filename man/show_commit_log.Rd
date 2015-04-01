@@ -1,10 +1,10 @@
 \name{show_commit_log}
 \alias{show_commit_log}
 \title{
-Display the package software repository commit log
+Display recent package software repository commit log entries
 }
 \description{
-Display the package software repository commit log
+Display recent package software repository commit log entries
 }
 \usage{
 show_commit_log()

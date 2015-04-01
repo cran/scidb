@@ -30,7 +30,7 @@ scidb_fisher.test = function(a,x="x",m="m",n="n",k="k",alternative="two.sided", 
 {
   pvalname = make.unique_(a@attributes, "pval")
   oddsname = make.unique_(a@attributes, "estimate")
-  query = sprintf("apply(%s, %s, fisher_test_p_value(%s,%s,%s,%s,'%s'), %s, fisher_test_odds_ratio(%s,%s,%s,%s))",
+  query = sprintf("apply(%s, %s, fishertest_p_value(%s,%s,%s,%s,'%s'), %s, fishertest_odds_ratio(%s,%s,%s,%s))",
            a@name, pvalname, x,m,n,k,alternative, oddsname,x,m,n,k)
   .scidbeval(query,depend=list(a),`eval`=eval,gc=TRUE)
 }

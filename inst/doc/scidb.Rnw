@@ -115,13 +115,17 @@ blewis@paradigm4.com}
 %\includegraphics[width=0.4\textwidth]{scidblogo}$\qquad\qquad$
 %\includegraphics[width=0.2\textwidth]{Rlogo}
 
-%\begin{minipage}[b]{\textwidth}
-%\raggedleft
-%\includegraphics{p4logo}
-%\end{minipage}
 %\newpage
 
 \maketitle
+
+\begin{minipage}[b]{\textwidth}
+\raggedleft
+\includegraphics{p4logo}$\qquad\qquad$
+\includegraphics[width=0.4\textwidth]{scidblogo}$\qquad\qquad$
+\includegraphics[width=0.2\textwidth]{Rlogo}
+\end{minipage}
+
 \tableofcontents
 
 \section{Introduction}
@@ -135,14 +139,13 @@ The \verb+scidb+ package for R provides two ways to interact with SciDB from R:
 The arrays mimic standard R arrays and data frames, but operations on them
 are performed by the SciDB engine.  Data are materialized to R only
 when requested.
-\item By running SciDB queries from R, optionally transferring data through
-data frames or data frame iterators.
+\item By running SciDB queries from R, optionally returning results as data
+frames.
 \end{enumerate}
 The SciDB array classes facilitate programming large-scale SciDB computation in
 R using natural R syntax.  This vignette illustrates using SciDB from R by
 example. For more detailed information on the functions described in this
 vignette, see the manual pages in the package.
-
 
 \section{Connecting to SciDB}
 
@@ -152,9 +155,8 @@ Section \ref{shim}). The function may be safely called multiple times.  Once a
 connection is established, connection information is maintained until a
 different connection is established or the R session ends.
 
-The network interface optionally supports SSL encryption and user
-authentication. Users are defined by the operating system users on the SciDB
-coordinator instance.  The shim service can be configured to support either
+The network interface optionally supports SSL encryption and PAM or HTTP digest
+user authentication.  The shim service can be configured to support either
 open/unencrypted or encrypted/authenticated ports, or both.
 
 {\bf Connect to localhost by default on unencrypted port 8080:}
@@ -165,7 +167,7 @@ open/unencrypted or encrypted/authenticated ports, or both.
 \end{Sinput}
 \end{Schunk}
 
-{\bf Connect to SciDB on an encrypted port 8083 with example authentication:}
+{\bf Connect to SciDB on an encrypted port 8083 with example PAM authentication:}
 \begin{Schunk}
 \begin{Sinput}
 > scidbconnect(host="localhost", port=8083,
@@ -182,12 +184,14 @@ The \verb+scidblist+ function lists SciDB objects (arrays, instances, etc.),
 optionally showing detailed schema information for arrays. Returned
 results may be filtered using regular expression-style syntax.
 
-The \verb+scidbremove+ function removes a SciDB array, or optionally a
-set of SciDB arrays defined by regular expression. The function
-accepts a vector of array names, resulting in the removal of all the
-specified arrays. Combine this feature with the regular expression filtering
-output of \verb+scidblist+ to remove sets of arrays matching the filter.
-
+The \verb+scidbremove+ function removes a SciDB array, or optionally a set of
+SciDB arrays. The function accepts a vector of array names, resulting in the
+removal of all the specified arrays. Combine this feature with the regular
+expression filtering output of \verb+scidblist+ to remove sets of arrays
+matching the filter.  Array names not associated with a specific R session are
+protected from easy removal to provide a modicum of protection for multiple
+SciDB users.  Specify \verb+force=TRUE+ as indicated in the warning message to
+remove those arrays.
 
 
 
@@ -203,13 +207,13 @@ Matrix package (whose sparse matrix elements are implicitly zero).
 The elements of a SciDB array, called {\it cells}, contain one or more {\it
 attributes} (similar to R variables).  The number and data types of attributes
 are uniform across all cells in an array, and SciDB stores data for each
-attribute separately. Thus, a one-dimensional SciDB array is conceptually very
+attribute separately. A one-dimensional SciDB array is conceptually
 similar to a data frame in R: the SciDB dimension index corresponds to data
 frame row index, and SciDB attributes to data frame columns.
-Higher-dimensional arrays in SciDB don't correspond directly to objects in R;
-the {\tt scidb} $n$-dimensional array class described below is limited to
-working with one attribute at a time to more closely emulate standard R
-arrays.
+Higher-dimensional arrays in SciDB are generalizations of data frames and they
+don't correspond directly to objects in R; the {\tt scidb} $n$-dimensional
+array class described below is sometimes limited to working with one attribute
+at a time to more closely emulate standard R arrays.
 
 The \verb+scidb+ package defines two array classes for R with data backed
 by SciDB arrays: the \verb+scidbdf+ class for data frame-like objects,
@@ -255,7 +259,8 @@ the examples.
 \end{Sinput}
 \begin{Soutput}
 SciDB expression:  morely
-SciDB schema:  <Expt:int32 NULL DEFAULT null,Run:int32 NULL DEFAULT null,Speed:int32 NULL DEFAULT null> [row=1:100,100,0]
+SciDB schema:  <Expt:int32 NULL DEFAULT null,Run:int32 NULL DEFAULT null,
+                Speed:int32 NULL DEFAULT null> [row=1:100,100,0]
 
 Attributes:
   attribute  type nullable
@@ -272,11 +277,11 @@ Dimension:
 > X[1:4, c("Run","Speed")][]
 \end{Sinput}
 \begin{Soutput}
-  Run Speed
-1   1   850
-2   2   740
-3   3   900
-4   4  1070
+  row Run Speed
+1   0   1   850
+2   1   2   740
+3   2   3   900
+4   3   4  1070
 \end{Soutput}
 \end{Schunk}
 %%\caption*{Example of a scidbdf object}
@@ -347,7 +352,7 @@ bulk data load utility as outlined in the SciDB documentation instead.
 > str(v)
 \end{Sinput}
 \begin{Soutput}
-SciDB expression:  R_array2bb317c6889d1101074813220
+SciDB expression:  R_array366d7949bc241102999947615
 SciDB schema:  <val:double NULL DEFAULT null> [i=0:4,5,0,j=0:4,5,0]
 
 Attributes:
@@ -362,24 +367,24 @@ Dimensions:
 > crossprod( v[] )              # Compute t(v) %*% v using R
 \end{Sinput}
 \begin{Soutput}
-          [,1]      [,2]      [,3]      [,4]      [,5]
-[1,]  9.532370 -7.472959  4.952529  3.736609  1.464429
-[2,] -7.472959  8.079816 -2.546614 -2.024801 -2.133998
-[3,]  4.952529 -2.546614  3.895251  2.868848  1.625864
-[4,]  3.736609 -2.024801  2.868848  2.218813  1.237344
-[5,]  1.464429 -2.133998  1.625864  1.237344  5.295838
+            0           1          2           3          4
+0  2.80783239 -0.05946079  0.6109525  1.53758978 -1.1351279
+1 -0.05946079  0.37437931  0.4675420 -0.08090686  0.8351372
+2  0.61095249  0.46754196  2.9929278 -2.32618189  0.7360878
+3  1.53758978 -0.08090686 -2.3261819  5.48612039 -0.5832051
+4 -1.13512788  0.83513722  0.7360878 -0.58320510  2.5291922
 \end{Soutput}
 \begin{Sinput}
 > # Now compute using SciDB, and materialize the result to R:
 > crossprod(v)[]
 \end{Sinput}
 \begin{Soutput}
-          [,1]      [,2]      [,3]      [,4]      [,5]
-[1,]  9.532370 -7.472959  4.952529  3.736609  1.464429
-[2,] -7.472959  8.079816 -2.546614 -2.024801 -2.133998
-[3,]  4.952529 -2.546614  3.895251  2.868848  1.625864
-[4,]  3.736609 -2.024801  2.868848  2.218813  1.237344
-[5,]  1.464429 -2.133998  1.625864  1.237344  5.295838
+            0           1          2           3          4
+0  2.80783239 -0.05946079  0.6109525  1.53758978 -1.1351279
+1 -0.05946079  0.37437931  0.4675420 -0.08090686  0.8351372
+2  0.61095249  0.46754196  2.9929278 -2.32618189  0.7360878
+3  1.53758978 -0.08090686 -2.3261819  5.48612039 -0.5832051
+4 -1.13512788  0.83513722  0.7360878 -0.58320510  2.5291922
 \end{Soutput}
 \end{Schunk}
 
@@ -422,14 +427,25 @@ $A[\,]$ & Materialize & SciDB array A& R array \\
 
 \section{Subsetting and indexing SciDB objects}
 
-The \verb+scidb+ and \verb+scidbdf+ classes generally follow SciDB database
-indexing convention, which exhibits some differences with standard R indexing.
-In particular, note that the starting SciDB integer index is arbitrary, but
-often zero. The upper-left corner of R arrays is always indexed by
-\verb+[1,1,...]+.  Subarray indexing operations use the SciDB convention. Thus,
-zero and negative indices are literally interpreted and passed to SciDB. In
-particular, negative indices do not indicate index omission, unlike standard R
-arrays.
+SciDB arrays are indexed by signed 62-bit integers. The origin of an array
+depends on its schema and can be any valid integer coordinate. However, zero is
+a typical origin, and some SciDB operations require zero-based indexes.
+
+By contrast, R indices use positive 52-bit integer-valued double precision
+floating point numbers.  That means that SciDB arrays can't always be indexed
+by R. In practice, R users should avoid creating SciDB arrays with coordinate
+systems that extend past R's limits. Moreover, all R array coordinate systems
+use 1-based indexing.
+
+Subarray indexing operations use the SciDB convention. Thus, zero and negative
+indices are literally interpreted and passed to SciDB. In particular, negative
+indices do not indicate index omission, unlike standard R arrays.
+
+Be aware that SciDB array coordinate systems may not begin at 1. Array
+coordinates are displayed when data are downloaded, and the underlying
+coordinate system can be inspected using the \verb+str+ or \verb+schema+
+functions.
+
 
 Important indexing notes include:
 \itemize{
@@ -438,30 +454,242 @@ indexing operations produce new SciDB array objects.
 \item Use numeric indices in any dimension in the units of the underlying SciDB
 array coordinate system. Note that SciDB arrays generally are zero-indexed
 and may even have negative indices. SciDB data frame-like objects generally
-use 1-based indexing. When in doubt about the base index, use the \verb+str+
-or \verb+dimensions+ functions to interrogate the SciDB object for details.
+use 1-based indexing. When in doubt about the base index, use the \verb+str+,
+\verb+schema+, or \verb+dimensions+ functions to interrogate the SciDB object
+for details.
 \item Numeric indexing may include contiguous ranges or vectors of distinct
 coordinate values, but repeated coordinate values in a single dimension are
-not allowed right now (sorry about that). Examples of valid index ranges include
+not allowed. Examples of valid index ranges include
 \verb+[1:4, c(3,1,5), -10:15]+, but not \verb+[c(1,3,1)]+.
+\item The bracket subsetting function \verb+[+ takes an optional logical
+\verb+redim+ argument. When \verb+FALSE+, the returned value has the same
+shape as the input value, with regions outside the indicated range marked
+sparse (empty). See the examples below.
+\item Subsetting operations using the bracket \verb+[+ function return
+zero-indexed results unless the \verb+redim=FALSE+ argument is specified.
 \item The \verb+scidbdf+ class represents 1-d SciDB arrays as data frame
 objects with SciDB array attribute as columns. Use either positional numeric
 or name-based indexing along columns, either with the dollar-sign notation
 or string indexing.
-\item The \verb+scidb+ supports labeled dimension indexing using
-R \verb+rownames, colnames+, or \verb+dimnames+ settings. Labels assigned
-in this way must be provided by 1-d SciDB arrays that map the integer
-coordinates to character label values. See the examples below.
-\item The \verb+scidb+ class supports indexing by other SciDB arrays
+\item 
+All array types support labeled dimension indexing using the R \verb+rownames+,
+\verb+colnames+, or \verb+dimnames+ and related functions. Labels assigned in this
+way must be provided by 1-d SciDB arrays that map the integer coordinates to
+character label values. See the examples below.
+\item Arrays may be indexed by other SciDB arrays
 to achieve the effect of filtering by boolean expressions and similar
 operations, also illustrated below in the examples.
 \item Use the utility \verb_between_ function to avoid forming large sequences
 representing huge indexing ranges. For example, use \verb+[between(1,1e9)]+
-instead of \verb+[1:1e9]+.
+instead of \verb+[1:1e9]+. Use \verb+between(0,Inf)+, for example, to indicate
+every index greater than or equal to zero.
 \item The \verb+diag+ function is supported to
 extract a vector of diagonal elements from a matrix, or to create a
 sparse diagonal matrix from a vector.
 }
+
+\subsection{Indexing examples}
+
+Let's illustrate some indexing ideas by example. Consider the 5x4 matrix
+with unusual origin of $(-2,0)$:
+
+\begin{Schunk}
+\begin{Sinput}
+> (x <- as.scidb(matrix(as.double(1:20),nrow=5), start=c(-2,0)) )
+\end{Sinput}
+\begin{Soutput}
+A reference to a  5x4 SciDB array
+\end{Soutput}
+\end{Schunk}
+
+The underlying coordinates are displayed when data are returned to R
+using the special empty index function:
+\begin{Schunk}
+\begin{Sinput}
+> x[]
+\end{Sinput}
+\begin{Soutput}
+   0  1  2  3
+-2 1  6 11 16
+-1 2  7 12 17
+0  3  8 13 18
+1  4  9 14 19
+2  5 10 15 20
+\end{Soutput}
+\end{Schunk}
+
+The package adopts the convention that explicit subsets return zero-indexed
+results, noting also that zero and negative integers are valid SciDB indexes
+(deviating from R's usual interpretation):
+\begin{Schunk}
+\begin{Sinput}
+> x[0:2, 2:3] []
+\end{Sinput}
+\begin{Soutput}
+   0  1
+0 13 18
+1 14 19
+2 15 20
+\end{Soutput}
+\end{Schunk}
+
+Use the optional \verb+redim=FALSE+ option to return a masked sparse
+array of the same shape as the input. This is often useful in conjunction
+with database join operations.
+\begin{Schunk}
+\begin{Sinput}
+> x[0:2, 2:3, redim=FALSE] []
+\end{Sinput}
+\begin{Soutput}
+5 x 4 sparse Matrix of class "dgCMatrix"
+   0 1  2  3
+-2 . .  .  .
+-1 . .  .  .
+0  . . 13 18
+1  . . 14 19
+2  . . 15 20
+\end{Soutput}
+\end{Schunk}
+
+The bracket function also supports the standard R \verb+drop+ argument:
+\begin{Schunk}
+\begin{Sinput}
+> x[, 1] []
+\end{Sinput}
+\begin{Soutput}
+ 0  1  2  3  4 
+ 6  7  8  9 10 
+\end{Soutput}
+\begin{Sinput}
+> x[, 1, drop=FALSE] []
+\end{Sinput}
+\begin{Soutput}
+   0
+0  6
+1  7
+2  8
+3  9
+4 10
+\end{Soutput}
+\end{Schunk}
+
+Non-contiguous selections are supported, noting again that returned subset
+results by convention here are zero-indexed:
+\begin{Schunk}
+\begin{Sinput}
+> x[c(0,2,-1), ][]
+\end{Sinput}
+\begin{Soutput}
+  0  1  2  3
+0 2  7 12 17
+1 3  8 13 18
+2 5 10 15 20
+\end{Soutput}
+\end{Schunk}
+(However, unlike standard R array subsetting repeated indices are not
+supported.)
+
+Coordinate axes may be labeled:
+\begin{Schunk}
+\begin{Sinput}
+> rownames(x) <- letters[1:5]
+> colnames(x) <- LETTERS[1:4]
+> x[]
+\end{Sinput}
+\begin{Soutput}
+  A  B  C  D
+a 1  6 11 16
+b 2  7 12 17
+c 3  8 13 18
+d 4  9 14 19
+e 5 10 15 20
+\end{Soutput}
+\end{Schunk}
+The labels are maintained as ancillary SciDB arrays under the hood. You can
+view them:
+\begin{Schunk}
+\begin{Sinput}
+> dimnames(x)
+\end{Sinput}
+\begin{Soutput}
+[[1]]
+Reference to a SciDB vector of length 5 
+
+[[2]]
+Reference to a SciDB vector of length Inf 
+\end{Soutput}
+\begin{Sinput}
+> dimnames(x)[[1]] []
+\end{Sinput}
+\begin{Soutput}
+ -2  -1   0   1   2 
+"a" "b" "c" "d" "e" 
+\end{Soutput}
+\end{Schunk}
+If a sparse array has coordinates too large for R to manage, results are
+returned in an ``unpacked'' data frame form.
+
+Note that SciDB objects with coordinates beyond the range of R display as
+\verb+inf+. Coordinate labeling arrays are sparse with a very large upper
+coordinate bound by convention--allowing the number of labels to grow easily.
+
+Labeled arrays can be subset, and the result retains labels:
+\begin{Schunk}
+\begin{Sinput}
+> x[c('c','a','e'), c('B','A')] []
+\end{Sinput}
+\begin{Soutput}
+  A  B
+a 1  6
+c 3  8
+e 5 10
+\end{Soutput}
+\end{Schunk}
+
+Data-frame like objects are supported. Under the hood they are 1-d SciDB
+arrays.
+\begin{Schunk}
+\begin{Sinput}
+> d <- as.scidb(iris)
+> head(d)
+\end{Sinput}
+\begin{Soutput}
+  Sepal_Width Petal_Length Petal_Width Species
+1         3.5          1.4         0.2  setosa
+2         3.0          1.4         0.2  setosa
+3         3.2          1.3         0.2  setosa
+4         3.1          1.5         0.2  setosa
+5         3.6          1.4         0.2  setosa
+6         3.9          1.7         0.4  setosa
+\end{Soutput}
+\end{Schunk}
+Note that the package will attempt to rename variables to conform to SciDB
+naming conventions when it has to.
+
+The ``columns'' of a data frame like object are defined by the SciDB array
+attributes. You can use numeric or named indices, or the R dollar sign
+notation. The following subsets are all the same:
+\begin{Schunk}
+\begin{Sinput}
+> d$Petal_Width
+\end{Sinput}
+\begin{Soutput}
+Reference to a SciDB vector of length 150 
+\end{Soutput}
+\begin{Sinput}
+> d[, "Petal_Width"]
+\end{Sinput}
+\begin{Soutput}
+Reference to a SciDB vector of length 150 
+\end{Soutput}
+\begin{Sinput}
+> d[, 4]
+\end{Sinput}
+\begin{Soutput}
+Reference to a SciDB vector of length 150 
+\end{Soutput}
+\end{Schunk}
+
 
 \subsection{Comparison operators and filtering}
 
@@ -479,7 +707,8 @@ The difference is illustrated in the following example.
 > (x$Petal_Length > 1.4 )[]
 \end{Sinput}
 \begin{Soutput}
-[1] FALSE FALSE FALSE  TRUE FALSE  TRUE
+    1     2     3     4     5     6 
+FALSE FALSE FALSE  TRUE FALSE  TRUE 
 \end{Soutput}
 \begin{Sinput}
 > # Special SciDB-style masked comparison:
@@ -576,7 +805,11 @@ aggregation function expressed as a character string. Here is a simple example:
 > print(head(y, n=4))
 \end{Sinput}
 \begin{Soutput}
-[1] 0.2 0.4 0.6 0.8
+  row Petal_Width_sum
+1   1             0.2
+2   2             0.4
+3   3             0.6
+4   4             0.8
 \end{Soutput}
 \end{Schunk}
 
@@ -632,20 +865,20 @@ columns.  The \verb+scidb+ class also supports a short-hand notation for
 \end{Sinput}
 \begin{Soutput}
 3 x 3 sparse Matrix of class "dgCMatrix"
-                                  
-[1,] .         1.5952808 0.4874291
-[2,] 0.1836433 0.3295078 0.7383247
-[3,] .         .         0.5757814
+          0         1         2
+0 .         1.5952808 0.4874291
+1 0.1836433 0.3295078 0.7383247
+2 .         .         0.5757814
 \end{Soutput}
 \begin{Sinput}
 > # Alternatively, achieve the same filter with an infix comparison:
 > (A > 0)[]
 \end{Sinput}
 \begin{Soutput}
-      [,1]  [,2] [,3]
-[1,] FALSE  TRUE TRUE
-[2,]  TRUE  TRUE TRUE
-[3,] FALSE FALSE TRUE
+      0     1    2
+0 FALSE  TRUE TRUE
+1  TRUE  TRUE TRUE
+2 FALSE FALSE TRUE
 \end{Soutput}
 \end{Schunk}
 %%\caption*{Example of array value filtering with subset}
@@ -681,13 +914,20 @@ example that performs an inner join on array attributes:
 > merge(a,b,by.x="surname",by.y="name")[,4:8][]
 \end{Sinput}
 \begin{Soutput}
-  nationality deceased     name                         title other_author
-0   Australia       no   McNeil     Interactive Data Analysis         <NA>
-1          UK       no   Ripley            Spatial Statistics         <NA>
-2          UK       no   Ripley         Stochastic Simulation         <NA>
-3          US       no  Tierney                     LISP-STAT         <NA>
-4          US      yes    Tukey     Exploratory Data Analysis         <NA>
-5   Australia       no Venables Modern Applied Statistics ...       Ripley
+  row_2 nationality deceased     name                         title
+1     0   Australia       no   McNeil     Interactive Data Analysis
+2     1          UK       no   Ripley            Spatial Statistics
+3     2          UK       no   Ripley         Stochastic Simulation
+4     3          US       no  Tierney                     LISP-STAT
+5     4          US      yes    Tukey     Exploratory Data Analysis
+6     5   Australia       no Venables Modern Applied Statistics ...
+  other_author
+1         <NA>
+2         <NA>
+3         <NA>
+4         <NA>
+5         <NA>
+6       Ripley
 \end{Soutput}
 \begin{Sinput}
 > # cf. The standard R data.frame merge function:
@@ -704,7 +944,7 @@ limited kinds and outer joins are only supported in certain cases.
 The \verb+aggregate+ function performs various aggregation operations
 on SciDB array objects.  Aggregation may be defined over array dimensions
 and/or array attributes very similarly to standard R aggregation syntax, except
-that aggregation functions must be valid SciDB aggregate expressions,
+that aggregation functions must generally be valid SciDB aggregate expressions,
 represented as strings.
 
 \begin{Schunk}
@@ -728,7 +968,13 @@ multi-dimensional moving window aggregation along array coordinate systems, and
 1-d aggregation along consecutive data values in sparse arrays.  See the on-line
 man page for additional details and examples.
 
+Alternatively, use the SciDB-specific \verb+redimension+ function to perform
+aggregations. This form of aggregation is sometimes more efficient in the
+database. See the help page for \verb+redimension+ and the examples in the
+following section on \verb+redimension+.
+
 \subsection{Binding new variables to an array}
+
 The SciDB package defines the \verb+bind+ function to add variables to arrays
 similar to the R \verb+cbind+ function for data frames.  However, \verb+bind+
 can also operate on higher-dimensional arrays. The example below adds a
@@ -740,12 +986,52 @@ variable named `prod` to the SciDB array \verb+df+ defined in the last example.
 > head(y, n=3)
 \end{Sinput}
 \begin{Soutput}
-  Sepal_Length Sepal_Width Petal_Length Petal_Width Species prod
-1          5.1         3.5          1.4         0.2  setosa 0.28
-2          4.9         3.0          1.4         0.2  setosa 0.28
-3          4.7         3.2          1.3         0.2  setosa 0.26
+  Sepal_Width Petal_Length Petal_Width Species prod
+1         3.5          1.4         0.2  setosa 0.28
+2         3.0          1.4         0.2  setosa 0.28
+3         3.2          1.3         0.2  setosa 0.26
 \end{Soutput}
 \end{Schunk}
+
+
+\subsection{SciDB redimension}
+
+The \verb+redimension+ function is a wrapper for the SciDB \verb+redimension+
+operator--the Swiss army knife of SciDB. The \verb+redimension+ function
+can be used to change the dimensionality of an array and even to apply
+reduction functions while doing so to achieve aggregations.
+
+The following example illustrates using \verb+redimension+ to compute
+a congingency table along levels of two variables, "class" and "Species."
+\begin{Schunk}
+\begin{Sinput}
+> x <- as.scidb(iris)
+> # bind an example new 'class' column:
+> y <- bind(x, "class", "iif(Petal_Width>2, int64(1), 0)")
+> # Contingency table along two dimensions:
+> redimension(y, dim=c("class", "Species"), FUN=count) []
+\end{Sinput}
+\begin{Soutput}
+2 x 3 sparse Matrix of class "dgCMatrix"
+  setosa versicolor virginica
+0     50         50        27
+1      .          .        23
+\end{Soutput}
+\begin{Sinput}
+> # Aggregation example (cf. aggregation example above)
+> redimension(x,
++             dim="Species",
++             FUN="avg(Petal_Length) as Petal_Length_avg,
++                  stdev(Petal_Width) as Petal_Width_stdev")[]
+\end{Sinput}
+\begin{Soutput}
+           Petal_Length_avg Petal_Width_stdev
+setosa                1.462         0.1053856
+versicolor            4.260         0.1977527
+virginica             5.552         0.2746501
+\end{Soutput}
+\end{Schunk}
+The function creates and applies row and dimension names as required.
 
 
 \subsection{Sorting and enumerating factors}
@@ -760,6 +1046,9 @@ Use the \verb+index_lookup+ function along with  \verb+unique+ to bind a new
 variable that enumerates unique values of a variable similarly to the R
 \verb+factor+ function.
 
+Use the new \verb+factor_scidb+ function to create R factor variables whose
+levels are determined by a SciDB dimension array.
+
 Examples follow. Note that we use the SciDB \verb+project+ function in one
 example. \verb+project+ presents an alternative syntax to the functionally
 equivalent column subset selection of variables using brackets.
@@ -772,10 +1061,10 @@ equivalent column subset selection of variables using brackets.
 > head(a, n=3)
 \end{Sinput}
 \begin{Soutput}
-  Sepal_Length Sepal_Width Petal_Length Petal_Width Species
-1          4.9         3.1          1.5         0.1  setosa
-2          4.9         3.6          1.4         0.1  setosa
-3          4.8         3.0          1.4         0.1  setosa
+  Sepal_Width Petal_Length Petal_Width Species
+1         3.1          1.5         0.1  setosa
+2         3.0          1.4         0.1  setosa
+3         3.0          1.1         0.1  setosa
 \end{Soutput}
 \begin{Sinput}
 > # Find unique values of Species:
@@ -792,31 +1081,27 @@ equivalent column subset selection of variables using brackets.
 > head(index_lookup(x, unique(x$Species), "Species"))
 \end{Sinput}
 \begin{Soutput}
-  Sepal_Length Sepal_Width Petal_Length Petal_Width Species Species_index
-1          5.1         3.5          1.4         0.2  setosa             0
-2          4.9         3.0          1.4         0.2  setosa             0
-3          4.7         3.2          1.3         0.2  setosa             0
-4          4.6         3.1          1.5         0.2  setosa             0
-5          5.0         3.6          1.4         0.2  setosa             0
-6          5.4         3.9          1.7         0.4  setosa             0
+  Sepal_Width Petal_Length Petal_Width Species Species_index
+1         3.5          1.4         0.2  setosa             0
+2         3.0          1.4         0.2  setosa             0
+3         3.2          1.3         0.2  setosa             0
+4         3.1          1.5         0.2  setosa             0
+5         3.6          1.4         0.2  setosa             0
+6         3.9          1.7         0.4  setosa             0
 \end{Soutput}
 \end{Schunk}
 
+See the on-line documentation for \verb+factor_scid+ for additional
+examples.
 
-\subsection{Indexing details and missing values}
-
-The integer coordinate systems used to index SciDB arrays are similar to R,
-except that SciDB integer indices may be zero or negative, and are represented
-by 62-bit signed integers (R indices use either unsigned positive 31-bit
-integer or positive 52-bit integer-valued double values). This means that SciDB
-arrays can't always be indexed by R In practice, R users should avoid creating
-SciDB arrays with coordinate systems that extend past R's limits.
+\subsection{Missing values}
 
 SciDB attribute values within a cell may be explicitly marked missing,
-indicated by a special SciDB missing code also referred to as a NULL code.
-SciDB internally supports a large number of possible missing codes. All SciDB
-missing code values are mapped to \verb+NA+ values in R.
+indicated by a special SciDB missing code also referred to as a \verb+NULL+
+code.  SciDB internally supports a large number of possible missing codes. All
+SciDB missing code values are mapped to \verb+NA+ values in R.
  
+
 
 
 \section{Lazy evaluation, array promises, and garbage collection}
@@ -868,7 +1153,14 @@ Here is an example:
 > B@name
 \end{Sinput}
 \begin{Soutput}
-[1] "redimension(redimension(between(transpose(test),3,null,3,null), <val:double NULL>[j=3:3,4,0,i=0:4,5,0]), <val:double NULL>[i=0:4,5,0])"
+[1] "redimension(
+       subarray(
+         redimension(
+           between(
+             transpose(test),3,null,3,null),
+           <val:double NULL>[j=3:3,4,0,i=0:4,5,0]),
+          null,null,null,null),
+       <val:double NULL>[i=0:4,5,0])"
 \end{Soutput}
 \begin{Sinput}
 > B@schema
@@ -891,7 +1183,7 @@ Here is an example:
 > C@name
 \end{Sinput}
 \begin{Soutput}
-[1] "R_array2bb38c448db1101074813220"
+[1] "R_array366d7fc6adf21102999947615"
 \end{Soutput}
 \begin{Sinput}
 > C@schema
@@ -957,27 +1249,27 @@ they include their right-hand endpoint, but not their left one.
 
 \subsection{Last-value imputation}
 
-The \code{na.locf} function is a generic function for replacing each missing or
+The \verb+na.locf+ function is a generic function for replacing each missing or
 empty value with the most recent non-missing value prior to it.
 
-Unlike the usual \code{na.locf} function from the \code{zoo} package, the SciDB
-\code{na.locf} function fills in both missing (SciDB \code{null} values) and
+Unlike the usual \verb+na.locf+ function from the \verb+zoo+ package, the SciDB
+\verb+na.locf+ function fills in both missing (SciDB \verb+null+ values) and
 empty (SciDB sparse) values with the last non-missing and non-sparse value
 along the indicated dimension.
 
-Time series represented in SciDB are often sparse arrays. The \code{na.locf}
+Time series represented in SciDB are often sparse arrays. The \verb+na.locf+
 function defines a conveniet way to  fill in all missing values along the time
 coordinate axis down to the time resolution.
 
 Caution! The output array is a mostly dense, filled-in version of the input
 array. If the time resolution is very fine and the input array very sparse,
-then the output array can be huge. Consider using \code{regrid} first on
+then the output array can be huge. Consider using \verb+regrid+ first on
 very fine time scales to reduce their resolution.
 
-The default \code{na.locf} method in the \code{zoo} package unforunately
-overrides this function (it uses \code{ANY} in its method signature). If
-you need to use SciDB arrays and the \code{zoo} package, prefix SciDB's
-version with \code{scidb::na.locf(...)}.
+The default \verb+na.locf+ method in the \verb+zoo+ package unforunately
+overrides this function (it uses \verb+ANY+ in its method signature). If
+you need to use SciDB arrays and the \verb+zoo+ package, prefix SciDB's
+version with \verb+scidb::na.locf(...)+.
 
 
 
@@ -1080,34 +1372,57 @@ Here is a summary list of functions and methods defined by  the package.  See
 online help for examples and more information on each one.
 
 \begin{verbatim}
-$                 %<%               Filter            Ops
-[                 abs               acos              aggregate
-all.equal         antijoin          apply             as.scidb
-asin              atan              attribute_rename  between
-bind              build             c                 cast
-cbind             colnames          colnames<-        cos
-count             crossprod         cumulate          default
-df2scidb          diag              diff              dim
-dimension_rename  dimensions        dimnames          dimnames<-
-glm.fit           glm_scidb         head              hist
-image             index_lookup      iquery            is.scidb
-is.scidbdf        lag               length            log
-max               mean              median            merge
-min               model_scidb       na.locf           names
-names<-           ncol              nrow              persist
-phyper            predict           print             project
-qhyper            quantile          rbind             redimension
-regrid            rename            repart            reshape
-rownames          rownames<-        schema            scidb
-scidb_attributes  scidb_fisher.test scidbconnect      scidbdf
-scidbeval         scidblist         scidbls           scidbremove
-scidbrm           sd                show              show_commit_log
-sin               slice             solve             sort
-sqrt              str               subarray          subset
-substitute        sum               summary           svd
-sweep             t                 tail              tan
-tcrossprod        unique            unpack            var
-xgrid
+<                       <=                      ==
+>                       >=                      -
+!=                      /                       [
+[<-                     $                       *
+%<=%                    %<%                     %==%
+%>=%                    %>%                     %*%
++                       abs                     acos
+aggregate               all.equal               antijoin
+apply                   asin                    as.scidb
+atan                    attribute_rename        bernoulli
+between                 bind                    bound
+build                   c                       cast
+cbind                   chunk_map               colnames
+colnames<-              cos                     count
+crossprod               cumulate                default
+df2scidb                diag                    diff
+dim                     dimension_rename        dimensions
+dimnames                dimnames<-              dist
+exp                     factor_scidb            Filter
+glm                     glm.fit                 glm_scidb
+head                    hist                    image
+index_lookup            iqdf                    iquery
+is.scidb                is.scidbdf              is.temp
+kmeans                  lag                     length
+levels_scidb            log                     max
+mean                    median                  merge
+min                     model_scidb             na.locf
+names                   names<-                 ncol
+nrow                    Ops                     order
+peek                    persist                 phyper
+predict                 print                   project
+qhyper                  quantile                rank
+rbind                   redimension             regrid
+remove_old_versions     rename                  repart
+replaceNA               reshape                 rownames
+row.names               row.names<-             rownames<-
+schema                  scidb                   scidb_attributes
+scidbconnect            scidb_coordinate_bounds scidb_coordinate_chunks
+scidb_coordinate_end    scidb_coordinate_overla scidb_coordinate_start
+scidbdf                 scidbdisconnect         scidbeval
+scidb_fisher.test       scidblist               scidbls
+scidb_nullable          scidbremove             scidbrm
+scidb_types             sd                      show
+show_commit_log         sin                     slice
+solve                   sort                    sqrt
+str                     subarray                subset
+sum                     summary                 svd
+sweep                   t                       tail
+tan                     tcrossprod              tsvd
+unbound                 unique                  unpack
+var                     xgrid
 \end{verbatim}
 
 
@@ -1167,43 +1482,6 @@ systems is easiest. Detailed up-to-date information can be found on
 Paradigm4's laboratory on Paradigm4's Github repository at 
 \href{https://github.com/Paradigm4/shim/wiki/Installing-shim}
 {https://github.com/Paradigm4/shim/wiki/Installing-shim}.
-We outline installation for each supported operating system below. See our github page
-for source code. The open source package author, Bryan Lewis, maintains
-binary packages for SciDB-supported operating systems. They are tied to specific
-versions of SciDB. The present version is 13.12 (December, 2013).
-
-
-\subsubsection{Installation on RHEL/CentOS 6}
-%%\begin{Code}
-%%\begin{lstlisting}[caption=Installing the simple HTTP service on RHEL, label=shimrhel]
-\begin{verbatim}
-# Install with:
-wget http://paradigm4.github.io/shim/shim-13.12-1.x86_64.rpm
-rpm -i shim-13.12-1.x86_64.rpm
-
-# (Uninstall, if desired, with:)
-yum remove shim
-\end{verbatim}
-%%\end{lstlisting}
-%%\end{Code}
-
-
-\subsubsection{Installation on Ubuntu 12.04}
-%%\begin{Code}
-%%\begin{lstlisting}[caption=Installing the simple HTTP service on Ubuntu, label=shimubuntu]
-\begin{verbatim}
-# Install with:
-wget http://paradigm4.github.io/shim/shim_13.12_amd64.deb
-sudo gdebi shim_13.12_amd64.deb
-
-# (Uninstall, if desired, with:)
-apt-get remove shim
-\end{verbatim}
-%%\end{lstlisting}
-%%%\end{Code}
-See the Wiki and web pages at 
-\href{https://github.com/Paradigm4/shim/}
-{https://github.com/Paradigm4/shim/} for up to date package information and source code.
 
 The installed \verb+shim+ network service exposes SciDB as a very simple HTTP
 API.  It includes a simple browser-based status and query tool. After
@@ -1219,21 +1497,40 @@ SciDB.org/forum or via Github issues.
 The \verb+scidb+ package defines several global package options.
 Package options may be set and retrieved with the R
 \verb+options+ function, and are listed in Table 2.
-\begin{table}[ht!]
+\begin{table}
 \label{options}
-\centering
 %%\resizebox{0.95\textwidth}{!}{
-\begin{tabularx}{0.9\textwidth}{llX}
-Option & Default value & Description \\
-\hline
-scidb.debug & NULL & Set to TRUE to display all queries issued to the SciDB engine and
-other debugging information.\\
-scidb.index.sequence.limit & 100 000 000 &  Maximum allowed scidb array object sequential indexing limit (for larger ranges, use between)\\
-scidb.max.array.elements & 100 000 000 & Maximum allowed non-empty elements to return in a subsetting operation of a scidb array object.\\
-\hline
-\end{tabularx}
+\begin{verbatim}
+# Maximum allowed sequential index limit (for larger, use between)
+  options(scidb.index.sequence.limit=1000000)
+# Maximum allowed elements in an array return result
+  options(scidb.max.array.elements=100000000)
+# The scidb.version option is set during scidbconnect(). However, users
+# may carefully override it to enable certain bug fixes specific to older
+# versions of SciDB.
+  options(scidb.version=13.9)
+# Set this to 32 for SciDB version 13.6!
+  options(scidb.gemm\_chunk_size=1000)
+# Default shim port and host.
+  options(scidb.default_shim_port=8080L)
+  options(scidb.default_shim_host="localhost")
+# Make it harder to remove arrays. When this option is TRUE, users
+# have to specify scidbrm(array, force=TRUE) to remove arrays that do not
+# begin with "Rarray".
+  options(scidb.safe\_remove=TRUE)
+# Disable SSL certificate host name checking by default. This is important mostly
+# for Amazon EC2 where hostnames rarely match their DNS names. If you enable this
+# then the shim SSL certificate CN entry *must* match the server host name for the
+# encrypted session to work. Set this TRUE for stronger security (help avoid MTM)
+# in SSL connections.
+  options(scidb.verifyhost=FALSE)
+# Set to FALSE to disable user-interruptable HTTP transactions.
+  options(scidb.interrupt=TRUE)
+# Set to TRUE to enable experimental shim stream protocol, avoids copying query
+# output to data file on server # (see https://github.com/Paradigm4/shim).
+  options(scidb.stream=FALSE)
+\end{verbatim}
 %%}
-\\[24pt]
 \caption*{Package options}
 \end{table}
 
@@ -1265,7 +1562,7 @@ automatically renamed in this way.
 %%\newpage
 \small{
 \begin{verbatim}
-Copyright (C) 2008-2013 SciDB, Inc.
+Copyright (C) 2008-2015 SciDB, Inc.
 
 The SciDB package for R is free software: you can redistribute it and/or modify
 it under the terms of the AFFERO GNU General Public License as published by the

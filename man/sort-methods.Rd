@@ -1,6 +1,5 @@
 \name{sort-methods}
 \docType{methods}
-\alias{sort}
 \alias{sort,scidb-method}
 \alias{sort,scidbdf-method}
 \title{Methods for Function \code{sort} in Package \pkg{scidb}}
@@ -9,19 +8,23 @@ Aggregate a SciDB array object grouped by a subset of its dimensions and/or attr
 }
 
 \usage{
-\S4method{sort}{scidb}(x, decreasing=FALSE, attributes, eval)
-\S4method{sort}{scidbdf}(x, decreasing=FALSE, attributes, eval)
+\S4method{sort}{scidb}(x, decreasing = FALSE, ...)
+\S4method{sort}{scidbdf}(x, decreasing = FALSE, ...)
 }
 \arguments{
   \item{x}{A \code{scidb} or \code{scidbdf} object.}
   \item{decreasing}{A logical value: TRUE means sort in decreasing order.}
-  \item{attributes}{(Required) A character vector of attribute names from array \code{x} to sort on}
-  \item{eval}{(Optional) If true, execute the query and store the result array. Otherwise defer evaluation.}
+  \item{...}{Optional SciDB-specific aruments (see details below).}
 }
 \details{
 Create a new array reference object that represents the sorted version of array
 \code{x}.  The output array reference has the same shape and number of
 attributes as \code{x} but the specified attributes appear in sorted order.
+The following SciDB-specific parameters are available:
+\itemize{
+\item{attributes}{(Required) A character vector of attribute names from array \code{x} to sort on}
+\item{eval}{(Optional) If true, execute the query and store the result array. Otherwise defer evaluation.}
+}
 }
 \value{A \code{scidb} or \code{scidbdf} reference object.}
 \author{

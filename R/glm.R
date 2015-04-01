@@ -29,12 +29,14 @@
 
 # A really basic prototype glm function, limited to simple formulas and
 # treatment contrast encoding. cf glm.
-glm_scidb = function(formula, data, family=gaussian(), weights=NULL)
+glm_scidb = function(formula, family=gaussian(), `data`, `weights`)
 {
   if(!is.scidbdf(data)) stop("data must be a scidbdf object")
   if(is.character(formula)) formula=as.formula(formula)
+  wts = NULL
+  if(!missing(weights)) wts = weights
   M = model_scidb(formula, data)
-  ans = glm.fit(M$model, M$response, weights=weights, family=family,intercept=M$intercept)
+  ans = glm.fit(M$model, M$response, weights=wts, family=family,intercept=M$intercept)
   ans$formula = M$formula
   ans$coefficient_names = M$names
   ans$factors = M$factors
@@ -67,9 +69,9 @@ glm.fit_scidb = function(x,y,weights=NULL,family=gaussian(),intercept)
   {
     stop("The Paradigm4 glm operator was not found.")
   }
-  x = substitute(x)
-  y = substitute(y)
-  `weights` = substitute(`weights`)
+  x = replaceNA(x)
+  y = replaceNA(y)
+  `weights` = replaceNA(`weights`)
   dist = family$family
   link = family$link
 # GLM has a some data partitioning requirements to look out for:
@@ -198,8 +200,6 @@ summary.glm_scidb = function(object, ...)
 #          that the factor encoding and baseline are reproducible.
 model_scidb = function(formula, data, factors=NULL)
 {
-  tryCatch(iquery("load_library('collate')"),
-    error=function(e) stop("This function requires the collate operator.\n See https://github.com/Paradigm4/collate"))
   if(!is.scidbdf(data)) stop("data must be a scidbdf object")
   if(is.character(formula)) formula=as.formula(formula)
   dummy = data.frame(matrix(NA,ncol=length(scidb_attributes(data))))
@@ -273,8 +273,9 @@ model_scidb = function(formula, data, factors=NULL)
   }
 
   varsstr = paste(vars, collapse=",")
-  query = sprintf("collate(project(%s,%s))",data@name,varsstr)
+  query = sprintf("unfold(project(%s,%s))",data@name,varsstr)
   M = .scidbeval(query,gc=TRUE,eval=TRUE)
+  M = attribute_rename(dimension_rename(M,old=c(1,2),new=c("i","j")), old=1, new="val")
 
   if(length(factors)<1)
   {
@@ -341,11 +342,17 @@ model_scidb = function(formula, data, factors=NULL)
 predict.glm_scidb = function(object, ...) #newdata=NULL, type=c("link","response"), se.fit=FALSE)
 {
   C = match.call()
-  if(is.null(C$newdata)) newdata=NULL
+  if(is.null(C$newdata))
+  {
+    newdata = NULL
+  } else
+  {
+    newdata = eval(C$newdata,envir=parent.frame())
+  }
   if(is.null(C$type)) type="link"
-  else type=C$type
+  else type = eval(C$type,envir=parent.frame())
   if(is.null(C$se.fit)) se.fit=FALSE
-  else se.fit=C$se.fit
+  else se.fit=eval(C$se.fit,envir=parent.frame())
   if(!type %in% c("link","response")) stop("type must be one of 'link' or 'response'")
   if(is.null(newdata))
   {

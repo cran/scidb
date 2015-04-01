@@ -13,8 +13,11 @@
 \alias{\%>=\%,scidb-method}
 \alias{\%>=\%,scidbdf-method}
 \alias{\%==\%}
+\alias{\%!=\%}
 \alias{\%==\%,scidb-method}
 \alias{\%==\%,scidbdf-method}
+\alias{\%!=\%,scidb-method}
+\alias{\%!=\%,scidbdf-method}
 \title{Masking comparison methods from package \pkg{scidb}}
 \description{
 The binary operators described here perform comparison operations that
@@ -38,6 +41,8 @@ SciDB arrays.
 \S4method{\%>=\%}{scidbdf}(x,y)
 \S4method{\%==\%}{scidb}(x,y)
 \S4method{\%==\%}{scidbdf}(x,y)
+\S4method{\%!=\%}{scidb}(x,y)
+\S4method{\%!=\%}{scidbdf}(x,y)
 }
 \arguments{
   \item{x}{A \code{scidb} or \code{scidbdf} object.}

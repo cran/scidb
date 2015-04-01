@@ -94,11 +94,13 @@ dimnames.scidb = function(x)
 }
 
 # SciDB labeled coordinates assignment
-# Improve this:
-# 1. Accept non-scidb array indices by making SciDB arrays out of them
-# 2. Automatically adjust the origin of the label arrays to match x
 `dimnames<-.scidb` = function(x, value)
 {
+  if(is.null(value)) 
+  {
+    x@gc$dimnames = value
+    return(x)
+  }
   if(!is.list(value))
     stop("dimnames requires a list")
   if(length(value)!=length(dim(x)))
@@ -109,19 +111,29 @@ dimnames.scidb = function(x)
     {
       v = value[[j]]
       if(is.null(v)) return(v)
-      if(is.scidb(v) || is.scidbdf(v))
+      if(is.scidbdf(v)) class(v) = "scidb"
+      if(is.scidb(v))
       {
+        if(length(dim(v))>1) stop("Dimension label arrays must be one dimensional")
+        if(length(v@attributes)>1) v = project(v,1)
+# Make sure that the label array has '*' upper dimension bound
         check = scidb_coordinate_start(x)[j] == scidb_coordinate_start(v)[1] &&
-                scidb_coordinate_chunksize(x)[j] == scidb_coordinate_chunksize(v)[1]
+                scidb_coordinate_chunksize(x)[j] == scidb_coordinate_chunksize(v)[1] &&
+                (is.na(dim(v)) || (dim(v) == as.numeric(.scidb_DIM_MAX)))
         if(!check)
         {
-          v = reshape_scidb(v,shape=dim(v),start=as.numeric(scidb_coordinate_start(x)[j]),chunks=as.numeric(scidb_coordinate_chunksize(x)[j]))
+# uh oh
+            v = redimension(v, sprintf("%s%s", build_attr_schema(v), build_dim_schema(v, newend="*")))
+            v = reshape(v, sprintf("%s%s", build_attr_schema(v), build_dim_schema(v, newstart=scidb_coordinate_start(x)[j])))
         }
+# join out holes. don't use dimnames! this is crummy.
+        xj = apply(x,j,count)
+        v = project(merge(v, xj, by.x=dimensions(v), by.y=dimensions(xj)),1)
         return(v);
       }
-      as.scidb(data.frame(label=v)[,1,drop=FALSE],
-               start=scidb_coordinate_start(x)[j],
-               chunkSize=scidb_coordinate_chunksize(x)[j])
+      scidbeval(unbound(as.scidb(v,
+                start=scidb_coordinate_start(x)[j],
+                chunkSize=scidb_coordinate_chunksize(x)[j])))
     })
 
   check = unlist(lapply(1:length(value), function(j)
@@ -135,8 +147,6 @@ dimnames.scidb = function(x)
       is.null(value[[j]]) || (nrow(value[[j]]) == dim(x)[j])
     }))
   check[is.na(check)] = FALSE
-  if(!all(check))
-    warning("Label lengths might not match array dimensions")
   x@gc$dimnames = value
   x@gc$depend =c (x@gc$depend, unlist(value))
   x
@@ -148,11 +158,23 @@ summary.scidb = function(x)
   invisible()
 }
 
-# XXX this will use insert, write me.
-#`[<-.scidb` = function(x,j,k, ..., value)
-#{
-#  stop("Sorry, scidb array objects are read only for now.")
-#}
+`[<-.scidb` = function(x, ..., value)
+{
+  m = match.call()
+  a = scidb_attributes(x)[1]
+  if(!is.null(m$attr)) a = m$attr
+  ai = which(scidb_attributes(x) %in% a)
+  i = list(...)
+  if(!all(unlist(lapply(i,checkseq)))) stop("Assignment is limited to contiguous blocks for now.")
+  d = sapply(i, length) # dimensions
+  s = sapply(i, function(u) u[1]) # origin
+# Note, ordered by rows thanks to aperm
+  if(!is.array(value)) value = array(value)
+  v = as.scidb(as.vector(aperm(value)), nullable=scidb_nullable(x)[ai], attr=a, reshape=FALSE)
+  reschema = sprintf("%s%s", build_attr_schema(v),
+              build_dim_schema(x, newstart=s, newlen=d))
+  merge(x, redimension(reshape(v, schema=reschema), schema=schema(x)), merge=TRUE)
+}
 
 # Array subsetting wrapper.
 # x: A Scidb array object
@@ -163,14 +185,20 @@ summary.scidb = function(x)
 `[.scidb` = function(x, ...)
 {
   M = match.call()
-  if(is.null(M$drop)) drop=TRUE
+  if(is.null(M$drop)) drop=TRUE  # if TRUE follow R drop convention
   else drop=M$drop
-  if(is.null(M$eval)) eval=FALSE
+  if(is.null(M$eval)) eval=FALSE  # if TRUE eval (not really needed anymore)
   else eval=M$eval
-  if(is.null(M$redim)) redim=TRUE
+  if(is.null(M$redim)) redim=TRUE  # if FALSE don't reset coordinates
   else redim=M$redim
+# inverse of redim (same functionality) for user convenience
+  if(!is.null(M$between)) redim=!M$between
+  if(!is.null(M$redim) && !is.null(M$between))
+  {
+    warning("The `redim` and `between` options are antonyms but they provide the same control over the query. When both are specified the `redim` option is ignored and subsetting only pays attention to the between option.")
+  }
   M = M[3:length(M)]
-  if(!is.null(names(M))) M = M[!(names(M) %in% c("drop","eval","redim"))]
+  if(!is.null(names(M))) M = M[!(names(M) %in% c("drop","eval","redim","between"))]
 # i shall contain a list of requested index values
   E = parent.frame()
   i = lapply(1:length(M), function(j) tryCatch(eval(M[j][[1]],E),error=function(e)c()))
@@ -184,7 +212,7 @@ summary.scidb = function(x)
 
 `dim<-.scidb` = function(x, value)
 {
-  stop("unsupported")
+  reshape(x, shape=value)
 }
 
 str.scidb = function(object, ...)
@@ -215,17 +243,39 @@ length.scidb = function(x) prod(as.numeric(scidb_coordinate_bounds(x)$length))
 # XXX Future: Add n-d array support here (TODO)
 as.scidb = function(X,
                     name=tmpnam(),
-                    chunkSize,
+                    chunksize,
                     overlap,
                     start,
+                    chunkSize = chunksize,
                     gc=TRUE, ...)
 {
   if(inherits(X,"data.frame"))
-    if(missing(chunkSize))
+  {
+    if(missing(chunksize))
       return(df2scidb(X,name=name,gc=gc,start=start,...))
     else
-      return(df2scidb(X,name=name,chunkSize=as.numeric(chunkSize[[1]]),gc=gc,start=start,...))
-  if(missing(chunkSize))
+      return(df2scidb(X,name=name,chunkSize=as.numeric(chunksize[[1]]),gc=gc,start=start,...))
+  }
+  force_type = NULL
+  if(is.factor(X))
+  {
+    if("scidb_factor" %in% class(X))
+    {
+      levels(X) = levels_scidb(X)
+      X = as.integer(as.vector(X))  # XXX !!! XXX THIS LIMITS INDEX VALUES TO 31 bits!!! !!!
+      force_type = "int64"
+    }
+    else
+      X = as.vector(X)
+  }
+  args = list(...)
+  nullable = TRUE
+  if(!is.null(args$nullable)) nullable = as.logical(args$nullable) # control nullability
+  attr_name = "val"
+  if(!is.null(args$attr)) attr_name = as.character(args$attr)      # attribute name
+  do_reshape = TRUE
+  if(!is.null(args$reshape)) do_reshape = as.logical(args$reshape) # control reshape
+  if(missing(chunksize))
   {
 # Note nrow, ncol might be NULL here if X is not a matrix. That's OK, we'll
 # deal with that case later.
@@ -257,19 +307,28 @@ as.scidb = function(X,
     chunkSize = min(chunkSize[[1]],length(X))
     X = as.matrix(X)
     schema = sprintf(
-      "< val : %s null>  [i=%.0f:%.0f,%.0f,%.0f]", type, start[[1]],
+      "< %s : %s null>  [i=%.0f:%.0f,%.0f,%.0f]", attr_name, type, start[[1]],
       nrow(X)-1+start[[1]], min(nrow(X),chunkSize), overlap[[1]])
     load_schema = schema
+    if(!is.null(force_type))
+    {
+      schema = sprintf(
+        "< %s : %s null>  [i=%.0f:%.0f,%.0f,%.0f]", attr_name, force_type, start[[1]],
+        nrow(X)-1+start[[1]], min(nrow(X),chunkSize), overlap[[1]])
+    }
   } else {
 # X is a matrix
     schema = sprintf(
-      "< val : %s >  [i=%.0f:%.0f,%.0f,%.0f, j=%.0f:%.0f,%.0f,%.0f]", type, start[[1]],
+      "< %s : %s  null>  [i=%.0f:%.0f,%.0f,%.0f, j=%.0f:%.0f,%.0f,%.0f]", attr_name, type, start[[1]],
       nrow(X)-1+start[[1]], chunkSize[[1]], overlap[[1]], start[[2]], ncol(X)-1+start[[2]],
       chunkSize[[2]], overlap[[2]])
-    load_schema = sprintf("<val:%s null>[row=1:%.0f,1000000,0]",type,length(X))
+    load_schema = sprintf("<%s:%s null>[__row=1:%.0f,1000000,0]",attr_name, type,  length(X))
   }
   if(!is.matrix(X)) stop ("X must be a matrix or a vector")
 
+  DEBUG = FALSE
+  if(!is.null(options("scidb.debug")[[1]]) && TRUE==options("scidb.debug")[[1]]) DEBUG=TRUE
+  td1 = proc.time()
 # Obtain a session from shim for the upload process
   session = getSession()
   on.exit( GET("/release_session",list(id=session)) ,add=TRUE)
@@ -283,16 +342,42 @@ as.scidb = function(X,
   fn = tempfile()
   bytes = writeBin(.Call("scidb_raw",as.vector(t(X)),PACKAGE="scidb"),con=fn)
   url = URI("upload_file",list(id=session))
-  ans = postForm(uri = url, uploadedfile = fileUpload(filename=fn),
-           .opts = curlOptions(httpheader = c(Expect = ""),'ssl.verifypeer'=0,'ssl.verifyhost'=as.integer(options("scidb.verifyhost"))))
+# RCurl madness! postForm with digest auth errors out, even when it
+# succeeds! XXX
+  hdr = digest_auth("POST",url)
+  ans = tryCatch(postForm(uri = url, uploadedfile = fileUpload(filename=fn), .opts = c(curlopts(),curlOptions(httpheader=hdr,'ssl.verifypeer'=0,'ssl.verifyhost'=as.integer(options("scidb.verifyhost"))))), error=invisible)
   unlink(fn)
   ans = ans[[1]]
   ans = gsub("\r","",ans)
   ans = gsub("\n","",ans)
+  if(DEBUG)
+  {
+    cat("Data upload time",(proc.time()-td1)[3],"\n")
+  }
 
 # Load query
-  query = sprintf("store(reshape(input(%s,'%s', 0, '(%s null)'),%s),%s)",load_schema,ans,type,schema,name)
+  if(do_reshape)
+  {
+    if(!is.null(force_type))
+    {
+      query = sprintf("store( attribute_rename(project(apply(reshape(input(%s,'%s', 0, '(%s null)'),%s), ___, %s(%s)), ___), ___, %s), %s)",load_schema,ans,type,schema, force_type, attr_name, attr_name, name)
+    }
+    else {
+      query = sprintf("store(reshape(input(%s,'%s', 0, '(%s null)'),%s),%s)",load_schema,ans,type,schema,name)
+    }
+  }
+  else
+  {
+    if(!is.null(force_type))
+    {
+      query = sprintf("store(attribute_rename(project(appy(input(%s,'%s', 0, '(%s null)'),___, %s(%s)), ___), ___, %s), %s)",load_schema,ans,type,name,force_type,attr_name,attr_name)
+    } else
+    {
+      query = sprintf("store(input(%s,'%s', 0, '(%s null)'),%s)",load_schema,ans,type,name)
+    }
+  }
   iquery(query)
   ans = scidb(name,gc=gc)
+  if(!nullable) ans = replaceNA(ans)
   ans
 }

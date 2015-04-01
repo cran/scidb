@@ -1,20 +1,21 @@
 \name{glm.fit}
 \alias{glm.fit}
-\alias{glm_scidb}
+\alias{glm}
 \alias{model_scidb}
 \alias{glm.fit,scidb-method}
 \alias{glm.fit,scidb,ANY,MNSN-method}
+\alias{glm,ANY,ANY,scidbdf-method}
 \title{
 Fitting generalized linear models
 }
 \description{
 \code{glm.fit} is used to fit generalized linear models specified by a model
-matrix and response vector. \code{glm_scidb} is a simplified interface for
+matrix and response vector. \code{glm} is a simplified interface for
 \code{scidbdf} objects similar (but much simpler than) \code{glm}.
 }
 \usage{
 \S4method{glm.fit}{scidb}(x,y,weights=NULL,family=gaussian())
-glm_scidb(formula, data, family=gaussian(), weights=NULL)
+\S4method{glm}{ANY,ANY,scidbdf}(formula, family=gaussian(), data, weights)
 model_scidb(formula, data, factors=NULL)
 }
 \arguments{
@@ -32,10 +33,10 @@ model_scidb(formula, data, factors=NULL)
   \item{factors}{a list of factor encodings to use in the model matrix. See details.}
 }
 \value{
-The \code{glm.fit} and \code{glm_scidb} functions return
-a list of model output values described below. The \code{glm_scidb}
-method uses an S3 class to additionally overload nice printing
-and \code{summary} methods.
+The \code{glm.fit} and \code{glm} functions return
+a list of model output values described below. The \code{glm}
+method uses an S3 class to implement printing
+\code{summary}, and \code{predict} methods.
 \enumerate{
 \item{\emph{coefficients}}{  model coefficient vector (SciDB array)}
 \item{\emph{stderr}}{  vector of model coefficient standard errors (SciDB array)}
@@ -81,16 +82,15 @@ and \code{summary} methods.
 
 }
 \details{
-The \code{glm_scidb} function works similarly to a limited version of
+The \code{glm} function works similarly to a limited version of
 the usual \code{glm} function, but with a \code{scidbdf} data.frame-like
 SciDB array instead of a standard data.frame.
 
-Formulas in the \code{glm_scidb} function may only refer to variables present
-in the \code{data} \code{scidbdf} object. And the indicated response must refer
-to a single-column response term in the data (the two-column response form is
-not accepted). Formulas may only list variables explicitly defined in the
-\code{data}. That means that you should bind interaction and transformed terms
-to your data before invoking the function.
+Formulas in the \code{glm} function may only refer to variables explicitly
+defined in the \code{data} \code{scidbdf} object.  That means that you should
+bind interaction and transformed terms to your data before invoking the
+function.  The indicated response must refer to a single-column response term
+in the data (the two-column response form is not accepted).
 
 Categorical (factor) variables in the data must be represented as strings. They
 will be encoded as treatment-style contrast variables with the first listed
@@ -104,7 +104,7 @@ a \code{scidbdf} data frame-like SciDB array.  The matrix is returned within an
 output list as a sparse SciDB matrix of class \code{scidb} with character
 string variables encoded as treatment contrasts as described above.
 If you already have a list of factor-level codes for categorical variables
-(for example from the output of \code{glm_scidb}, you can supply that in the
+(for example from the output of \code{glm}, you can supply that in the
 factor argument. See help for \code{predict} for an example.
 }
 \author{
@@ -112,7 +112,7 @@ B. W. Lewis<blewis@paradigm4.com>
 }
 \seealso{
   \code{\link{scidb}}
-  \code{\link{predict.glm_scidb}}
+  \code{\link{predict}}
 }
 \examples{
 \dontrun{
@@ -122,7 +122,7 @@ y <- as.scidb(rnorm(5000))
 M <- glm.fit(x, y)
 coef(M)[]
 
-# Using glm_scidb (similar to glm)
+# Using glm (similar to standard glm in this case)
 # From the 'glm' help:
 ## Dobson (1990) Page 93: Randomized Controlled Trial :
 counts <- c(18,17,15,20,10,20,25,13,12)
@@ -134,6 +134,6 @@ summary(glm.D93)
 
 # Compare with:
 d.AD_sci = as.scidb(d.AD)
-glm.D93_sci = glm_scidb(counts ~ outcome + treatment, family = poisson(), data=d.AD_sci)
+glm.D93_sci = glm(counts ~ outcome + treatment, family = poisson(), data=d.AD_sci)
 summary(glm.D93_sci)
 }}

@@ -7,19 +7,29 @@ scidbeval
 Evaluate a SciDB expression.
 }
 \usage{
-scidbeval(expr, eval=TRUE, name, gc)
+scidbeval(expr, eval=TRUE, name, gc=TRUE, temp=FALSE)
 }
 \arguments{
   \item{expr}{An R expression that evaluates to a `scidb` or `scidbdf` object.}
-  \item{eval}{If TRUE, return a `scidb` or `scidbdf` object that has been evaluated by the databas and stored to a SciDB array.}
+  \item{eval}{If TRUE, return a `scidb` or `scidbdf` object that has been evaluated by
+              the databas and stored to a SciDB array.}
   \item{name}{An optional character value that names the stored SciDB array.}
   \item{gc}{An optional logical value that, when TRUE, ties the result to the R garbage collector.}
+  \item{temp}{An optional logical value that, when TRUE, evaluates to a special SciDB
+              temporary array (requires SciDB versions equal to or greater than 14.8).}
 }
 \value{
 Either a \code{scidb} or \code{scidbdf} object.
 }
 \note{
-Use \code{eval=FALSE} to defer expression evaluation for efficiency. Many functions in the SciDB package accept un-evaluated expresions. One can compose these objects to form complex query expressions that can be evaluated in one transaction.
+Use \code{eval=FALSE} to defer expression evaluation for efficiency. Many
+functions in the SciDB package accept un-evaluated expresions. One can compose
+these objects to form complex query expressions that can be evaluated in one
+transaction.
+
+Use SciDB temporary arrays with caution. They can speed up some
+computations by avoiding disk storage in some cases, but are not
+transactionally protected.
 }
 \author{
 B. W. Lewis<blewis@paradigm4.com>

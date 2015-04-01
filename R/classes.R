@@ -48,6 +48,7 @@ setClass("scidb",
                         schema="character",
                         attributes="character",
                         dimensions="character",
+                        logical_plan="character",
                         gc="environment"),
          S3methods=TRUE)
 
@@ -56,6 +57,7 @@ setClass("scidbdf",
                         schema="character",
                         attributes="character",
                         dimensions="character",
+                        logical_plan="character",
                         gc="environment"),
          S3methods=TRUE)
 

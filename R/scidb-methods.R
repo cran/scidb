@@ -33,6 +33,11 @@ setGeneric("%>%", def=function(x,y){NULL})
 setGeneric("%<=%", def=function(x,y){NULL})
 setGeneric("%>=%", def=function(x,y){NULL})
 setGeneric("%==%", def=function(x,y){NULL})
+setGeneric("%!=%", def=function(x,y){NULL})
+
+setOldClass("glm")
+setGeneric("glm")
+setMethod("glm", signature(formula="ANY", family="ANY", data="scidbdf"), glm_scidb)
 
 setOldClass("crossprod")
 setGeneric("crossprod")
@@ -45,6 +50,9 @@ setGeneric("na.locf")
 
 setOldClass("hist")
 setGeneric("hist")
+
+setOldClass("rank")
+setGeneric("rank")
 
 setGeneric("sum")
 setGeneric("mean")
@@ -76,6 +84,9 @@ setGeneric("reshape", function(data,...) stats::reshape(data,...))
 
 setOldClass("dist")
 setGeneric("dist")
+
+setOldClass("kmeans")
+setGeneric("kmeans")
 
 setOldClass("svd")
 setGeneric("svd")
@@ -125,6 +136,13 @@ setMethod("%==%",signature(x="scidb", y="ANY"),
   function(x,y)
   {
     .compare(x,y,"==",traditional=FALSE)
+  },
+  valueClass="scidb"
+)
+setMethod("%!=%",signature(x="scidb", y="ANY"),
+  function(x,y)
+  {
+    .compare(x,y,"!=",traditional=FALSE)
   },
   valueClass="scidb"
 )
@@ -195,10 +213,7 @@ setMethod("crossprod",signature(x="scidb", y="scidb"),
   valueClass="scidb"
 )
 
-setMethod("na.locf",signature(object="scidb"), na.locf_scidb)
-
-setMethod("hist",signature(x="scidb"), hist_scidb)
-
+setGeneric("tcrossprod")
 setMethod("tcrossprod",signature(x="scidb", y="scidb"),
   function(x,y)
   {
@@ -318,21 +333,8 @@ function(x)
 setMethod("head", signature(x="scidb"),
 function(x, n=6L, ...)
 {
-  bounds = scidb_coordinate_bounds(x)
-  xstart = as.numeric(bounds$start)
-  xlen   = as.numeric(bounds$end)
-  m = xstart
-  p = m + n - 1
-  p = apply(cbind(p, xlen),1,min)
-  if(length(p)>2) p[3:length(p)] = m[3:length(p)]
-  limits = lapply(1:length(m), function(j) seq(m[j],p[j]))
-  tryCatch(
-    do.call(dimfilter,args=list(x=x,i=limits,eval=FALSE,drop=TRUE))[],
-    error = function(e)
-    {
-      query = betweenbound(x,m,p)
-      iquery(query, return=TRUE, n=n)
-    })
+  class(x)="scidbdf"  # to supress warning
+  iqdf(x,n)
 })
 
 setMethod("tail", signature(x="scidb"),
@@ -377,6 +379,7 @@ function(x, grid=c(500,500), op=sprintf("sum(%s)", .get_attribute(x)), na=0, ...
 {
   if(length(dim(x))!=2) stop("Sorry, array must be two-dimensional")
   if(length(grid)!=2) stop("The grid parameter must contain two values")
+  if(any(is.infinite(dim(x)))) x = bound(x)
   el = list(...)
   if("plot" %in% names(el))
   {
@@ -410,8 +413,15 @@ setMethod("apply", signature(X = "scidb"), apply_scidb)
 setMethod("unpack",signature(x="scidb"),unpack_scidb)
 setMethod("reshape", signature(data="scidb"), reshape_scidb)
 setMethod("dist", signature(x="scidb"), dist_scidb)
+setMethod("kmeans", signature(x="scidb"), kmeans_scidb)
 setMethod("svd", signature(x="scidb"), svd_scidb)
 setMethod("glm.fit", signature(x="scidb",y="ANY",weights="MNSN"), glm.fit_scidb)
+setMethod("na.locf",signature(object="scidb"), na.locf_scidb)
+setMethod("hist",signature(x="scidb"), hist_scidb)
+setMethod("rank",signature(x="scidb"), rank_scidb)
+setGeneric("order")
+setMethod("order",signature("ANY"), order_scidb)
+
 
 # Transpose a matrix or vector
 setMethod("t", signature(x="scidb"), 
@@ -506,4 +516,9 @@ setMethod("sqrt",signature(x="scidb"),
   function(x)
   {
     fn_scidb(x, "sqrt")
+  })
+setMethod("exp",signature(x="scidb"),
+  function(x)
+  {
+    fn_scidb(x, "exp")
   })

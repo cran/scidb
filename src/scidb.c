@@ -203,129 +203,6 @@ df2scidb (SEXP A, SEXP chunk, SEXP start, SEXP REALFORMAT)
 }
 
 
-/* Parse SciDB unpack results of a single-attribute array for a limited set
- * of types.
- *
- * DATA: An R RAW vector
- * NDIM: The number of array dimensions (INTEGER)
- * LEN: The number of cells (INTEGER)
- * TYPE: The data type
- * NULLABLE: Is the data SciDB-NULLABLE (INTEGER)?
- * INT64: 1 if SciDB data are int64 (INTEGER).
- *
- * Returns a two-element list:
- * 1. A length-LEN vector of cell values (TYPE)
- * 2. A LEN x NDIM matrix of cell coordinate (DOUBLE)
- *
- */
-SEXP
-scidbparse (SEXP DATA, SEXP NDIM, SEXP LEN, SEXP TYPE, SEXP NULLABLE, SEXP INT64)
-{
-  int j, k, l, ndim;
-  long long i;
-  SEXP A, I, ans;
-  double x;
-  char xc[2];
-  int xi;
-  char a;
-  unsigned char nx;
-  int nullable = INTEGER(NULLABLE)[0];
-  int i64  = INTEGER(INT64)[0];
-  char *raw = (char *)RAW(DATA);
-
-  long long *xi64 = (long long *)&x;
-  unsigned long long *xui64 = (unsigned long long *)&x;
-
-  l = (long long)INTEGER(LEN)[0];
-  ndim = INTEGER(NDIM)[0];
-
-  PROTECT (A = allocVector (TYPEOF (TYPE), l));
-  PROTECT (I = allocMatrix (REALSXP, l, ndim));
-  nx = 1;
-
-  switch (TYPEOF (TYPE))
-    {
-    case REALSXP:
-      for (j = 0; j < l; ++j)
-        {
-          for(k=0;k<ndim;++k) {
-            memcpy(&i, raw, sizeof(long long));  raw+=sizeof(long long);
-            REAL(I)[j + k*l] = (double)i;
-          }
-          REAL(A)[j] = NA_REAL;
-          if(nullable) {
-            memcpy(&nx, raw, sizeof(char));  raw++;
-          }
-          memcpy(&x, raw, sizeof(double)); raw+=sizeof(double);
-          if(nx == NOT_MISSING)
-          {
-            if(i64==1)
-            {
-              REAL (A)[j] = (double)(*xi64);
-            } else if(i64==2)
-            {
-              REAL (A)[j] = (double)(*xui64);
-            }
-            else REAL (A)[j] = x;
-          }
-        }
-      break;
-    case STRSXP:
-      for (j = 0; j < l; ++j)
-        {
-          for(k=0;k<ndim;++k) {
-            memcpy(&i, raw, sizeof(long long));  raw+=sizeof(long long);
-            REAL(I)[j + k*l] = (double)i;
-          }
-          SET_STRING_ELT (A, j, NA_STRING);
-          if(nullable) {
-            memcpy(&nx, raw, sizeof(char));  raw++;
-          }
-          memset(xc,0,2);
-          memcpy(&xc, raw, sizeof(char)); raw+=sizeof(char);
-          if(nx == NOT_MISSING) SET_STRING_ELT (A, j, mkChar (xc));
-        }
-      break;
-    case LGLSXP:
-      for (j = 0; j < l; ++j)
-        {
-          for(k=0;k<ndim;++k) {
-            memcpy(&i, raw, sizeof(long long));  raw+=sizeof(long long);
-            REAL(I)[j + k*l] = (double)i;
-          }
-          LOGICAL (A)[j] = NA_LOGICAL;
-          if(nullable) {
-            memcpy(&nx, raw, sizeof(char));  raw++;
-          }
-          memcpy(&a, raw, sizeof(char)); raw+=sizeof(char);
-          if(nx == NOT_MISSING) LOGICAL (A)[j] = (int)a;
-        }
-      break;
-    case INTSXP:
-      for (j = 0; j < l; ++j)
-        {
-          for(k=0;k<ndim;++k) {
-            memcpy(&i, raw, sizeof(long long));  raw+=sizeof(long long);
-            REAL(I)[j + k*l] = (double)i;
-          }
-          INTEGER (A)[j] = R_NaInt;
-          if(nullable) {
-            memcpy(&nx, raw, sizeof(char));  raw++;
-          }
-          memcpy(&xi, raw, sizeof(int)); raw+=sizeof(int);
-          if( nx == NOT_MISSING) INTEGER (A)[j] = xi;
-        }
-      break;
-    default:
-      break;
-    };
-  ans = PROTECT(allocVector(VECSXP, 2));
-  SET_VECTOR_ELT(ans, 0, A);
-  SET_VECTOR_ELT(ans, 1, I);
-  UNPROTECT (3);
-  return ans;
-}
-
 /* Convert basic R vectors into SciDB nullable types, translating R
  * missing values into SciDB missing values.
  */
@@ -335,6 +212,7 @@ scidb_raw (SEXP A)
   SEXP ans = R_NilValue;
   char *buf;
   R_xlen_t j, len = XLENGTH(A);
+  unsigned int slen, l;
   const unsigned char not_missing = NOT_MISSING;
   const char missing = IS_MISSING;
   switch (TYPEOF (A))
@@ -390,18 +268,30 @@ scidb_raw (SEXP A)
       }
       break;
     case STRSXP:
-      PROTECT(ans = allocVector(RAWSXP, len*(sizeof(char) + 1)));
+/* Compute the output length first, padding length for SciDB string header,
+ * null flag (byte), string length (unsigned int), and for the terminating
+ * string zero byte.
+ */
+      slen = 0;
+      for(j=0;j<len;++j)
+      {
+        if(STRING_ELT(A,j) == NA_STRING) slen = slen + 4 + 1 + 1;
+        else slen = slen + 4 + 1 + 1 + strlen(CHAR(STRING_ELT(A,j)));
+      }
+      PROTECT(ans = allocVector(RAWSXP,  slen));
       buf = (char *)RAW(ans);
       if(!buf) error ("Not enough memory.");
       for(j=0;j<len;++j)
       {
         if(STRING_ELT(A,j) != NA_STRING)
         {
+          l = strlen(CHAR(STRING_ELT(A,j))) + 1;
           memcpy(buf, &not_missing, 1); buf++;
-          memcpy(buf, CHAR(STRING_ELT(A,j)), sizeof(char)); buf++;
+          memcpy(buf, &l, 4); buf+=4;
+          memcpy(buf, CHAR(STRING_ELT(A,j)), l); buf = buf + l;
         } else
         {
-          memcpy(buf, &missing, 1); buf+=2;
+          memcpy(buf, &missing, 1); buf+=6;
         }
       }
       break;
