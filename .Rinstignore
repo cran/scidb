@@ -1,3 +1,5 @@
 doc/.*[.]tex$
 doc/.*[.]jpg$
 misc-documentation/
+vignettes/*[.]css$
+vignettes/*[.]html$

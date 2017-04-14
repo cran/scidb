@@ -1,3 +1,11 @@
+CHANGES IN scidb 2.0.0:
+
+   o Big change: all SciDB arrays are presented as data frames
+
+   o Greatly simplified the package, improved data transfer performance
+
+   o Support for SciDB 16.9 and older versions at least back to 15.7
+
 CHANGES IN scidb 1.1-3:
 
    o Support for upcoming SciDB 14.12, untested backwards support for

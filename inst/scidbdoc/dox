@@ -1,0 +1,41 @@
+#!/bin/bash
+# SciDB doxygen to ace editor snippet parser.
+#
+# This program consumes stdin (usually from a  Logical*.cpp file) with
+# SciDB-style doxygen on it, and produces parsed data on standard out.
+# The SciDB doxygen is required to have a Synopsis section.
+# The parsed data contains three elements separated by the TAB character:
+#
+#  1 operator name      example: gemm
+#  2 operator synopsis  example: gemm(left, right, accumulate)
+#  3 operator help
+#
+# The third value is double-quoted. Interior quotes in the help are escaped.
+# Newlines in the help are replaced by the ESC character hex value: \x1b.
+#
+# Here is an example that parses all the default operators from SciDB trunk into
+# an output table named 'ops.tsv':
+# rm ops.tsv; for x in $(find scidbtrunk/src/query/ops/ -name "*Logical*.cpp"); do echo $x && cat $x | ./dox >> ops.tsv; done
+#
+# These output may be read, for example, by R with:
+# x = read.table("ops.tsv", header=FALSE, sep="\t", allowEscapes=TRUE, stringsAsFactors=FALSE)
+# x[,3] = gsub("\x1b", "\n", x[,3])
+
+man=`mktemp`
+syn=`mktemp`
+
+cat - | tee \
+  >(cat | sed -n '/.*@par *Synopsis/I,/\*\//p' | sed -n '/.*@par *Summary/I,/\*\//p' | sed -e 's/^ *\*//'  | sed -e 's@^ *///@@;s@^ *//@@;' | sed -e "s/@par *Synopsis:/@par Synopsis:\n/" | sed '/.*@par *Synopsis/Id' | sed '/.*@par *Summary/Id' | sed -e 's/^ *-/\n\n\t-/' | sed -e "s/^[[:blank:]]*(\([a-z]\))/\n\t(\1)/;s/<br>/\n/g" | fmt | sed -e "s/@par \(.*\):/\1\n/;s/\t/        /g;s/@see/see/" | tr '\n' '\033' | sed -e 's/"/\\\"/g' |  sed -e 's/^/"/;s/$/"/' > $man) \
+  >( sed -e 's/^ *\*//;s/^ *//'  | sed -e 's@^ *///@@;s@^ *//@@;' | sed -n '/@par Synopsis/,/^$/p' | sed -n '/.*(/p' | sed -n 1p | tr -d '\t' > $syn) >/dev/null &&  sync
+
+# print output in order
+o=`cat $syn | sed -e "s/(.*//" | sed -e "s/.*: *//;s/\t/        /g" | tr -d ' ' | tr -d '*'`
+# check for bogus entires and print nothing add a warning on stderr here
+if test -z "${o}"; then
+  rm -f $man $syn
+  exit 0
+fi
+echo -e "${o}\t`cat $syn`\t`cat $man`"
+
+# remove temporary files
+rm -f $man $syn

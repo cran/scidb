@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>SciDB</title>
+
+<script type="text/javascript">
+window.onload = function() {
+  var imgs = document.getElementsByTagName('img'), i, img;
+  for (i = 0; i < imgs.length; i++) {
+    img = imgs[i];
+    // center an image if it is the only element of its parent
+    if (img.parentElement.childElementCount === 1)
+      img.parentElement.style.textAlign = 'center';
+  }
+};
+</script>
+
+<!-- Styles for R syntax highlighter -->
+<style type="text/css">
+   pre .operator,
+   pre .paren {
+     color: rgb(104, 118, 135)
+   }
+
+   pre .literal {
+     color: #990073
+   }
+
+   pre .number {
+     color: #099;
+   }
+
+   pre .comment {
+     color: #998;
+     font-style: italic
+   }
+
+   pre .keyword {
+     color: #900;
+     font-weight: bold
+   }
+
+   pre .identifier {
+     color: rgb(0, 0, 0);
+   }
+
+   pre .string {
+     color: #d14;
+   }
+</style>
+
+<!-- R syntax highlighter -->
+<script type="text/javascript">
+var hljs=new function(){function m(p){return p.replace(/&/gm,"&amp;").replace(/</gm,"&lt;")}function f(r,q,p){return RegExp(q,"m"+(r.cI?"i":"")+(p?"g":""))}function b(r){for(var p=0;p<r.childNodes.length;p++){var q=r.childNodes[p];if(q.nodeName=="CODE"){return q}if(!(q.nodeType==3&&q.nodeValue.match(/\s+/))){break}}}function h(t,s){var p="";for(var r=0;r<t.childNodes.length;r++){if(t.childNodes[r].nodeType==3){var q=t.childNodes[r].nodeValue;if(s){q=q.replace(/\n/g,"")}p+=q}else{if(t.childNodes[r].nodeName=="BR"){p+="\n"}else{p+=h(t.childNodes[r])}}}if(/MSIE [678]/.test(navigator.userAgent)){p=p.replace(/\r/g,"\n")}return p}function a(s){var r=s.className.split(/\s+/);r=r.concat(s.parentNode.className.split(/\s+/));for(var q=0;q<r.length;q++){var p=r[q].replace(/^language-/,"");if(e[p]){return p}}}function c(q){var p=[];(function(s,t){for(var r=0;r<s.childNodes.length;r++){if(s.childNodes[r].nodeType==3){t+=s.childNodes[r].nodeValue.length}else{if(s.childNodes[r].nodeName=="BR"){t+=1}else{if(s.childNodes[r].nodeType==1){p.push({event:"start",offset:t,node:s.childNodes[r]});t=arguments.callee(s.childNodes[r],t);p.push({event:"stop",offset:t,node:s.childNodes[r]})}}}}return t})(q,0);return p}function k(y,w,x){var q=0;var z="";var s=[];function u(){if(y.length&&w.length){if(y[0].offset!=w[0].offset){return(y[0].offset<w[0].offset)?y:w}else{return w[0].event=="start"?y:w}}else{return y.length?y:w}}function t(D){var A="<"+D.nodeName.toLowerCase();for(var B=0;B<D.attributes.length;B++){var C=D.attributes[B];A+=" "+C.nodeName.toLowerCase();if(C.value!==undefined&&C.value!==false&&C.value!==null){A+='="'+m(C.value)+'"'}}return A+">"}while(y.length||w.length){var v=u().splice(0,1)[0];z+=m(x.substr(q,v.offset-q));q=v.offset;if(v.event=="start"){z+=t(v.node);s.push(v.node)}else{if(v.event=="stop"){var p,r=s.length;do{r--;p=s[r];z+=("</"+p.nodeName.toLowerCase()+">")}while(p!=v.node);s.splice(r,1);while(r<s.length){z+=t(s[r]);r++}}}}return z+m(x.substr(q))}function j(){function q(x,y,v){if(x.compiled){return}var u;var s=[];if(x.k){x.lR=f(y,x.l||hljs.IR,true);for(var w in x.k){if(!x.k.hasOwnProperty(w)){continue}if(x.k[w] instanceof Object){u=x.k[w]}else{u=x.k;w="keyword"}for(var r in u){if(!u.hasOwnProperty(r)){continue}x.k[r]=[w,u[r]];s.push(r)}}}if(!v){if(x.bWK){x.b="\\b("+s.join("|")+")\\s"}x.bR=f(y,x.b?x.b:"\\B|\\b");if(!x.e&&!x.eW){x.e="\\B|\\b"}if(x.e){x.eR=f(y,x.e)}}if(x.i){x.iR=f(y,x.i)}if(x.r===undefined){x.r=1}if(!x.c){x.c=[]}x.compiled=true;for(var t=0;t<x.c.length;t++){if(x.c[t]=="self"){x.c[t]=x}q(x.c[t],y,false)}if(x.starts){q(x.starts,y,false)}}for(var p in e){if(!e.hasOwnProperty(p)){continue}q(e[p].dM,e[p],true)}}function d(B,C){if(!j.called){j();j.called=true}function q(r,M){for(var L=0;L<M.c.length;L++){if((M.c[L].bR.exec(r)||[null])[0]==r){return M.c[L]}}}function v(L,r){if(D[L].e&&D[L].eR.test(r)){return 1}if(D[L].eW){var M=v(L-1,r);return M?M+1:0}return 0}function w(r,L){return L.i&&L.iR.test(r)}function K(N,O){var M=[];for(var L=0;L<N.c.length;L++){M.push(N.c[L].b)}var r=D.length-1;do{if(D[r].e){M.push(D[r].e)}r--}while(D[r+1].eW);if(N.i){M.push(N.i)}return f(O,M.join("|"),true)}function p(M,L){var N=D[D.length-1];if(!N.t){N.t=K(N,E)}N.t.lastIndex=L;var r=N.t.exec(M);return r?[M.substr(L,r.index-L),r[0],false]:[M.substr(L),"",true]}function z(N,r){var L=E.cI?r[0].toLowerCase():r[0];var M=N.k[L];if(M&&M instanceof Array){return M}return false}function F(L,P){L=m(L);if(!P.k){return L}var r="";var O=0;P.lR.lastIndex=0;var M=P.lR.exec(L);while(M){r+=L.substr(O,M.index-O);var N=z(P,M);if(N){x+=N[1];r+='<span class="'+N[0]+'">'+M[0]+"</span>"}else{r+=M[0]}O=P.lR.lastIndex;M=P.lR.exec(L)}return r+L.substr(O,L.length-O)}function J(L,M){if(M.sL&&e[M.sL]){var r=d(M.sL,L);x+=r.keyword_count;return r.value}else{return F(L,M)}}function I(M,r){var L=M.cN?'<span class="'+M.cN+'">':"";if(M.rB){y+=L;M.buffer=""}else{if(M.eB){y+=m(r)+L;M.buffer=""}else{y+=L;M.buffer=r}}D.push(M);A+=M.r}function G(N,M,Q){var R=D[D.length-1];if(Q){y+=J(R.buffer+N,R);return false}var P=q(M,R);if(P){y+=J(R.buffer+N,R);I(P,M);return P.rB}var L=v(D.length-1,M);if(L){var O=R.cN?"</span>":"";if(R.rE){y+=J(R.buffer+N,R)+O}else{if(R.eE){y+=J(R.buffer+N,R)+O+m(M)}else{y+=J(R.buffer+N+M,R)+O}}while(L>1){O=D[D.length-2].cN?"</span>":"";y+=O;L--;D.length--}var r=D[D.length-1];D.length--;D[D.length-1].buffer="";if(r.starts){I(r.starts,"")}return R.rE}if(w(M,R)){throw"Illegal"}}var E=e[B];var D=[E.dM];var A=0;var x=0;var y="";try{var s,u=0;E.dM.buffer="";do{s=p(C,u);var t=G(s[0],s[1],s[2]);u+=s[0].length;if(!t){u+=s[1].length}}while(!s[2]);if(D.length>1){throw"Illegal"}return{r:A,keyword_count:x,value:y}}catch(H){if(H=="Illegal"){return{r:0,keyword_count:0,value:m(C)}}else{throw H}}}function g(t){var p={keyword_count:0,r:0,value:m(t)};var r=p;for(var q in e){if(!e.hasOwnProperty(q)){continue}var s=d(q,t);s.language=q;if(s.keyword_count+s.r>r.keyword_count+r.r){r=s}if(s.keyword_count+s.r>p.keyword_count+p.r){r=p;p=s}}if(r.language){p.second_best=r}return p}function i(r,q,p){if(q){r=r.replace(/^((<[^>]+>|\t)+)/gm,function(t,w,v,u){return w.replace(/\t/g,q)})}if(p){r=r.replace(/\n/g,"<br>")}return r}function n(t,w,r){var x=h(t,r);var v=a(t);var y,s;if(v){y=d(v,x)}else{return}var q=c(t);if(q.length){s=document.createElement("pre");s.innerHTML=y.value;y.value=k(q,c(s),x)}y.value=i(y.value,w,r);var u=t.className;if(!u.match("(\\s|^)(language-)?"+v+"(\\s|$)")){u=u?(u+" "+v):v}if(/MSIE [678]/.test(navigator.userAgent)&&t.tagName=="CODE"&&t.parentNode.tagName=="PRE"){s=t.parentNode;var p=document.createElement("div");p.innerHTML="<pre><code>"+y.value+"</code></pre>";t=p.firstChild.firstChild;p.firstChild.cN=s.cN;s.parentNode.replaceChild(p.firstChild,s)}else{t.innerHTML=y.value}t.className=u;t.result={language:v,kw:y.keyword_count,re:y.r};if(y.second_best){t.second_best={language:y.second_best.language,kw:y.second_best.keyword_count,re:y.second_best.r}}}function o(){if(o.called){return}o.called=true;var r=document.getElementsByTagName("pre");for(var p=0;p<r.length;p++){var q=b(r[p]);if(q){n(q,hljs.tabReplace)}}}function l(){if(window.addEventListener){window.addEventListener("DOMContentLoaded",o,false);window.addEventListener("load",o,false)}else{if(window.attachEvent){window.attachEvent("onload",o)}else{window.onload=o}}}var e={};this.LANGUAGES=e;this.highlight=d;this.highlightAuto=g;this.fixMarkup=i;this.highlightBlock=n;this.initHighlighting=o;this.initHighlightingOnLoad=l;this.IR="[a-zA-Z][a-zA-Z0-9_]*";this.UIR="[a-zA-Z_][a-zA-Z0-9_]*";this.NR="\\b\\d+(\\.\\d+)?";this.CNR="\\b(0[xX][a-fA-F0-9]+|(\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)";this.BNR="\\b(0b[01]+)";this.RSR="!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|\\.|-|-=|/|/=|:|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~";this.ER="(?![\\s\\S])";this.BE={b:"\\\\.",r:0};this.ASM={cN:"string",b:"'",e:"'",i:"\\n",c:[this.BE],r:0};this.QSM={cN:"string",b:'"',e:'"',i:"\\n",c:[this.BE],r:0};this.CLCM={cN:"comment",b:"//",e:"$"};this.CBLCLM={cN:"comment",b:"/\\*",e:"\\*/"};this.HCM={cN:"comment",b:"#",e:"$"};this.NM={cN:"number",b:this.NR,r:0};this.CNM={cN:"number",b:this.CNR,r:0};this.BNM={cN:"number",b:this.BNR,r:0};this.inherit=function(r,s){var p={};for(var q in r){p[q]=r[q]}if(s){for(var q in s){p[q]=s[q]}}return p}}();hljs.LANGUAGES.cpp=function(){var a={keyword:{"false":1,"int":1,"float":1,"while":1,"private":1,"char":1,"catch":1,"export":1,virtual:1,operator:2,sizeof:2,dynamic_cast:2,typedef:2,const_cast:2,"const":1,struct:1,"for":1,static_cast:2,union:1,namespace:1,unsigned:1,"long":1,"throw":1,"volatile":2,"static":1,"protected":1,bool:1,template:1,mutable:1,"if":1,"public":1,friend:2,"do":1,"return":1,"goto":1,auto:1,"void":2,"enum":1,"else":1,"break":1,"new":1,extern:1,using:1,"true":1,"class":1,asm:1,"case":1,typeid:1,"short":1,reinterpret_cast:2,"default":1,"double":1,register:1,explicit:1,signed:1,typename:1,"try":1,"this":1,"switch":1,"continue":1,wchar_t:1,inline:1,"delete":1,alignof:1,char16_t:1,char32_t:1,constexpr:1,decltype:1,noexcept:1,nullptr:1,static_assert:1,thread_local:1,restrict:1,_Bool:1,complex:1},built_in:{std:1,string:1,cin:1,cout:1,cerr:1,clog:1,stringstream:1,istringstream:1,ostringstream:1,auto_ptr:1,deque:1,list:1,queue:1,stack:1,vector:1,map:1,set:1,bitset:1,multiset:1,multimap:1,unordered_set:1,unordered_map:1,unordered_multiset:1,unordered_multimap:1,array:1,shared_ptr:1}};return{dM:{k:a,i:"</",c:[hljs.CLCM,hljs.CBLCLM,hljs.QSM,{cN:"string",b:"'\\\\?.",e:"'",i:"."},{cN:"number",b:"\\b(\\d+(\\.\\d*)?|\\.\\d+)(u|U|l|L|ul|UL|f|F)"},hljs.CNM,{cN:"preprocessor",b:"#",e:"$"},{cN:"stl_container",b:"\\b(deque|list|queue|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array)\\s*<",e:">",k:a,r:10,c:["self"]}]}}}();hljs.LANGUAGES.r={dM:{c:[hljs.HCM,{cN:"number",b:"\\b0[xX][0-9a-fA-F]+[Li]?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+(?:[eE][+\\-]?\\d*)?L\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+\\.(?!\\d)(?:i\\b)?",e:hljs.IMMEDIATE_RE,r:1},{cN:"number",b:"\\b\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\.\\d+(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"keyword",b:"(?:tryCatch|library|setGeneric|setGroupGeneric)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\.",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\d+(?![\\w.])",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\b(?:function)",e:hljs.IMMEDIATE_RE,r:2},{cN:"keyword",b:"(?:if|in|break|next|repeat|else|for|return|switch|while|try|stop|warning|require|attach|detach|source|setMethod|setClass)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"literal",b:"(?:NA|NA_integer_|NA_real_|NA_character_|NA_complex_)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"literal",b:"(?:NULL|TRUE|FALSE|T|F|Inf|NaN)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"identifier",b:"[a-zA-Z.][a-zA-Z0-9._]*\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"<\\-(?!\\s*\\d)",e:hljs.IMMEDIATE_RE,r:2},{cN:"operator",b:"\\->|<\\-",e:hljs.IMMEDIATE_RE,r:1},{cN:"operator",b:"%%|~",e:hljs.IMMEDIATE_RE},{cN:"operator",b:">=|<=|==|!=|\\|\\||&&|=|\\+|\\-|\\*|/|\\^|>|<|!|&|\\||\\$|:",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"%",e:"%",i:"\\n",r:1},{cN:"identifier",b:"`",e:"`",r:0},{cN:"string",b:'"',e:'"',c:[hljs.BE],r:0},{cN:"string",b:"'",e:"'",c:[hljs.BE],r:0},{cN:"paren",b:"[[({\\])}]",e:hljs.IMMEDIATE_RE,r:0}]}};
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 {
+   font-size:2.2em;
+}
+
+h2 {
+   font-size:1.8em;
+}
+
+h3 {
+   font-size:1.4em;
+}
+
+h4 {
+   font-size:1.0em;
+}
+
+h5 {
+   font-size:0.9em;
+}
+
+h6 {
+   font-size:0.8em;
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+pre {
+  overflow-x: auto;
+}
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * {
+      background: transparent !important;
+      color: black !important;
+      filter:none !important;
+      -ms-filter: none !important;
+   }
+
+   body {
+      font-size:12pt;
+      max-width:100%;
+   }
+
+   a, a:visited {
+      text-decoration: underline;
+   }
+
+   hr {
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote {
+      padding-right: 1em;
+      page-break-inside: avoid;
+   }
+
+   tr, img {
+      page-break-inside: avoid;
+   }
+
+   img {
+      max-width: 100% !important;
+   }
+
+   @page :left {
+      margin: 15mm 20mm 15mm 10mm;
+   }
+
+   @page :right {
+      margin: 15mm 10mm 15mm 20mm;
+   }
+
+   p, h2, h3 {
+      orphans: 3; widows: 3;
+   }
+
+   h2, h3 {
+      page-break-after: avoid;
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<h1>SciDB</h1>
+
+<p>SciDB is a free open-source database that organizes data in n-dimensional
+arrays.  SciDB features include ACID transactions, parallel processing,
+distributed storage, and efficient sparse array storage. SciDB arrays consist
+of a coordinate system whose coordinates are called <em>dimensions</em>, and one or
+more values at each coordinate called <em>attributes</em>.</p>
+
+<p>The &ldquo;scidb&rdquo; package helps R interact with SciDB by directly running SciDB
+queries using the native array functional language (AFL) and  optionally
+returning results as data frames.</p>
+
+<p>This vignette illustrates using SciDB from R by example. For more detailed
+information on the functions described in this vignette, see the manual pages
+in the package.</p>
+
+<h2>Installing the package</h2>
+
+<p>From CRAN (stable, but may lag features on GitHub by several months):</p>
+
+<pre><code class="r">install.packages(&quot;scidb&quot;)
+</code></pre>
+
+<p>From the development repository on GitHub (stable branch):</p>
+
+<pre><code class="r">devtools::install_github(&quot;Paradigm4/SciDBR&quot;)
+</code></pre>
+
+<p>&ldquo;Stable&rdquo; means that all CRAN checks and package unit tests pass when tested
+using the current SciDB release. We try to make sure that the scidb package
+works with <em>all</em> previous versions of SciDB but we only actively test against
+the current release version of the database. Other experimental and development
+branches exist; see the GitHub repository for a list.</p>
+
+<h2>Connecting to SciDB</h2>
+
+<p>The <code>scidbconnect()</code> function establishes a connection to a simple HTTP network
+service called shim (<a href="https://github.com/Paradigm4/shim">https://github.com/Paradigm4/shim</a>) running on a SciDB
+coordinator instance.  The function may be safely called multiple times. The
+function return value contains the SciDB database connection state in an object
+of class afl.</p>
+
+<p>The network interface optionally supports SSL encryption and SciDB
+authentication or HTTP digest user authentication.</p>
+
+<p><em>Connect to SciDB on the default shim port and localhost</em></p>
+
+<pre><code class="r">library(&quot;scidb&quot;)
+db &lt;- scidbconnect()
+</code></pre>
+
+<p><em>Connect to shim on an encrypted port 8083 with example SciDB authentication</em></p>
+
+<pre><code class="r">db &lt;- scidbconnect(port=8083, username=&quot;root&quot;, password=&quot;Paradigm4&quot;)
+</code></pre>
+
+<p><em>Connect to shim on an encrypted port 8083 with example SciDB authentication, interactively entering password</em></p>
+
+<pre><code class="r">db &lt;- scidbconnect(port=8083, username=&quot;root&quot;, password=getpwd())
+</code></pre>
+
+<p>Use encrypted sessions when communicating with SciDB over public networks.
+SciDB user authentication is only supported by SciDB versions 15.7 and greater and
+only works over encrypted connections.</p>
+
+<h3>More on SciDB authentication, namespaces and user roles</h3>
+
+<p>See the official SciDB documentation for details about users, roles and namespaces
+<a href="https://paradigm4.atlassian.net/wiki/display/ESD/Security">https://paradigm4.atlassian.net/wiki/display/ESD/Security</a>.</p>
+
+<p>The global package option <code>scidb.prefix</code> is designed to simplify working with SciDB
+user roles from R. SciDB user roles are provided by the namespaces plugin and
+may require issuing the query <code>load_library(&#39;namespaces&#39;)</code> before use (usually
+performed by the SciDB system administrator). For instance, use the <code>scidb.prefix</code>
+package option to assume a special database user role &ldquo;functionary&rdquo; shown in
+the following example:</p>
+
+<pre><code class="r">options(scidb.prefix=&quot;set_role(&#39;functionary&#39;)&quot;)
+</code></pre>
+
+<p>After setting that, all queries will be prefixed with the role-setting statement.
+You may use the <code>scidb.prefix</code> option to prefix queries with arbitrary AFL
+statements. Separate multiple statements with the semi-colon character.</p>
+
+<p>Alternatively, use the <code>scidb_prefix()</code> function on a per-database connection
+level. The prefix will be displayed in the connection summary.</p>
+
+<pre><code class="r">library(scidb)
+db &lt;- scidbconnect()
+db &lt;- scidb_prefix(db, &quot;set_role(&#39;functionary&#39;)&quot;)
+print(db)
+</code></pre>
+
+<h2>Listing SciDB arrays, operators and macros</h2>
+
+<p>The <code>scidbconnect()</code> function returns a SciDB connection object of class afl.
+In addition to storing the connection state, the returned object has a few
+special methods. Printing the object shows a summary of the connection state.
+Applying the <code>ls()</code> function to the object returns a list of SciDB arrays (subject
+to any potential namespace-setting prefix expression). And the object itself is
+really a list that contains available SciDB AFL operator and macro functions
+established upon connection. Apply the <code>ls.str()</code> to the object to list all AFL
+operators and macros, or use the dollar sign accessor function and interactive
+completion with the TAB key.</p>
+
+<pre><code class="r">db &lt;- scidbconnect()
+print(db)    # summarize connection
+ls(db)       # quick list of arrays
+ls.str(db)   # quick list of AFL operators
+# db$&lt;TAB&gt;   # interactive completion list of AFL operators
+</code></pre>
+
+<p>Each listed AFL operator is presented as an R function. RStudio users can use
+the TAB key inside the function body to see suggested AFL operator argument
+completions. Alternatively, <code>ls.str(db)</code> shows the formal AFL operator
+arguments for each function.  These functions can be used to compose AFL
+expressions from R, discussed in more detail below.</p>
+
+<p><strong>NOTE</strong> The list of operators and macros is established at connection time.
+If the database operators change after establishing the connection, for
+instance by loading a new SciDB plugin, then those changes will not be shown in
+the database connection object. New connection objects will show the current
+list of operators and macros.</p>
+
+<h1>Mapping SciDB arrays and query expressions to R variables</h1>
+
+<p>The <code>scidb()</code> function returns an object of class scidb that contains a
+reference to a SciDB array or query expression. The returned object is
+presented with a data frame-like view that lists the SciDB schema components.</p>
+
+<pre><code class="r">x &lt;- scidb(db, &quot;build(&lt;v:double&gt;[i=1:2,2,0, j=1:3,1,0], i*j)&quot;)
+print(x)
+</code></pre>
+
+<pre><code>SciDB expression  build(&lt;v:double&gt;[i=1:2,2,0, j=1:3,1...
+SciDB schema  &lt;v:double&gt; [i=1:2,2,0,j=1:3,1,0] 
+  variable dimension   type nullable start end chunk
+1        i      TRUE  int64    FALSE     1   2     2
+2        j      TRUE  int64    FALSE     1   3     1
+3        v     FALSE double    FALSE                
+</code></pre>
+
+<p>The R variable <code>x</code> is a sort of <em>SciDB array view</em>; an un-evaluated SciDB query
+expression. The value of <code>x</code> is evaluated by SciDB either lazily when needed or
+when explicitly requested. It&#39;s an S4 R object; then &ldquo;name&rdquo; slot contains the
+AFL expression corresponding to the object, for instance <code>x@name</code> in the
+above example.</p>
+
+<p>Use the <code>store()</code> function to evaluate and materialize views in SciDB.
+The <code>store()</code> function stores the evaluation result into a new named SciDB
+array in the database, returning a new scidb R object that points to the
+SciDB array.  The array name may be optionally specified or automatically
+generated and the array may optionally be stored in a SciDB temporary array.</p>
+
+<pre><code class="r">y &lt;- store(db, x, temp=TRUE)
+print(y)
+</code></pre>
+
+<pre><code>SciDB expression  R_array1687f71a392851102980131950
+SciDB schema  &lt;v:double&gt; [i=1:2,2,0,j=1:3,1,0] 
+  variable dimension   type nullable start end chunk
+1        i      TRUE  int64    FALSE     1   2     2
+2        j      TRUE  int64    FALSE     1   3     1
+3        v     FALSE double    FALSE                
+</code></pre>
+
+<p>Note that the SciDB expression associated with the <code>y</code> R variable is now a
+named SciDB array (automatically named in this case); compare with the
+SciDB expression for <code>x</code> above.</p>
+
+<p>SciDB array values associated with R variables are tied to R&#39;s garbage
+collector by default (unless the argument <code>gc=FALSE</code> is specified). When the R
+variable&#39;s contents are garbage-collected by R, the associated SciDB array is
+removed.</p>
+
+<pre><code class="r">ls(db)   # (observe y&#39;s corresponding array in the list)
+rm(y)
+gc()
+ls(db)   # (y&#39;s corresponding array will no longer appear)
+</code></pre>
+
+<h2>The <code>schema()</code> function</h2>
+
+<p>Use the <code>schema()</code> function to display the SciDB schema of scidb objects
+verbatim or in parsed detail for attributes and dimensions.</p>
+
+<pre><code class="r">schema(x)
+# [1] &quot;&lt;v:double&gt; [i=1:2:0:2; j=1:3:0:1]&quot;
+
+schema(x, &quot;attributes&quot;)
+#   name   type nullable
+# 1    v double     TRUE
+
+schema(x, &quot;dimensions&quot;)
+#   name start end chunk overlap
+# 1    i     1   2     2       j
+# 2    0     1   3     1       0
+</code></pre>
+
+<h1>Uploading R values to SciDB with <code>as.scidb()</code> and downloading SciDB values to R with <code>as.R()</code></h1>
+
+<p>The package provides limited convenience functions for converting and uploading
+R values to SciDB. The upload mechanism is much less efficient than available
+SciDB bulk load methods and should only be used for small to moderate-sized
+data. The following R objects are supported:</p>
+
+<ul>
+<li>logical, integer, numeric, and character vectors</li>
+<li>numeric matrices</li>
+<li>data frames with logical, character, integer, and numeric values
+(variable names may be changed to conform to SciDB naming convention)</li>
+<li>numeric column-compressed sparse matrices (class &ldquo;dgCMatrix&rdquo;)</li>
+<li>raw objects</li>
+</ul>
+
+<p>Factor values are uploaded as character value, replacing factor levels with
+their corresponding  character strings.</p>
+
+<p>The <code>as.scidb()</code> function returns a reference to a SciDB array
+containing the uploaded data. The following example uploads a data frame to
+SciDB, warning us that variable names were changed because SciDB does not
+support dots in names, and then downloads the resulting SciDB object data back
+into R.</p>
+
+<pre><code class="r">x &lt;- as.scidb(db, head(iris))
+as.R(x)
+</code></pre>
+
+<pre><code>Warning message:
+In df2scidb(db, x, name = name, gc = gc, ...) :
+  Attribute names have been changed
+
+  i Sepal_Length Sepal_Width Petal_Length Petal_Width Species
+1 1          5.1         3.5          1.4         0.2  setosa
+2 2          4.9         3.0          1.4         0.2  setosa
+3 3          4.7         3.2          1.3         0.2  setosa
+4 4          4.6         3.1          1.5         0.2  setosa
+5 5          5.0         3.6          1.4         0.2  setosa
+6 6          5.4         3.9          1.7         0.4  setosa
+</code></pre>
+
+<p>Note that SciDB dimension indices (<code>i</code> above) are appended to the data
+when downloaded.</p>
+
+<h1>Running AFL queries</h1>
+
+<p>The scidb package defines two ways to compose and execute SciDB queries:</p>
+
+<ol>
+<li>Directly running AFL expressions written as character strings (<code>iquery()</code>)</li>
+<li>Composing AFL expressions from the database connection AFL functions,
+returning scidb objects.</li>
+</ol>
+
+<h2>The <code>iquery()</code> convenience function</h2>
+
+<p>Use the <code>iquery</code> function to directly run arbitrary SciDB AFL queries supplied as
+character strings or scidb objects, optionally returning results to R as a
+data frame.</p>
+
+<pre><code class="r">iquery(db, &quot;build(&lt;v:double&gt;[i=1:2,2,0, j=1:3,1,0], i*j)&quot;, return=TRUE)
+</code></pre>
+
+<pre><code>  i j v
+1 1 1 1
+2 2 1 2
+3 1 2 2
+4 2 2 4
+5 1 3 3
+6 2 3 6
+</code></pre>
+
+<h2>AFL operators and macros as R functions</h2>
+
+<p>A SciDB database connection object returned by <code>scidbconnect()</code> contains
+a list of available AFL operators and macros presented as R functions.
+The functions return scidb objects, and those objects may be used as
+function arguments to compose complex AFL query expressions.</p>
+
+<pre><code class="r">db &lt;- scidbconnect()
+x &lt;- db$build(&quot;&lt;v:double&gt;[i=1:2,2,0, j=1:3,1,0]&quot;, i * j)
+y &lt;- db$apply(x, a, 2 * v, b, &quot;&#39;a character string&#39;&quot;)
+print(y)
+</code></pre>
+
+<pre><code>SciDB expression  apply(build(&lt;v:double&gt;[i=1:2,2,0, j...
+SciDB schema  &lt;v:double,a:double,b:string NOT NULL&gt; [i=1:2:0:2; j=1:3:0:1] 
+  variable dimension   type nullable start end chunk
+1        i      TRUE  int64    FALSE     1   2     2
+2        j      TRUE  int64    FALSE     1   3     1
+3        v     FALSE double     TRUE                
+4        a     FALSE double     TRUE                
+5        b     FALSE string    FALSE                
+</code></pre>
+
+<p><strong>Note</strong> that in the above expression <code>i</code> and <code>j</code> are treated verbatim as SciDB dimension
+values, not R values.  The function argument evaluation procedure in SciDB AFL methods
+is, in order of precedence:</p>
+
+<ol>
+<li>Arguments that evaluate to SciDB arrays are replaced by their
+corresponding SciDB expression.</li>
+<li>Character strings are replaced by their unquoted value. (This means that you usually need to
+supply quote marks (&#39;) in values you wish SciDB to treat as strings.)</li>
+<li>All remaining arguments are passed verbatim into the SciDB query
+expression, unless escaped by the special <code>R()</code> function (see next section).</li>
+</ol>
+
+<p>Certain SciDB schema literal values represent one important exception to the above
+process.  SciDB schemas contain characters like <code>&lt;</code>, <code>:</code>, <code>[</code> that correspond
+to R infix operators. It&#39;s difficult to always overload their evaluation as
+R operators. Thus, SciDB schemas must simply always be supplied as R character strings
+instead of verbatim text as shown in the following example (also used above).</p>
+
+<pre><code class="r">x &lt;- db$build(&quot;&lt;v:double&gt;[i=1:2,2,0, j=1:3,1,0]&quot;, i * j)
+</code></pre>
+
+<h3>Using scalar-valued R expressions within AFL statements</h3>
+
+<p>Use the special <code>R()</code> function syntax within any portion of an AFL statement to
+replace the enclosed R expression with its scalar value.  The R expression is
+evaluated in the calling environment (the parent frame of the AFL function).
+The evaluated R expression must be a scalar character, numeric, or logical
+value.  The next example uses two R values, one for the upper limit of the
+<code>j</code> dimension and another in the build statement.</p>
+
+<pre><code class="r">jlim &lt;- 3
+z &lt;- pi
+x &lt;- db$build(&quot;&lt;v:double&gt;[i=1:2,2,0, j=1:R(jlim),1,0]&quot;, i * j + R(z))
+</code></pre>
+
+<p>Use this syntax to mix scalar R values into SciDB AFL expressions.</p>
+
+<h3>Help on AFL expressions</h3>
+
+<p>Use the TAB key for argument lists within an AFL function (RStudio only).
+The standard R <code>help()</code> function shows SciDB doxygen help for AFL function
+arguments, for instance</p>
+
+<pre><code class="r">help(db$aggregate)
+</code></pre>
+
+<p>Alternatively, supply a character string argument naming a SciDB operator
+to the <code>aflhelp()</code> function to show SciDB help for the operator.</p>
+
+<pre><code class="r">aflhelp(db, &quot;aggregate&quot;)
+</code></pre>
+
+<h3>SciDB aliasing in AFL expressions with <code>%as%</code></h3>
+
+<p>Use the special <code>%as%</code> R infix operator in place of the usual AFL
+word &ldquo;as&rdquo; in SciDB expressions using aliasing, either to rename a
+SciDB array, expression, or certain AFL expression arguments often
+in aggregations.</p>
+
+<pre><code class="r">db &lt;- scidbconnect()
+x &lt;- as.scidb(db, iris)     # upload the iris data frame to SciDB
+as.R(db$grouped_aggregate(x, Species, avg(Petal_Length) %as% avg))
+</code></pre>
+
+<pre><code>  instance_id value_no    Species   avg
+1           2        0     setosa 1.462
+2           3        0 versicolor 4.260
+3           4        0  virginica 5.552
+</code></pre>
+
+<h2>Fall back to quoting AFL expressions verbatim</h2>
+
+<p>If you run into trouble using the AFL methods on a scidb connection
+object, remember that you can always simply supply a quoted AFL
+expression string. For instance, the last example above could have
+equivalently been written:</p>
+
+<pre><code class="r">db &lt;- scidbconnect()
+x &lt;- as.scidb(db, iris)     # upload the iris data frame to SciDB
+iquery(db, paste(&quot;grouped_aggregate(&quot;, x@name, &quot;, Species, avg(Petal_Length) as avg)&quot;), return=TRUE)
+</code></pre>
+
+<h1>Package options</h1>
+
+<p>The following package options can be set with R&#39;s <code>options</code> function.  Set
+<code>options(scidb.debug=TRUE)</code> to see interesting debugging information including
+all the issued SciDB queries.</p>
+
+<pre><code># Set the scidb.prefix option to prefix queries with arbitrary AFL
+# statements (issued in the same connection context as the query).
+# This is mostly useful for authentication-related options like set_role
+# and in some cases set_namespace.
+options(scidb.prefix=NULL)
+
+# Default shim port and host.
+options(scidb.default_shim_port=8080L)
+options(scidb.default_shim_host=&quot;localhost&quot;)
+
+# How to download arrays and their coordinates. Set scidb.unpack=FALSE
+# to use apply, which can be faster in some cases when used with aio.
+options(scidb.unpack=FALSE)
+
+# Disable SSL certificate host name checking by default. This is important mostly
+# for Amazon EC2 where hostnames rarely match their DNS names. If you enable this
+# then the shim SSL certificate CN entry *must* match the server host name for the
+# encrypted session to work. Set this TRUE for stronger security (help avoid MTM)
+# in SSL connections.
+options(scidb.verifyhost=FALSE)
+
+# Enable or disable verbose debugging messages
+options(scidb.debug=FALSE)
+
+# List of special DDL operators
+options(scidb.ddl=c(&quot;cancel&quot;,
+                    &quot;create_array&quot;,
+                    &quot;remove&quot;,
+                    &quot;rename&quot;,
+                    &quot;sync&quot;,
+                    &quot;add_instances&quot;,
+                    &quot;remove_instances&quot;,
+                    &quot;unregister_instances&quot;,
+                    &quot;create_namespace&quot;,
+                    &quot;drop_namespace&quot;,
+                    &quot;move_array_to_namespace&quot;,
+                    &quot;create_role&quot;,
+                    &quot;create_user&quot;,
+                    &quot;drop_namespace&quot;,
+                    &quot;drop_role&quot;,
+                    &quot;drop_user&quot;,
+                    &quot;add_user_to_role&quot;,
+                    &quot;drop_user_from_role&quot;,
+                    &quot;set_namespace&quot;,
+                    &quot;set_role&quot;,
+                    &quot;set_role_permissions&quot;,
+                    &quot;verity_user&quot;,
+                    &quot;create_with_residency&quot;)
+</code></pre>
+
+</body>
+
+</html>
