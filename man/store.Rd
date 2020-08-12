@@ -23,4 +23,3 @@ store(db, expr, name, eval = TRUE, gc = TRUE, temp = FALSE)
 Force evaluation of an expression that yields a \code{scidb} or \code{scidb} object,
 storing the result to a SciDB array when \code{eval=TRUE}.
 }
-

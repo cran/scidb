@@ -69,4 +69,3 @@ as.R(x, only_attributes=TRUE)
 \seealso{
 \code{\link{as.scidb}}
 }
-

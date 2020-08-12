@@ -56,4 +56,3 @@ iquery(db, "build(<val:string>[i=1:3], '[(01),(02),(03)]', true)",xi
 \seealso{
 \code{\link{scidb}} \code{\link{as.R}}
 }
-

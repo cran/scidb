@@ -5,28 +5,37 @@
 \alias{scidb-package}
 \title{SciDB/R Interface}
 \description{
-SciDB/R Interface
+Package options
 }
 \section{Package options}{
 
 
  options(scidb.prefix=NULL)
+ 
 # Default shim port and host.
+
  options(scidb.default_shim_port=8080L)
+ 
  options(scidb.default_shim_host="localhost")
+ 
 # How to download arrays and their coordinates. Set scidb.unpack=FALSE
 # to use apply, which can be faster in some cases when used with aio.
+
  options(scidb.unpack=FALSE)
+ 
 # Disable SSL certificate host name checking by default. This is important mostly
 # for Amazon EC2 where hostnames rarely match their DNS names. If you enable this
 # then the shim SSL certificate CN entry *must* match the server host name for the
 # encrypted session to work. Set this TRUE for stronger security (help avoid MTM)
 # in SSL connections.
+
  options(scidb.verifyhost=FALSE)
+ 
 # List of special DDL operators
+
  options(scidb.ddl=c("create_array", "remove", "rename"))
 }
+
 \seealso{
 \code{\link{scidb}}, \code{\link{iquery}}
 }
-

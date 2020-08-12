@@ -43,4 +43,3 @@ R factor values are converted to their corresponding character levels.
 \seealso{
 \code{\link{as.R}}
 }
-

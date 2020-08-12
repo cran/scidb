@@ -15,4 +15,3 @@ Character vector of names
 \description{
 SciDB dimension and attribute names
 }
-

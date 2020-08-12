@@ -32,4 +32,3 @@ new_db <- scidb_prefix(db, "set_role('functionary')")
 ls(new_db)
 }
 }
-

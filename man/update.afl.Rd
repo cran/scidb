@@ -4,14 +4,14 @@
 \alias{update.afl}
 \title{Update available AFL operators}
 \usage{
-\method{update}{afl}(db, new, ops)
+\method{update}{afl}(.db, .new, .ops)
 }
 \arguments{
-\item{db}{an \code{afl} object (a SciDB database connection returned from \code{\link{scidbconnect}})}
+\item{.db}{an \code{afl} object (a SciDB database connection returned from \code{\link{scidbconnect}})}
 
-\item{new}{a character vector of operator names}
+\item{.new}{a character vector of operator names}
 
-\item{ops}{an optional three-variable data frame with variables name, signature, help, corresponding
+\item{.ops}{an optional three-variable data frame with variables name, signature, help, corresponding
 to the operator names, signatures, and help files (from SciDB Doxygen documentation)}
 }
 \value{
@@ -24,4 +24,3 @@ Update available AFL operators
 Every operator gets a shallow copy of the db argument; that is, \code{attributes(db[i])$conn} should be the same for every operator index i.
 }
 \keyword{internal}
-

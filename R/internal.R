@@ -6,7 +6,7 @@
 #' @param ... optional extra arguments (see below)
 #' @note option extra arguments
 #' \itemize{
-#'   \item{binar}{ optional logical value, if \code{FALSE} use iquery text transfer, otherwise binary transfer, defaults \code{TRUE}}
+#'   \item{binary}{ optional logical value, if \code{FALSE} use iquery text transfer, otherwise binary transfer, defaults \code{TRUE}}
 #'   \item{buffer}{ integer initial parse buffer size in bytes, adaptively resized as needed: larger buffers can be faster but comsume more memory, default size is 100000L.}
 #'   \item{only_attributes}{ optional logical value, \code{TRUE} means don't retrieve dimension coordinates, only return attribute values; defaults to \code{FALSE}.}
 #"   \item{schema}{ optional result schema string, only applies when \code{query} is not a SciDB object. Supplying this avois one extra metadata query to determine result schema. Defaults to \code{schema(query)}.}
@@ -20,6 +20,11 @@ scidb_unpack_to_dataframe = function(db, query, ...)
   DEBUG = FALSE
   INT64 = attr(db, "connection")$int64
   DEBUG = getOption("scidb.debug", FALSE)
+  AIO = getOption("scidb.aio", FALSE)
+  RESULT_SIZE_LIMIT = getOption("scidb.result_size_limit", 256)
+  if (DEBUG) {
+    if (is.null(attr(db, "connection")$session)) stop("[Shim session] unexpected in long running shim session")
+  }
   buffer = 100000L
   args = list(...)
   if (is.null(args$only_attributes)) args$only_attributes = FALSE
@@ -62,8 +67,11 @@ scidb_unpack_to_dataframe = function(db, query, ...)
     # Apply dimensions as attributes, using unique names. Manually construct the list of resulting attributes:
     dimensional_attributes = data.frame(name=dimensions$name, type="int64", nullable=FALSE) # original dimension names (used below)
     internal_attributes = rbind(attributes, dimensional_attributes)
-    dim_apply = paste(dim_names, dim_names, sep=",", collapse=",")
-    internal_query = sprintf("apply(%s, %s)", internal_query, dim_apply)
+    if (AIO == FALSE)
+    {
+      dim_apply = paste(dim_names, dim_names, sep=",", collapse=",")
+      internal_query = sprintf("apply(%s, %s)", internal_query, dim_apply)
+    }
   }
   ns = rep("", length(internal_attributes$nullable))
   ns[internal_attributes$nullable] = "null"
@@ -71,8 +79,18 @@ scidb_unpack_to_dataframe = function(db, query, ...)
   format_string = sprintf("(%s)", format_string)
   if (DEBUG) message("Data query ", internal_query)
   if (DEBUG) message("Format ", format_string)
-  sessionid = scidbquery(db, internal_query, save=format_string, release=0)
-  on.exit( SGET(db, "/release_session", list(id=sessionid), err=FALSE), add=TRUE)
+  sessionid = scidbquery(
+    db,
+    internal_query,
+    save=format_string,
+    result_size_limit=RESULT_SIZE_LIMIT,
+    atts_only=ifelse(args$only_attributes, TRUE, ifelse(AIO, FALSE, TRUE)))
+  if (!is.null(attr(db, "connection")$session)) { # if session already exists
+    release = 0
+  } else { # need to get new session every time
+    release = 1;
+  }
+  if (release) on.exit( SGET(db, "/release_session", list(id=sessionid), err=FALSE), add=TRUE)
 
   dt2 = proc.time()
   uri = URI(db, "/read_bytes", list(id=sessionid, n=0))
@@ -121,22 +139,62 @@ scidb_unpack_to_dataframe = function(db, query, ...)
       avg_bytes_per_line = ceiling( (p - p_old) / lines)
       buffer = min(getOption("scidb.buffer_size"), ceiling(1.3 * (len - p) / avg_bytes_per_line)) # Engineering factors
 # Assemble the data frame
-      if (is.null(ans)) ans = data.table::data.table(data.frame(tmp[1:n], stringsAsFactors=FALSE, check.names=FALSE))
-      else ans = rbind(ans, data.table::data.table(data.frame(tmp[1:n], stringsAsFactors=FALSE, check.names=FALSE)))
+      ans = data.table::rbindlist(list(ans, tmp[1:n]))
+#      if (is.null(ans)) ans = data.table::data.table(data.frame(tmp[1:n], stringsAsFactors=FALSE, check.names=FALSE))
+#      else ans = rbind(ans, data.table::data.table(data.frame(tmp[1:n], stringsAsFactors=FALSE, check.names=FALSE)))
     }
     if (DEBUG) message("  R rbind/df assembly time ", round( (proc.time() - dt2)[3], 4))
   }
   if (is.null(ans))
   {
     xa = attributes$name
-    if (args$only_attributes) # permute cols, see issue #125
-      xd = c()
-    else
+    xd = NULL
+    classes = list()
+    classes_dimensions = NULL
+    if (!args$only_attributes) {
       xd = dimensions$name
+      classes_dimensions = rep("numeric", length(xd))
+    }
+    has_binary = FALSE
+    for(i in 1:nrow(attributes)) {
+      t = attributes$type[i]
+      if(t == 'bool') {
+        classes = c(classes, 'logical')
+      } else if(t == 'binary') {
+        classes = c(classes, 'list')
+        has_binary = TRUE
+      } else if(t == 'datetime') {
+        classes[[length(classes) + 1]] = as.character(c('POSIXct', 'POSIXt'))
+      } else if(t == 'string' || t == 'char') {
+        classes = c(classes, 'character')
+      } else if(t %in% c('int8', 'uint8', 'int16', 'uint16', 'int32')) {
+        classes = c(classes, 'integer')
+      } else {
+        classes = c(classes, 'numeric')
+      }
+    }
     n = length(xd) + length(xa)
     ans = vector(mode="list", length=n)
-    names(ans) = make.names_(c(xd, xa))
-    class(ans) = "data.frame"
+    if (has_binary) {
+      # C_scidb_parse leaves dimensions at the end,
+      # for "binary" leave dimensions as they are
+      classes = c(classes, classes_dimensions)
+      names(ans) = make.names_(c(xa, xd))
+      for(i in 1:length(ans))
+        class(ans[[i]]) = classes[[i]]
+    }
+    else {
+      classes = c(classes_dimensions, classes)
+      names(ans) = make.names_(c(xd, xa))
+      class(ans) = "data.frame"
+      for(i in 1:ncol(ans)) {
+        # Workaround for POSIXct class
+        if (length(classes[[i]]) == 2
+            && all.equal(classes[[i]], as.character(c("POSIXct", "POSIXt"))))
+          class(ans[, i]) = 'numeric'
+        class(ans[, i]) = classes[[i]]
+      }
+    }
     return(ans)
   }
   if (DEBUG) message("Total R parsing time ", round( (proc.time() - dt1)[3], 4))
@@ -236,6 +294,27 @@ create_temp_array = function(db, name, schema)
   iquery(db, query, `return`=FALSE)
 }
 
+# Internal function
+get_setting_items_str = function(db, settings, sep=',') {
+  
+  convert_single_item_v19 = function(key, value) {
+    if(is.character(value))
+      value = sprintf("'%s'", value)  # Quote string value(s)
+    valueStr = if(length(value) > 1) sprintf("(%s)", paste(value, collapse = ',')) else value
+    
+    sprintf("%s:%s", key, valueStr)
+  } 
+  convert_single_item_pre_v19 = function(key, value) {
+    valueStr = if(length(value) > 1) paste(value, collapse = ',') else value
+    sprintf("'%s=%s'", key, valueStr)
+  } 
+  
+  convert_single_item = if (at_least(attr(db, "connection")$scidb.version, "19.0")) 
+    convert_single_item_v19 else convert_single_item_pre_v19
+  
+  items = mapply(convert_single_item, names(settings), settings)
+  paste(items, collapse = sep)
+}
 
 #' An important internal convenience function that returns a scidb object.  If
 #' eval=TRUE, a new SciDB array is created the returned scidb object refers to
@@ -346,9 +425,15 @@ URI = function(db, resource="", args=list())
     args = c(args, list(auth=.scidbenv$auth))
   if (!is.null(.scidbenv$password)) args = c(args, list(password=.scidbenv$password))
   if (!is.null(.scidbenv$username)) args = c(args, list(user=.scidbenv$username))
+  if (!is.null(.scidbenv$admin) && .scidbenv$admin) args = c(args, list(admin=1))
   prot = paste(.scidbenv$protocol, "//", sep=":")
   if ("password" %in% names(args) || "auth" %in% names(args)) prot = "https://"
-  ans  = paste(prot, .scidbenv$host, ":", .scidbenv$port, sep="")
+  if (!is.null(.scidbenv$port)) { # if port value is not NULL
+    ans = paste(prot, .scidbenv$host, ":", .scidbenv$port, sep="")
+  } else { # if port value is NULL, Shim port must have been forwarded to a URL
+           # and only having the URL is sufficient
+    ans = paste(prot, .scidbenv$host, sep = "")
+  }
   ans = paste(ans, resource, sep="/")
   if (length(args)>0)
     ans = paste(ans, paste(paste(names(args), args, sep="="), collapse="&"), sep="?")
@@ -369,7 +454,7 @@ SGET = function(db, resource, args=list(), err=TRUE, binary=FALSE)
   if (ans$status_code > 299 && err)
   {
     msg = sprintf("HTTP error %s", ans$status_code)
-    if (ans$status_code >= 500) msg = sprintf("%s\n%s", msg, rawToChar(ans$content))
+    if (ans$status_code >= 400) msg = sprintf("%s\n%s", msg, rawToChar(ans$content))
     stop(msg)
   }
   if (binary) return(ans$content)
@@ -421,7 +506,6 @@ POST = function(db, data, args=list(), err=TRUE)
 # db: scidb database connection object
 # query: a character query string
 # save: Save format query string or NULL.
-# release: Set to zero preserve web session until manually calling release_session
 # session: if you already have a SciDB http session, set this to it, otherwise NULL
 # resp(logical): return http response
 # stream: Set to 0L or 1L to control streaming (NOT USED)
@@ -429,7 +513,7 @@ POST = function(db, data, args=list(), err=TRUE)
 # Example values of save: "dcsv", "csv+", "(double NULL, int32)"
 #
 # Returns the HTTP session in each case
-scidbquery = function(db, query, save=NULL, release=1, session=NULL, resp=FALSE, stream, prefix=attributes(db)$connection$prefix)
+scidbquery = function(db, query, save=NULL, result_size_limit=NULL, session=NULL, resp=FALSE, stream, prefix=attributes(db)$connection$prefix, atts_only=TRUE)
 {
   DEBUG = FALSE
   STREAM = 0L
@@ -438,12 +522,19 @@ scidbquery = function(db, query, save=NULL, release=1, session=NULL, resp=FALSE,
   {
     STREAM = 0L
   } else STREAM = as.integer(stream)
+  release = 0
+  if (!is.null(attr(db, "connection")$session)) {
+    session = attr(db, "connection")$session
+  } else {
+    if (DEBUG) cat("[Shim session] created new session\n")
+  }
   sessionid = session
   if (is.null(session))
   {
     sessionid = getSession(db) # Obtain a session from shim
   }
   if (is.null(save)) save=""
+  if (is.null(result_size_limit)) result_size_limit=""
   if (DEBUG)
   {
     message(query, "\n")
@@ -456,17 +547,19 @@ scidbquery = function(db, query, save=NULL, release=1, session=NULL, resp=FALSE,
       args$prefix = c(getOption("scidb.prefix"), prefix)
       if (!is.null(args$prefix)) args$prefix = paste(args$prefix, collapse=";")
       args$save = save
+      args$result_size_limit = result_size_limit
+      if (!is.null(args$save)) args$atts_only=ifelse(atts_only, 1L, 0L)
       do.call("SGET", args=list(db=db, resource="/execute_query", args=args))
     }, error=function(e)
     {
       SGET(db, "/cancel", list(id=sessionid), err=FALSE)
-      SGET(db, "/release_session", list(id=sessionid), err=FALSE)
+      if (release) SGET(db, "/release_session", list(id=sessionid), err=FALSE)
       e$call = NULL
       stop(e)
     }, interrupt=function(e)
     {
       SGET(db, "/cancel", list(id=sessionid), err=FALSE)
-      SGET(db, "/release_session", list(id=sessionid), err=FALSE)
+      if (release) SGET(db, "/release_session", list(id=sessionid), err=FALSE)
       stop("cancelled")
     }, warning=invisible)
   if (DEBUG) message("Query time ", round( (proc.time() - t1)[3], 4))
@@ -497,9 +590,15 @@ scidbquery = function(db, query, save=NULL, release=1, session=NULL, resp=FALSE,
   schema1d = sprintf("<i:int64 null, j:int64 null, val : %s null>[idx=0:*,100000,0]", type)
 
 # Obtain a session from shim for the upload process
-  session = getSession(db)
-  if (length(session)<1) stop("SciDB http session error")
-  on.exit(SGET(db, "/release_session", list(id=session), err=FALSE), add=TRUE)
+  if (!is.null(attr(db, "connection")$session)) { # if session already exists
+    session = attr(db, "connection")$session
+    release = 0
+  } else { # need to get new session every time
+    session = getSession(db)
+    if (length(session)<1) stop("SciDB http session error")
+    release = 1;
+  }
+  if (release) on.exit( SGET(db, "/release_session", list(id=session), err=FALSE), add=TRUE)
 
 # Compute the indices and assemble message to SciDB in the form
 # double, double, double for indices i, j and data val.
@@ -524,9 +623,15 @@ raw2scidb = function(db, X, name, gc=TRUE, ...)
   if (!is.raw(X)) stop("X must be a raw value")
   args = list(...)
 # Obtain a session from shim for the upload process
-  session = getSession(db)
-  if (length(session)<1) stop("SciDB http session error")
-  on.exit(SGET(db, "/release_session", list(id=session), err=FALSE), add=TRUE)
+  if (!is.null(attr(db, "connection")$session)) { # if session already exists
+    session = attr(db, "connection")$session
+    release = 0
+  } else { # need to get new session every time
+    session = getSession(db)
+    if (length(session)<1) stop("SciDB http session error")
+    release = 1;
+  }
+  if (release) on.exit( SGET(db, "/release_session", list(id=session), err=FALSE), add=TRUE)
 
   bytes = .Call(C_scidb_raw, X)
   ans = POST(db, bytes, list(id=session))
@@ -586,12 +691,12 @@ lazyeval = function(db, name)
 df2scidb = function(db, X,
                     name=tmpnam(db),
                     types=NULL,
+                    use_aio_input=FALSE,
                     chunk_size,
-                    gc)
+                    gc, format, temp=FALSE)
 {
-  .scidbenv = attr(db, "connection")
   if (!is.data.frame(X)) stop("X must be a data frame")
-  if (missing(gc)) gc = FALSE
+  if (missing(gc)) gc = TRUE
   nullable = TRUE
   anames = make.names(names(X), unique=TRUE)
   anames = gsub("\\.", "_", anames, perl=TRUE)
@@ -603,47 +708,49 @@ df2scidb = function(db, X,
   dcast = anames
   if (!is.null(types)) {
     for (j in 1:ncol(X)) typ[j] = types[j]
-  } else {
-    for (j in 1:ncol(X)) {
-      if ("numeric" %in% class(X[, j]))
-      {
-        typ[j] = "double"
-        X[, j] = gsub("NA", "null", sprintf("%.16f", X[, j]))
-      }
-      else if ("integer" %in% class(X[, j]))
-      {
-        typ[j] = "int32"
-        X[, j] = gsub("NA", "null", sprintf("%d", X[, j]))
-      }
-      else if ("integer64" %in% class(X[, j]))
-      {
-        typ[j] = "int64"
-        X[, j] = gsub("NA", "null", as.character(X[, j]))
-      }
-      else if ("logical" %in% class(X[, j]))
-      {
-        typ[j] = "bool"
-        X[, j] = gsub("na", "null", tolower(sprintf("%s", X[, j])))
-      }
-      else if ("character" %in% class(X[, j]))
-      {
-        typ[j] = "string"
-        X[is.na(X[, j]), j] = "null"
-      }
-      else if ("factor" %in% class(X[, j]))
-      {
-        typ[j] = "string"
-        isna = is.na(X[, j])
-        X[, j] = sprintf("%s", X[, j])
-        if (any(isna)) X[isna, j] = "null"
-      }
-      else if ("Date" %in% class(X[, j]) || "POSIXct" %in% class(X[, j]))
-      {
-        warning("Converting R Date/POSIXct to SciDB datetime as UTC time. Subsecond times rounded to seconds.")
-        X[, j] = round(as.double(as.POSIXct(X[, j], tz="UTC")))
-        X[, j] = gsub("NA", "null", sprintf("%d", X[, j]))
-        typ[j] = "datetime"
-      }
+  }
+  for (j in 1:ncol(X)) {
+    if ((! grepl("^int", typ[j])) && "numeric" %in% class(X[, j]))
+    {
+      if(is.null(types)) typ[j] = "double"
+      X[, j] = gsub("NA", "null",
+                    sprintf("%.17g",
+                            ifelse(X[, j] > 0 & X[, j] < .Machine$double.xmin, 0,
+                                   ifelse(X[, j] < 0 & X[, j] > -.Machine$double.xmin, 0, X[, j]))))
+    }
+    else if (grepl("^int", typ[j]) || "integer" %in% class(X[, j]))
+    {
+      if(is.null(types)) typ[j] = "int32"
+      X[, j] = gsub("NA", "null", sprintf("%d", X[, j]))
+    }
+    else if (grepl("^int", typ[j]) || "integer64" %in% class(X[, j]))
+    {
+      if(is.null(types)) typ[j] = "int64"
+      X[, j] = gsub("NA", "null",  sprintf("%s", X[, j]))
+    }
+    else if ("logical" %in% class(X[, j]))
+    {
+      if(is.null(types)) typ[j] = "bool"
+      X[, j] = gsub("na", "null", tolower(sprintf("%s", X[, j])))
+    }
+    else if ("character" %in% class(X[, j]))
+    {
+      if(is.null(types)) typ[j] = "string"
+      X[is.na(X[, j]), j] = "null"
+    }
+    else if ("factor" %in% class(X[, j]))
+    {
+      if(is.null(types)) typ[j] = "string"
+      isna = is.na(X[, j])
+      X[, j] = sprintf("%s", X[, j])
+      if (any(isna)) X[isna, j] = "null"
+    }
+    else if ("Date" %in% class(X[, j]) || "POSIXct" %in% class(X[, j]))
+    {
+      warning("Converting R Date/POSIXct to SciDB datetime as UTC time. Subsecond times rounded to seconds.")
+      X[, j] = round(as.double(as.POSIXct(X[, j], tz="UTC")))
+      X[, j] = gsub("NA", "null", sprintf("%d", X[, j]))
+      if(is.null(types)) typ[j] = "datetime"
     }
   }
   for (j in 1:ncol(X))
@@ -655,26 +762,33 @@ df2scidb = function(db, X,
   args = sprintf("<%s>", paste(anames, ":", typ, " null", collapse=","))
 
 # Obtain a session from the SciDB http service for the upload process
-  session = getSession(db)
-  on.exit(SGET(db, "/release_session", list(id=session), err=FALSE), add=TRUE)
+  if (!is.null(attr(db, "connection")$session)) { # if session already exists
+    session = attr(db, "connection")$session
+    release = 0
+  } else { # need to get new session every time
+    session = getSession(db)
+    if (length(session)<1) stop("SciDB http session error")
+    release = 1;
+  }
+  if (release) on.exit( SGET(db, "/release_session", list(id=session), err=FALSE), add=TRUE)
 
   ncolX = ncol(X)
   nrowX = nrow(X)
-  X = charToRaw(fwrite(X, file=return))
+  if(missing(format)) X = charToRaw(fwrite(X, file=return))
+  else X = charToRaw(fwrite(X, file=return, format=format))
   tmp = POST(db, X, list(id=session))
   tmp = gsub("\n", "", gsub("\r", "", tmp))
 
 # Generate a load_tools query
   aio = length(grep("aio_input", names(db))) > 0
   atts = paste(dcast, collapse=",")
-  if (aio)
+  if (use_aio_input && aio)
   {
-    if (missing(chunk_size))
-      LOAD = sprintf("project(apply(aio_input('%s','num_attributes=%d'),%s),%s)", tmp,
-                 ncolX, atts, paste(anames, collapse=","))
-    else
-      LOAD = sprintf("project(apply(aio_input('%s','num_attributes=%d','chunk_size=%.0f'),%s),%s)", tmp,
-                 ncolX, chunk_size, atts, paste(anames, collapse=","))
+    aioSettings = list(num_attributes = ncolX)
+    if(!missing(chunk_size))
+      aioSettings[['chunk_size']] = chunk_size
+    LOAD = sprintf("project(apply(aio_input('%s', %s),%s),%s)", tmp,
+                   get_setting_items_str(db, aioSettings), atts, paste(anames, collapse=","))
   } else
   {
     if (missing(chunk_size))
@@ -682,8 +796,14 @@ df2scidb = function(db, X,
     else
       LOAD = sprintf("input(%s, '%s', -2, 'tsv')", dfschema(anames, typ, nrowX, chunk_size), tmp)
   }
+  ## Create a temporary array 'name'
+  if(temp){ # Use scidb temporary array instead of regular versioned array
+    targetArraySchema = lazyeval(db, LOAD)$schema
+    create_temp_array(db, name, schema = targetArraySchema)
+  }
+  ##
   query = sprintf("store(%s,%s)", LOAD, name)
-  scidbquery(db, query, release=1, session=session, stream=0L)
+  scidbquery(db, query, session=session, stream=0L)
   scidb(db, name, gc=gc)
 }
 
@@ -703,6 +823,7 @@ df2scidb = function(db, X,
 #' @keywords internal
 fwrite = function(x, file=stdout(), sep="\t", format=paste(rep("%s", ncol(x)), collapse=sep))
 {
+  if(length(format) > 1) format = paste(format, collapse=sep)
   foo = NULL
   rm(list="foo") # avoid package R CMD check warnings of undeclared variable
   if (!is.data.frame(x)) stop("x must be a data.frame")
@@ -766,8 +887,14 @@ matvec2scidb = function(db, X,
     load_schema = schema
   } else if (length(D) > 2)
   {
-# X is an n-d array
-    stop("not supported yet") # XXX WRITE ME
+# X is a dense n-d array
+    ndim = length(D)
+    chunkSize = rep(floor(10e6 ^ (1 / ndim)), ndim)
+    start = rep(0, ndim)
+    end = D - 1
+    dimNames = make.unique_(attr_name, paste("i", 1:length(D), sep=""))
+    schema = sprintf("< %s : %s null >[%s]", attr_name, force_type, paste(sprintf( "%s=%.0f:%.0f,%.0f,0", dimNames, start, end, chunkSize), collapse=","))
+    load_schema = sprintf("<%s:%s null>[__row=1:%.0f,1000000,0]", attr_name, force_type,  length(X))
   } else {
 # X is a matrix
     schema = sprintf(
@@ -776,16 +903,23 @@ matvec2scidb = function(db, X,
       chunkSize[[2]], overlap[[2]])
     load_schema = sprintf("<%s:%s null>[__row=1:%.0f,1000000,0]", attr_name, force_type,  length(X))
   }
-  if (!is.matrix(X)) stop ("X must be a matrix or a vector")
+  if (!is.array(X)) stop ("X must be an array or vector")
 
   DEBUG = getOption("scidb.debug", FALSE)
   td1 = proc.time()
 # Obtain a session from shim for the upload process
-  session = getSession(db)
-  on.exit( SGET(db, "/release_session", list(id=session), err=FALSE), add=TRUE)
+  if (!is.null(attr(db, "connection")$session)) { # if session already exists
+    session = attr(db, "connection")$session
+    release = 0
+  } else { # need to get new session every time
+    session = getSession(db)
+    if (length(session)<1) stop("SciDB http session error")
+    release = 1;
+  }
+  if (release) on.exit( SGET(db, "/release_session", list(id=session), err=FALSE), add=TRUE)
 
 # Upload the data
-  bytes = .Call(C_scidb_raw, as.vector(t(X)))
+  bytes = .Call(C_scidb_raw, as.vector(aperm(X)))
   ans = POST(db, bytes, list(id=session))
   ans = gsub("\n", "", gsub("\r", "", ans))
   if (DEBUG)

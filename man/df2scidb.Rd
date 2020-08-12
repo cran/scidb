@@ -4,7 +4,17 @@
 \alias{df2scidb}
 \title{Internal function to upload an R data frame to SciDB}
 \usage{
-df2scidb(db, X, name = tmpnam(db), types = NULL, chunk_size, gc)
+df2scidb(
+  db,
+  X,
+  name = tmpnam(db),
+  types = NULL,
+  use_aio_input = FALSE,
+  chunk_size,
+  gc,
+  format,
+  temp = FALSE
+)
 }
 \arguments{
 \item{db}{scidb database connection}
@@ -26,4 +36,3 @@ a \code{\link{scidb}} object, or a character schema string if \code{schema_only=
 Internal function to upload an R data frame to SciDB
 }
 \keyword{internal}
-

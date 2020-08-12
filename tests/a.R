@@ -6,9 +6,16 @@ check = function(a, b)
 
 library("scidb")
 host = Sys.getenv("SCIDB_TEST_HOST")
+test_with_security = ifelse(Sys.getenv("SCIDB_TEST_WITH_SECURITY") == 'true',
+                            TRUE, FALSE)
 if (nchar(host) > 0)
 {
-  db = scidbconnect(host)
+  if (!test_with_security) {
+    db = scidbconnect(host)
+  } else {
+    db = scidbconnect(username = 'root', password = 'Paradigm4', 
+                      protocol = 'https', port = 8083) 
+  }
 
 # 1 Data movement tests
 
@@ -25,12 +32,12 @@ if (nchar(host) > 0)
   check(iris[, 1],  as.R(x, only_attributes=TRUE)[, 1])
 
 # only attributes and optional skipping of metadata query by supplying schema in full and abbreviated forms
-  check(nrow(x), nrow(as.R(x)))
-  check(nrow(x), nrow(as.R(x, only_attributes=TRUE)))
+  check(as.R(db$op_count(x))$count, nrow(as.R(x)))
+  check(as.R(db$op_count(x))$count, nrow(as.R(x, only_attributes=TRUE)))
   a = scidb(db, x@name, schema=schema(x))
-  check(nrow(x), nrow(as.R(a)))
+  check(as.R(db$op_count(x))$count, nrow(as.R(a)))
   a = scidb(db, x@name, schema=gsub("\\[.*", "", schema(x)))
-  check(nrow(x), nrow(as.R(a)))
+  check(as.R(db$op_count(x))$count, nrow(as.R(a)))
 
 # upload vector
   check(1:5, as.R(as.scidb(db, 1:5))[, 2])
@@ -64,7 +71,7 @@ if (nchar(host) > 0)
  i = 4
  j = 6
  x = db$build("<v:double>[i=1:2,2,0, j=1:3,1,0]", i * j)
- check(as.R(x)$v, c(1, 2, 2, 4, 3, 6))
+ check(sort(as.R(x)$v), c(1, 2, 2, 3, 4, 6))
  x = db$apply(x, w, R(i) * R(j))
  # Need as.integer() for integer64 coversion below
  check(as.integer(as.R(x)$w), rep(24, 6))
@@ -75,10 +82,20 @@ if (nchar(host) > 0)
 # issue #156 type checks
 
 # int64 option
- db = scidbconnect(host, int64=TRUE)
+ if (!test_with_security) {
+   db = scidbconnect(host, int64=TRUE)
+ } else {
+   db = scidbconnect(username = 'root', password = 'Paradigm4', 
+                     protocol = 'https', port = 8083, int64=TRUE) 
+ }
  x = db$build("<v:int64>[i=1:2,2,0]", i)
  check(as.R(x), as.R(as.scidb(db, as.R(x, TRUE))))
- db = scidbconnect(host, int64=FALSE)
+ if (!test_with_security) {
+   db = scidbconnect(host, int64=FALSE)
+ } else {
+   db = scidbconnect(username = 'root', password = 'Paradigm4', 
+                     protocol = 'https', port = 8083, int64=FALSE) 
+ }
  x = db$build("<v:int64>[i=1:2,2,0]", i)
  check(as.R(x), as.R(as.scidb(db, as.R(x, TRUE))))
 
@@ -130,6 +147,9 @@ if (nchar(host) > 0)
   iquery(db, "apply(build(<val:double>[i=1:3], random()), x, 'abc')", return=TRUE,
          schema="<val:double,  x:string>[]", only_attributes=TRUE)
 
+# issue #172 (uint16 not supported)
+  iquery(db, "list('instances')", return=TRUE, binary=TRUE)
+
 # Test for references and garbage collection in AFL statements
   x = store(db, db$build("<x:double>[i=1:1,1,0]", R(pi)))
   y = db$apply(x, "y", 2)
@@ -137,4 +157,59 @@ if (nchar(host) > 0)
   gc()
   as.R(y)
   rm(y)
+
+# Issue 191 scoping issue example
+  a = db$build("<val:double>[x=1:10]", 'random()')
+  b = db$aggregate(a, "sum(val)")
+  as.R(b)
+  foo = function()
+  {
+     c = db$build("<val:double>[x=1:10]", 'random()')
+     d = db$aggregate(c, "sum(val)")
+     as.R(d)
+  }
+  foo()
+
+# Issue 193 Extreme numeric values get truncated on upload
+  upload_data <- data.frame(a = 1.23456e-50)
+  upload_ref <- as.scidb(db, upload_data)
+  download_data <- as.R(upload_ref, only_attributes = TRUE)
+  stopifnot(upload_data$a == download_data$a)
+
+# Issue 195 Empty data.frame(s)
+  for (scidb_type in names(scidb:::.scidbtypes))
+    for (only_attributes in c(FALSE, TRUE)) {
+      one_df <- iquery(
+        db,
+        paste("build(<x:", scidb_type, ">[i=0:0], null)"),
+        only_attributes = only_attributes,
+        return = TRUE)
+      empty_df <- iquery(
+        db,
+        paste("filter(build(<x:", scidb_type, ">[i=0:0], null), false)"),
+        only_attributes = only_attributes,
+        return = TRUE)
+      index <- 1 + ifelse(only_attributes, 0, 1)
+      if (class(one_df) == "data.frame") {
+        stopifnot(class(one_df[, index]) == class(empty_df[, index]))
+        merge(one_df, empty_df)
+      }
+      else {
+        stopifnot(class(one_df[[index]]) == class(empty_df[[index]]))
+        mapply(c, one_df, empty_df)
+      }
+    }
+
+# Issue 195 Coerce very small floating point values to 0
+  small_df <- data.frame(a = .Machine$double.xmin,
+                         b = .Machine$double.xmin / 10,   # Will be coerced to 0
+                         c = -.Machine$double.xmin,
+                         d = -.Machine$double.xmin / 10)  # Will be coerced to 0
+  small_df_db <- as.R(as.scidb(db, small_df), only_attributes = TRUE)
+  small_df_fix <- small_df
+  small_df_fix$b <- 0
+  small_df_fix$d <- 0
+  print(small_df_fix)
+  print(small_df_db)
+  check(small_df_db, small_df_fix)
 }

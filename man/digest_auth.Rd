@@ -21,4 +21,3 @@ digest_auth(db, method, uri, realm = "", nonce = "123456")
 Convenience function for digest authentication.
 }
 \keyword{internal}
-

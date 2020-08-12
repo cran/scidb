@@ -12,4 +12,3 @@ getpwd(prompt = "Password:")
 \description{
 Simple utility to interactively enter a password without showing it on the screen
 }
-

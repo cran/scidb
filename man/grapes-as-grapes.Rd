@@ -14,4 +14,3 @@ x \%as\% y
 \description{
 AFL array aliasing
 }
-

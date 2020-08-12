@@ -7,7 +7,7 @@
 aflhelp(topic, db)
 }
 \arguments{
-\item{topic}{an \code{\link{afl}} object from a SciDB database connection, or optionally a character string name}
+\item{topic}{an afl object from a SciDB database connection, or optionally a character string name}
 
 \item{db}{optional database connection from \code{\link{scidbconnect}} (only needed when \code{topic} is a character string)}
 }
@@ -21,7 +21,6 @@ Display SciDB AFL operator documentation
 \dontrun{
 d <- scidbconnect()
 aflhelp("list", d)     # explicitly look up a character string
-help(d$list)        # same thing via R's \\code{help} function
+help(d$list)        # same thing via R's \code{help} function
 }
 }
-

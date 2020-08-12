@@ -15,4 +15,3 @@ a vector of SciDB array dimension names
 \description{
 Names of array dimensions
 }
-

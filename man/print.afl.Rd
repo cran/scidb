@@ -17,4 +17,3 @@ printed object summary
 \description{
 Print a summary of a \code{afl} SciDB database connection object
 }
-

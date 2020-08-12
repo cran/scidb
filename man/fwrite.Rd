@@ -4,8 +4,12 @@
 \alias{fwrite}
 \title{Fast write.table/textConnection substitute}
 \usage{
-fwrite(x, file = stdout(), sep = "\\t", format = paste(rep("\%s",
-  ncol(x)), collapse = sep))
+fwrite(
+  x,
+  file = stdout(),
+  sep = "\\t",
+  format = paste(rep("\%s", ncol(x)), collapse = sep)
+)
 }
 \arguments{
 \item{x}{a data frame}
@@ -27,4 +31,3 @@ Not such a great option for writing to files, marginal difference from write.tab
 obviously much greater memory use.
 }
 \keyword{internal}
-

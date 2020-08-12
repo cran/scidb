@@ -22,4 +22,3 @@ a \code{scidb} object
 \description{
 Create an R reference to a SciDB array or expression.
 }
-

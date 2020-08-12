@@ -17,4 +17,3 @@ logical TRUE if x is greater than or equal to y
 \description{
 Returns TRUE if version string x is greater than or equal to than version y
 }
-
